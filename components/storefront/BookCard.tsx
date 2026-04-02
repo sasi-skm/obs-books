@@ -36,12 +36,14 @@ export default function BookCard({ book }: { book: Book }) {
       const price = hasConditionPrices ? book.condition_prices![defaultCondition] : book.price
       addItem({
         id: book.id + '-' + defaultCondition,
+        bookId: book.id,
         title: book.title,
         author: book.author,
         price,
         image_url: coverImage,
         category: book.category,
         condition: defaultCondition,
+        weight_grams: book.weight_grams,
       })
     }
   }

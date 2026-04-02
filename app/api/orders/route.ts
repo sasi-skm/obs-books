@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { customer_name, customer_phone, customer_email, shipping_address, payment_method, note, items, total_amount } = body
+    const { customer_name, customer_phone, customer_email, shipping_address, payment_method, note, items, total_amount, slip_url, destination_country, currency } = body
 
     if (!customer_name || !customer_phone || !shipping_address || !items?.length) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -29,7 +29,10 @@ export async function POST(req: NextRequest) {
             payment_method,
             note: note || null,
             total_amount,
-            payment_status: 'pending',
+            slip_url: slip_url || null,
+            destination_country: destination_country || 'TH',
+            currency: currency || 'THB',
+            payment_status: slip_url ? 'uploaded' : 'pending',
             order_status: 'new',
           })
           .select()
@@ -52,6 +55,25 @@ export async function POST(req: NextRequest) {
         // Decrement book copies
         for (const item of items) {
           await supabaseAdmin.rpc('decrement_book_copies', { book_id_param: item.book_id })
+        }
+
+        // Send Telegram notification (non-blocking)
+        try {
+          const { sendTelegramOrderNotification } = await import('@/lib/telegram')
+          await sendTelegramOrderNotification({
+            order_number: orderNumber,
+            customer_name,
+            customer_phone,
+            shipping_address,
+            total_amount,
+            items: items.map((i: { title: string; price: number; condition?: string }) => ({
+              title: i.title,
+              price: i.price,
+              condition: i.condition,
+            })),
+          })
+        } catch (telegramErr) {
+          console.error('Telegram notification failed:', telegramErr)
         }
 
         return NextResponse.json({ order_number: orderNumber, id: order.id })

@@ -116,6 +116,15 @@ export const TX: Record<string, Record<Lang, string>> = {
   bankAccount: { en: 'Account Number', th: 'เลขบัญชี' },
   bankHolder: { en: 'Account Name', th: 'ชื่อบัญชี' },
 
+  // Shipping
+  destinationCountry: { en: 'Destination Country', th: 'ประเทศปลายทาง' },
+  shippingEstimate: { en: 'Estimated Shipping (DHL)', th: 'ค่าจัดส่งโดยประมาณ (DHL)' },
+  internationalNote: { en: 'International shipping via DHL Express. This is an estimate - Sasi will confirm the final shipping cost.', th: 'จัดส่งต่างประเทศผ่าน DHL Express ราคานี้เป็นราคาโดยประมาณ - ซาซิจะยืนยันค่าจัดส่งจริงอีกครั้ง' },
+
+  // Tracking
+  realTimeTracking: { en: 'Live Tracking Events', th: 'ติดตามสถานะแบบเรียลไทม์' },
+  noTrackingEvents: { en: 'Tracking events will appear once your parcel is scanned.', th: 'ข้อมูลการจัดส่งจะแสดงเมื่อพัสดุถูกสแกน' },
+
   // Misc
   viewAll: { en: 'View All', th: 'ดูทั้งหมด' },
   allCategories: { en: 'All Categories', th: 'ทุกหมวดหมู่' },

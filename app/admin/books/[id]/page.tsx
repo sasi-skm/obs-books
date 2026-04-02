@@ -21,7 +21,7 @@ export default function EditBookPage() {
 
   const [form, setForm] = useState({
     title: '', author: '', category: 'wildflowers',
-    copies: '1', description: '', featured: false, status: 'available',
+    copies: '1', weight_grams: '', description: '', featured: false, status: 'available',
   })
   const [conditionPrices, setConditionPrices] = useState<Record<string, string>>({
     'Like New': '', 'Very Good': '', 'Good': '', 'Well Read': '',
@@ -49,7 +49,8 @@ export default function EditBookPage() {
     if (book) {
       setForm({
         title: book.title, author: book.author, category: book.category,
-        copies: String(book.copies), description: book.description || '',
+        copies: String(book.copies), weight_grams: book.weight_grams ? String(book.weight_grams) : '',
+        description: book.description || '',
         featured: book.featured, status: book.status,
       })
 
@@ -172,6 +173,7 @@ export default function EditBookPage() {
           image_url: imageUrl,
           images: finalUrls,
           video_url: finalVideoUrl,
+          weight_grams: form.weight_grams ? parseInt(form.weight_grams) : null,
         }).eq('id', bookId)
 
         if (updateError) {
@@ -294,6 +296,13 @@ export default function EditBookPage() {
               className="w-full px-3 py-3 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
               value={form.copies} onChange={e => setForm({ ...form, copies: e.target.value })} />
           </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block font-heading text-sm mb-1">Weight (grams)</label>
+          <input type="number" min="0" placeholder="e.g. 450 - used for shipping estimates"
+            className="w-full px-3 py-3 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+            value={form.weight_grams} onChange={e => setForm({ ...form, weight_grams: e.target.value })} />
         </div>
 
         <div className="mb-4">

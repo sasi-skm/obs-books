@@ -14,6 +14,7 @@ export interface Book {
   description?: string
   featured: boolean
   created_at: string
+  weight_grams?: number
   updated_at: string
 }
 
@@ -39,6 +40,8 @@ export interface Order {
   note?: string
   courier?: string
   tracking_number?: string
+  destination_country?: string
+  currency?: 'THB' | 'USD'
   created_at: string
   updated_at: string
   items?: OrderItem[]
@@ -56,12 +59,14 @@ export interface OrderItem {
 
 export interface CartItem {
   id: string
+  bookId: string
   title: string
   author: string
   price: number
   image_url: string
   category: string
   condition?: string
+  weight_grams?: number
 }
 
 export type Lang = 'en' | 'th'

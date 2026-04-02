@@ -24,6 +24,7 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('all')
+  const [shippingForm, setShippingForm] = useState<{ orderId: string; tracking: string; courier: string } | null>(null)
 
   useEffect(() => {
     loadOrders()
@@ -55,13 +56,24 @@ export default function AdminOrdersPage() {
     loadOrders()
   }
 
-  const handleMarkShipped = async (orderId: string) => {
-    const trackingNumber = prompt('Enter tracking number:')
-    if (!trackingNumber) return
-    const courier = prompt('Courier (thailand-post, kerry, flash, jt):') || 'thailand-post'
+  const handleConfirmShip = async () => {
+    if (!shippingForm || !shippingForm.tracking.trim()) return
     await supabase
       .from('orders')
-      .update({ order_status: 'shipped', courier, tracking_number: trackingNumber })
+      .update({
+        order_status: 'shipped',
+        courier: shippingForm.courier,
+        tracking_number: shippingForm.tracking.trim(),
+      })
+      .eq('id', shippingForm.orderId)
+    setShippingForm(null)
+    loadOrders()
+  }
+
+  const handleMarkDelivered = async (orderId: string) => {
+    await supabase
+      .from('orders')
+      .update({ order_status: 'delivered' })
       .eq('id', orderId)
     loadOrders()
   }
@@ -111,6 +123,7 @@ export default function AdminOrdersPage() {
                 <th className="text-left p-3 font-heading font-medium">Customer</th>
                 <th className="text-left p-3 font-heading font-medium hidden sm:table-cell">Total</th>
                 <th className="text-left p-3 font-heading font-medium">Payment</th>
+                <th className="text-left p-3 font-heading font-medium hidden md:table-cell">Ship to</th>
                 <th className="text-left p-3 font-heading font-medium">Status</th>
                 <th className="text-left p-3 font-heading font-medium">Actions</th>
               </tr>
@@ -129,6 +142,13 @@ export default function AdminOrdersPage() {
                   <td className="p-3">
                     <span className={`text-xs px-2 py-0.5 inline-block ${PAYMENT_COLORS[order.payment_status] || ''}`}>
                       {order.payment_status}
+                    </span>
+                  </td>
+                  <td className="p-3 hidden md:table-cell">
+                    <span className="text-xs text-ink-muted">
+                      {order.destination_country && order.destination_country !== 'TH'
+                        ? order.destination_country
+                        : 'TH'}
                     </span>
                   </td>
                   <td className="p-3">
@@ -157,11 +177,57 @@ export default function AdminOrdersPage() {
                         </button>
                       )}
                       {order.payment_status === 'confirmed' && order.order_status === 'paid' && (
+                        shippingForm?.orderId === order.id ? (
+                          <div className="flex flex-col gap-1.5 min-w-[200px]">
+                            <input
+                              type="text"
+                              placeholder="Tracking number"
+                              value={shippingForm.tracking}
+                              onChange={e => setShippingForm({ ...shippingForm, tracking: e.target.value })}
+                              className="text-xs px-2 py-1 border border-line bg-cream outline-none focus:border-sage w-full"
+                            />
+                            <select
+                              value={shippingForm.courier}
+                              onChange={e => setShippingForm({ ...shippingForm, courier: e.target.value })}
+                              className="text-xs px-2 py-1 border border-line bg-cream outline-none focus:border-sage w-full"
+                            >
+                              <option value="thailand-post">Thailand Post</option>
+                              <option value="kerry">Kerry Express</option>
+                              <option value="flash">Flash Express</option>
+                              <option value="jt">J&T Express</option>
+                              <option value="dhl">DHL Express</option>
+                            </select>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={handleConfirmShip}
+                                disabled={!shippingForm.tracking.trim()}
+                                className="text-xs px-2 py-1 bg-sage text-white hover:bg-sage-light disabled:opacity-50"
+                              >
+                                Confirm
+                              </button>
+                              <button
+                                onClick={() => setShippingForm(null)}
+                                className="text-xs px-2 py-1 border border-line text-ink-muted hover:border-sage"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setShippingForm({ orderId: order.id, tracking: '', courier: 'thailand-post' })}
+                            className="text-xs px-2 py-1 bg-bark text-white hover:bg-bark/80"
+                          >
+                            Ship
+                          </button>
+                        )
+                      )}
+                      {order.order_status === 'shipped' && (
                         <button
-                          onClick={() => handleMarkShipped(order.id)}
-                          className="text-xs px-2 py-1 bg-bark text-white hover:bg-bark/80"
+                          onClick={() => handleMarkDelivered(order.id)}
+                          className="text-xs px-2 py-1 bg-green-700 text-white hover:bg-green-800"
                         >
-                          Ship
+                          Delivered
                         </button>
                       )}
                       {order.tracking_number && (

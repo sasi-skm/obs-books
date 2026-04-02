@@ -40,12 +40,14 @@ export default function BookDetailClient({ book }: { book: Book }) {
     } else {
       addItem({
         id: cartItemId,
+        bookId: book.id,
         title: book.title,
         author: book.author,
         price: currentPrice,
         image_url: galleryImages[0],
         category: book.category,
         condition: selectedCondition,
+        weight_grams: book.weight_grams,
       })
     }
   }

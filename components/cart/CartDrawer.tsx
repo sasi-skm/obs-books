@@ -54,6 +54,9 @@ export default function CartDrawer() {
                 <div className="flex-1 min-w-0">
                   <div className="font-heading text-sm font-semibold truncate">{item.title}</div>
                   <div className="text-xs text-ink-muted italic">{item.author}</div>
+                  {item.condition && (
+                    <div className="text-[0.65rem] text-sage tracking-wider uppercase">{item.condition}</div>
+                  )}
                   <div className="font-heading text-sm font-semibold text-bark mt-0.5">
                     ฿{item.price.toLocaleString()}
                   </div>

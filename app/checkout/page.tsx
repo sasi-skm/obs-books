@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useCart } from '@/components/cart/CartContext'
 import { useLang } from '@/components/layout/LanguageContext'
 import { generatePromptPayQR } from '@/lib/promptpay'
+import { getShippingRate, thbToUsd, SUPPORTED_COUNTRIES, DEFAULT_BOOK_WEIGHT } from '@/lib/shipping'
 
 type Step = 'details' | 'payment' | 'done'
 
@@ -14,12 +15,19 @@ export default function CheckoutPage() {
   const { lang, t } = useLang()
 
   const [step, setStep] = useState<Step>('details')
-  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', note: '' })
+  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', note: '', country: 'TH' })
   const [payMethod, setPayMethod] = useState<'promptpay' | 'transfer'>('promptpay')
   const [qrCode, setQrCode] = useState<string>('')
   const [slipPreview, setSlipPreview] = useState<string>('')
+  const [slipFile, setSlipFile] = useState<File | null>(null)
   const [orderNumber, setOrderNumber] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const isInternational = form.country !== 'TH'
+  const totalWeightGrams = items.reduce((sum, i) => sum + (i.weight_grams || DEFAULT_BOOK_WEIGHT), 0)
+  const shippingUsd = isInternational ? getShippingRate(form.country, totalWeightGrams) : null
+  const booksTotalUsd = isInternational ? thbToUsd(total) : null
+  const grandTotalUsd = (booksTotalUsd !== null && shippingUsd !== null) ? booksTotalUsd + shippingUsd : null
 
   useEffect(() => {
     if (step === 'payment' && payMethod === 'promptpay' && total > 0) {
@@ -36,6 +44,7 @@ export default function CheckoutPage() {
   const handleSlipUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    setSlipFile(file)
     const reader = new FileReader()
     reader.onload = (ev) => setSlipPreview(ev.target?.result as string)
     reader.readAsDataURL(file)
@@ -44,6 +53,21 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     setSubmitting(true)
     try {
+      // Upload payment slip if provided
+      let slipUrl = ''
+      if (slipFile) {
+        const fd = new FormData()
+        fd.append('file', slipFile)
+        fd.append('bucket', 'payment-slips')
+        try {
+          const uploadRes = await fetch('/api/upload', { method: 'POST', body: fd })
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json()
+            slipUrl = uploadData.url || ''
+          }
+        } catch {}
+      }
+
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,12 +78,16 @@ export default function CheckoutPage() {
           shipping_address: form.address,
           payment_method: payMethod,
           note: form.note,
+          slip_url: slipUrl || null,
+          destination_country: form.country,
+          currency: isInternational ? 'USD' : 'THB',
           items: items.map(i => ({
-            book_id: i.id,
+            book_id: i.bookId || i.id.split('-')[0],
             title: i.title,
             author: i.author,
             price: i.price,
             image_url: i.image_url,
+            condition: i.condition,
           })),
           total_amount: total,
         }),
@@ -69,7 +97,6 @@ export default function CheckoutPage() {
       clearCart()
       setStep('done')
     } catch {
-      // Fallback: generate local order number
       setOrderNumber('OBS-' + Date.now().toString(36).toUpperCase())
       clearCart()
       setStep('done')
@@ -125,14 +152,32 @@ export default function CheckoutPage() {
         <div className="border border-line p-4 mb-6 bg-cream">
           {items.map(item => (
             <div key={item.id} className="flex justify-between text-sm mb-1 text-ink-light">
-              <span className="truncate mr-4">{item.title}</span>
-              <span className="flex-shrink-0">฿{item.price.toLocaleString()}</span>
+              <span className="truncate mr-4">
+                {item.title}
+                {item.condition && <span className="text-xs text-sage ml-1">({item.condition})</span>}
+              </span>
+              <span className="flex-shrink-0">
+                {isInternational ? `$${thbToUsd(item.price).toFixed(2)}` : `฿${item.price.toLocaleString()}`}
+              </span>
             </div>
           ))}
+          {isInternational && shippingUsd !== null && (
+            <div className="flex justify-between text-sm mb-1 text-ink-light pt-1 border-t border-line/50 mt-1">
+              <span>{t('shippingEstimate')}</span>
+              <span className="flex-shrink-0">${shippingUsd.toFixed(2)} USD</span>
+            </div>
+          )}
           <div className="flex justify-between font-heading text-base font-semibold pt-2 mt-2 border-t border-line">
             <span>{t('total')}</span>
-            <span>฿{total.toLocaleString()}</span>
+            <span>
+              {isInternational && grandTotalUsd !== null
+                ? `$${grandTotalUsd.toFixed(2)} USD`
+                : `฿${total.toLocaleString()}`}
+            </span>
           </div>
+          {isInternational && (
+            <p className="text-xs text-ink-muted mt-2 italic">{t('internationalNote')}</p>
+          )}
         </div>
 
         {step === 'details' && (
@@ -172,6 +217,26 @@ export default function CheckoutPage() {
                 onChange={e => setForm({ ...form, address: e.target.value })}
                 required
               />
+            </div>
+            <div className="mb-4">
+              <label className="block font-heading text-sm mb-1">{t('destinationCountry')} *</label>
+              <select
+                className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                value={form.country}
+                onChange={e => setForm({ ...form, country: e.target.value })}
+              >
+                {SUPPORTED_COUNTRIES.map(c => (
+                  <option key={c.code} value={c.code}>
+                    {c.code === 'TH' && lang === 'th' ? c.nameLocal : c.name}
+                    {c.code === 'TH' ? (lang === 'en' ? ' (Free shipping)' : '') : ''}
+                  </option>
+                ))}
+              </select>
+              {isInternational && shippingUsd !== null && (
+                <p className="text-xs text-sage mt-1">
+                  {t('shippingEstimate')}: ${shippingUsd.toFixed(2)} USD (DHL Express)
+                </p>
+              )}
             </div>
             <div className="mb-4">
               <label className="block font-heading text-sm mb-1">{t('note')}</label>

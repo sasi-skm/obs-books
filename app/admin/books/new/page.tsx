@@ -16,7 +16,7 @@ export default function NewBookPage() {
   const router = useRouter()
   const [form, setForm] = useState({
     title: '', author: '', category: 'wildflowers',
-    copies: '1', description: '', featured: false,
+    copies: '1', weight_grams: '', description: '', featured: false,
   })
   const [conditionPrices, setConditionPrices] = useState<Record<string, string>>({
     'Like New': '', 'Very Good': '', 'Good': '', 'Well Read': '',
@@ -120,6 +120,7 @@ export default function NewBookPage() {
           image_url: imageUrl,
           images: uploadedUrls,
           video_url: uploadedVideoUrl,
+          weight_grams: form.weight_grams ? parseInt(form.weight_grams) : null,
           status: 'available',
         })
 
@@ -242,6 +243,13 @@ export default function NewBookPage() {
               className="w-full px-3 py-3 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
               value={form.copies} onChange={e => setForm({ ...form, copies: e.target.value })} />
           </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="block font-heading text-sm mb-1">Weight (grams)</label>
+          <input type="number" min="0" placeholder="e.g. 450 - used for shipping estimates"
+            className="w-full px-3 py-3 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+            value={form.weight_grams} onChange={e => setForm({ ...form, weight_grams: e.target.value })} />
         </div>
 
         <div className="mb-4">

@@ -1,17 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useLang } from '@/components/layout/LanguageContext'
 import { COURIERS, getCourierName } from '@/lib/tracking'
 import { Order } from '@/types'
 
+interface TrackingEvent {
+  datetime: string
+  location: string
+  status: string
+  description: string
+}
+
 const STATUS_STEPS = [
-  { key: 'new', icon: '📋' },
-  { key: 'paid', icon: '💰' },
-  { key: 'packing', icon: '📦' },
-  { key: 'shipped', icon: '🚚' },
-  { key: 'delivered', icon: '✅' },
+  { key: 'new' },
+  { key: 'paid' },
+  { key: 'packing' },
+  { key: 'shipped' },
+  { key: 'delivered' },
 ]
 
 export default function TrackPage() {
@@ -20,6 +27,16 @@ export default function TrackPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [trackEvents, setTrackEvents] = useState<TrackingEvent[]>([])
+
+  useEffect(() => {
+    if (order?.tracking_number && order?.courier === 'thailand-post') {
+      fetch(`/api/tracking?tracking_number=${encodeURIComponent(order.tracking_number)}`)
+        .then(r => r.json())
+        .then(data => setTrackEvents(data.events || []))
+        .catch(() => {})
+    }
+  }, [order?.tracking_number, order?.courier])
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -97,10 +114,18 @@ export default function TrackPage() {
                 const isActive = i <= currentIdx
                 return (
                   <div key={step.key} className="relative z-10 text-center flex-1">
-                    <div className={`w-8 h-8 rounded-full mx-auto flex items-center justify-center text-sm ${
-                      isActive ? 'bg-sage text-white' : 'bg-parchment text-ink-muted'
+                    <div className={`w-8 h-8 rounded-full mx-auto flex items-center justify-center ${
+                      isActive ? 'bg-sage text-white' : 'bg-parchment border-2 border-line text-ink-muted'
                     }`}>
-                      {step.icon}
+                      {isActive ? (
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path d="M2 7l3.5 3.5L12 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      ) : (
+                        <svg width="8" height="8" viewBox="0 0 8 8">
+                          <circle cx="4" cy="4" r="3" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                        </svg>
+                      )}
                     </div>
                     <p className={`text-[0.65rem] mt-1 ${isActive ? 'text-sage font-medium' : 'text-ink-muted'}`}>
                       {t(`status${step.key.charAt(0).toUpperCase() + step.key.slice(1)}`)}
@@ -125,6 +150,28 @@ export default function TrackPage() {
                 >
                   {lang === 'th' ? 'ติดตามพัสดุ' : 'Track on carrier website'} →
                 </a>
+              </div>
+            )}
+
+            {/* Real-time tracking events */}
+            {trackEvents.length > 0 && (
+              <div className="border border-line p-4 bg-cream mb-4">
+                <p className="text-sm font-heading mb-3">{t('realTimeTracking')}</p>
+                <div className="space-y-3">
+                  {trackEvents.map((event, i) => (
+                    <div key={i} className="flex gap-3 text-xs">
+                      <div className="flex flex-col items-center">
+                        <div className={`w-2.5 h-2.5 rounded-full ${i === 0 ? 'bg-sage' : 'bg-line'}`} />
+                        {i < trackEvents.length - 1 && <div className="w-px flex-1 bg-line mt-1" />}
+                      </div>
+                      <div className="pb-2">
+                        <p className="text-ink-light font-medium">{event.description}</p>
+                        {event.location && <p className="text-ink-muted">{event.location}</p>}
+                        <p className="text-ink-muted">{event.datetime}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
