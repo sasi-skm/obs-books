@@ -1,0 +1,180 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { Order } from '@/types'
+import { supabase } from '@/lib/supabase'
+
+const STATUS_COLORS: Record<string, string> = {
+  new: 'bg-blue-100 text-blue-700',
+  paid: 'bg-sage/10 text-sage',
+  packing: 'bg-amber-100 text-amber-700',
+  shipped: 'bg-purple-100 text-purple-700',
+  delivered: 'bg-green-100 text-green-700',
+}
+
+const PAYMENT_COLORS: Record<string, string> = {
+  pending: 'bg-yellow-100 text-yellow-700',
+  uploaded: 'bg-blue-100 text-blue-700',
+  confirmed: 'bg-green-100 text-green-700',
+}
+
+type Tab = 'all' | 'new' | 'paid' | 'shipped'
+
+export default function AdminOrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<Tab>('all')
+
+  useEffect(() => {
+    loadOrders()
+  }, [])
+
+  const loadOrders = async () => {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co') {
+      try {
+        const { data } = await supabase
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false })
+        if (data) setOrders(data as Order[])
+      } catch {}
+    }
+    setLoading(false)
+  }
+
+  const filtered = orders.filter(o => {
+    if (tab === 'all') return true
+    return o.order_status === tab
+  })
+
+  const handleConfirmPayment = async (orderId: string) => {
+    await supabase
+      .from('orders')
+      .update({ payment_status: 'confirmed', order_status: 'paid' })
+      .eq('id', orderId)
+    loadOrders()
+  }
+
+  const handleMarkShipped = async (orderId: string) => {
+    const trackingNumber = prompt('Enter tracking number:')
+    if (!trackingNumber) return
+    const courier = prompt('Courier (thailand-post, kerry, flash, jt):') || 'thailand-post'
+    await supabase
+      .from('orders')
+      .update({ order_status: 'shipped', courier, tracking_number: trackingNumber })
+      .eq('id', orderId)
+    loadOrders()
+  }
+
+  const tabs: { key: Tab; label: string; count: number }[] = [
+    { key: 'all', label: 'All', count: orders.length },
+    { key: 'new', label: 'New', count: orders.filter(o => o.order_status === 'new').length },
+    { key: 'paid', label: 'Paid', count: orders.filter(o => o.order_status === 'paid').length },
+    { key: 'shipped', label: 'Shipped', count: orders.filter(o => o.order_status === 'shipped').length },
+  ]
+
+  return (
+    <div>
+      <h1 className="font-heading text-2xl font-normal mb-6">Orders</h1>
+
+      {/* Tabs */}
+      <div className="flex gap-2 mb-6 flex-wrap">
+        {tabs.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`px-4 py-2 font-heading text-sm transition-colors ${
+              tab === t.key
+                ? 'bg-sage text-offwhite'
+                : 'bg-offwhite border border-line text-ink-light hover:border-sage'
+            }`}
+          >
+            {t.label} ({t.count})
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <p className="text-ink-muted">Loading orders...</p>
+      ) : orders.length === 0 ? (
+        <div className="text-center py-12 bg-offwhite border border-line">
+          <p className="text-3xl mb-2">📋</p>
+          <p className="text-ink-muted italic">No orders yet</p>
+          <p className="text-xs text-ink-muted mt-1">Orders will appear here when customers place them</p>
+        </div>
+      ) : (
+        <div className="bg-offwhite border border-line overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line bg-parchment">
+                <th className="text-left p-3 font-heading font-medium">Order #</th>
+                <th className="text-left p-3 font-heading font-medium">Customer</th>
+                <th className="text-left p-3 font-heading font-medium hidden sm:table-cell">Total</th>
+                <th className="text-left p-3 font-heading font-medium">Payment</th>
+                <th className="text-left p-3 font-heading font-medium">Status</th>
+                <th className="text-left p-3 font-heading font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(order => (
+                <tr key={order.id} className="border-b border-line hover:bg-parchment/50">
+                  <td className="p-3 font-mono text-xs font-medium text-sage">{order.order_number}</td>
+                  <td className="p-3">
+                    <div className="font-heading font-medium">{order.customer_name}</div>
+                    <div className="text-xs text-ink-muted">{order.customer_phone}</div>
+                  </td>
+                  <td className="p-3 font-heading text-bark hidden sm:table-cell">
+                    ฿{order.total_amount.toLocaleString()}
+                  </td>
+                  <td className="p-3">
+                    <span className={`text-xs px-2 py-0.5 inline-block ${PAYMENT_COLORS[order.payment_status] || ''}`}>
+                      {order.payment_status}
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <span className={`text-xs px-2 py-0.5 inline-block ${STATUS_COLORS[order.order_status] || ''}`}>
+                      {order.order_status}
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <div className="flex gap-2 flex-wrap">
+                      {order.slip_url && (
+                        <a
+                          href={order.slip_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          View Slip
+                        </a>
+                      )}
+                      {order.payment_status !== 'confirmed' && order.order_status === 'new' && (
+                        <button
+                          onClick={() => handleConfirmPayment(order.id)}
+                          className="text-xs px-2 py-1 bg-sage text-white hover:bg-sage-light"
+                        >
+                          Confirm
+                        </button>
+                      )}
+                      {order.payment_status === 'confirmed' && order.order_status === 'paid' && (
+                        <button
+                          onClick={() => handleMarkShipped(order.id)}
+                          className="text-xs px-2 py-1 bg-bark text-white hover:bg-bark/80"
+                        >
+                          Ship
+                        </button>
+                      )}
+                      {order.tracking_number && (
+                        <span className="text-xs text-ink-muted font-mono">{order.tracking_number}</span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}

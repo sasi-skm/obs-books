@@ -1,0 +1,86 @@
+'use client'
+
+import Link from 'next/link'
+import { useLang } from '../layout/LanguageContext'
+
+function IgIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="ig-grad" cx="30%" cy="107%" r="150%">
+          <stop offset="0%" stopColor="#fdf497" />
+          <stop offset="45%" stopColor="#fd5949" />
+          <stop offset="60%" stopColor="#d6249f" />
+          <stop offset="90%" stopColor="#285AEB" />
+        </radialGradient>
+      </defs>
+      <rect width="20" height="20" x="2" y="2" rx="6" fill="url(#ig-grad)" />
+      <circle cx="12" cy="12" r="3.2" stroke="white" strokeWidth="1.5" fill="none" />
+      <circle cx="17.2" cy="6.8" r="1" fill="white" />
+    </svg>
+  )
+}
+
+function FbIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="32" height="32" xmlns="http://www.w3.org/2000/svg" fill="#1877F2">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+    </svg>
+  )
+}
+
+function TikTokIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="32" height="32" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.89a8.18 8.18 0 0 0 4.79 1.54V6.98a4.85 4.85 0 0 1-1.02-.29z" />
+    </svg>
+  )
+}
+
+const SOCIALS = [
+  { icon: <IgIcon />,      name: 'Instagram', handle: '@obs_books', href: 'https://instagram.com/obs_books' },
+  { icon: <FbIcon />,      name: 'Facebook',  handle: 'OBS Books',  href: 'https://www.facebook.com/profile.php?id=122100382010460957' },
+  { icon: <TikTokIcon />,  name: 'TikTok',    handle: '@obs_books', href: 'https://www.tiktok.com/@obs_books' },
+]
+
+export default function ContactSection() {
+  const { t } = useLang()
+
+  return (
+    <section className="py-16 px-6 bg-offwhite text-center" id="contact">
+      <div className="text-center mb-10">
+        <h2 className="font-heading text-[clamp(1.6rem,3vw,2.3rem)] font-normal">{t('contactTitle')}</h2>
+        <div className="divider divider-white" />
+        <p className="text-sm text-ink-muted italic max-w-[480px] mx-auto mt-2">{t('contactSub')}</p>
+      </div>
+
+      <div className="max-w-[600px] mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {SOCIALS.map(s => (
+          <a
+            key={s.name}
+            href={s.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-offwhite p-6 border border-line text-center transition-all hover:-translate-y-0.5 hover:shadow-card"
+          >
+            <div className="flex justify-center mb-2">{s.icon}</div>
+            <h3 className="font-heading text-base font-medium mb-0.5">{s.name}</h3>
+            <p className="text-xs text-ink-muted">{s.handle}</p>
+          </a>
+        ))}
+        <Link
+          href="/track"
+          className="bg-offwhite p-6 border border-line text-center transition-all hover:-translate-y-0.5 hover:shadow-card"
+        >
+          <div className="text-2xl mb-2">📦</div>
+          <h3 className="font-heading text-base font-medium mb-0.5">{t('trackOrder')}</h3>
+          <p className="text-xs text-sage font-semibold">{t('trackOrder')}</p>
+        </Link>
+      </div>
+
+      <div className="mt-6 inline-block px-6 py-3 bg-offwhite border border-line text-sm text-ink-light">
+        📦 {t('shipNote')}
+      </div>
+    </section>
+  )
+}

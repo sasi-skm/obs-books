@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cream: #FAF6F0;
+  --parchment: #F0EAE0;
+  --white: #FFFCF7;
+  --ink: #2C2418;
+  --ink-light: #5C5243;
+  --ink-muted: #8A7E6F;
+  --sage: #6B7F5E;
+  --sage-light: #8BA37A;
+  --sage-muted: rgba(107, 127, 94, 0.13);
+  --rose: #B4636E;
+  --bark: #7A6048;
+  --line: #E8E2D8;
+  --shadow: rgba(44, 36, 24, 0.07);
+}
+
+body {
+  color: var(--ink);
+  background: var(--cream);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--cream); }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+
+/* Section divider flower */
+.divider {
+  @apply w-12 h-px mx-auto my-2 relative;
+  background: var(--sage-light);
+}
+.divider::after {
+  content: '\273F';
+  @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] px-1.5;
+  color: var(--sage-light);
+  background: inherit;
+}
+.divider-cream::after { background: var(--cream); }
+.divider-white::after { background: var(--white); }
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(25px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fadeUp 0.8s ease; }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideOut {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
+/* Fairy tale particles around logo */
+@keyframes twinkleStar {
+  0%, 100% { opacity: 0.35; transform: scale(0.8) rotate(0deg); }
+  50%       { opacity: 1;    transform: scale(1.2) rotate(20deg); }
+}
+
+@keyframes floatPetal {
+  0%, 100% { transform: translateY(0px)  rotate(0deg);  opacity: 0.65; }
+  33%      { transform: translateY(-7px) rotate(14deg); opacity: 1;    }
+  66%      { transform: translateY(3px)  rotate(-9deg); opacity: 0.8;  }
+}
