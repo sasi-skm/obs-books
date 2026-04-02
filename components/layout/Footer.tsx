@@ -1,10 +1,14 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useLang } from './LanguageContext'
 
 export default function Footer() {
+  const pathname = usePathname()
   const { t } = useLang()
+
+  if (pathname.startsWith('/admin')) return null
 
   return (
     <footer className="bg-ink text-parchment py-10 px-6 text-center">

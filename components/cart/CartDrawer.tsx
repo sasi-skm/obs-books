@@ -2,12 +2,16 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { useCart } from './CartContext'
 import { useLang } from '../layout/LanguageContext'
 
 export default function CartDrawer() {
+  const pathname = usePathname()
   const { items, removeItem, total, count, isOpen, setIsOpen } = useCart()
   const { t } = useLang()
+
+  if (pathname.startsWith('/admin')) return null
 
   return (
     <>

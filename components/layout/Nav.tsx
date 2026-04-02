@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useLang } from './LanguageContext'
 import { useCart } from '../cart/CartContext'
 
@@ -14,9 +15,12 @@ const NAV_ITEMS = [
 ]
 
 export default function Nav() {
+  const pathname = usePathname()
   const { lang, setLang, t } = useLang()
   const { count, setIsOpen } = useCart()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  if (pathname.startsWith('/admin')) return null
 
   return (
     <>
