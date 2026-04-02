@@ -3,6 +3,8 @@ import { CATEGORIES } from '@/lib/translations'
 import CategoryClient from './CategoryClient'
 import { notFound } from 'next/navigation'
 
+export const revalidate = 60
+
 export default async function CategoryPage({ params }: { params: { slug: string } }) {
   const category = CATEGORIES.find(c => c.id === params.slug)
   if (!category) notFound()

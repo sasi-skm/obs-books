@@ -2,6 +2,8 @@ import { getBooks, getFeaturedBooks } from '@/lib/books-data'
 import { CATEGORIES } from '@/lib/translations'
 import HomeClient from './HomeClient'
 
+export const revalidate = 60
+
 export default async function HomePage() {
   const [allBooks, featuredBooks] = await Promise.all([
     getBooks(),
