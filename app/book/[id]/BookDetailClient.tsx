@@ -7,6 +7,9 @@ import { Book } from '@/types'
 import { CATEGORIES, getCategoryName } from '@/lib/translations'
 import { useCart } from '@/components/cart/CartContext'
 import { useLang } from '@/components/layout/LanguageContext'
+import { useAuth } from '@/lib/AuthContext'
+import WishlistHeart from '@/components/storefront/WishlistHeart'
+import { supabase } from '@/lib/supabase'
 
 const CONDITIONS_ORDER = ['Like New', 'Very Good', 'Good', 'Well Read']
 
@@ -80,8 +83,21 @@ function getEstimatedDelivery(): string {
 export default function BookDetailClient({ book }: { book: Book }) {
   const { addItem, removeItem, items } = useCart()
   const { lang, t } = useLang()
+  const { user } = useAuth()
   const category = CATEGORIES.find(c => c.id === book.category)
   const [showConditionGuide, setShowConditionGuide] = useState(false)
+  const [waitlistJoined, setWaitlistJoined] = useState(false)
+
+  const handleJoinWaitlist = async () => {
+    if (!user) { window.location.href = '/login'; return }
+    await supabase.from('waitlists').insert({
+      user_id: user.id,
+      book_id: book.id,
+      book_title: book.title,
+      email: user.email,
+    })
+    setWaitlistJoined(true)
+  }
 
   const galleryImages = (book.images && book.images.length > 0) ? book.images : [book.image_url]
   const [activeImage, setActiveImage] = useState(0)
@@ -154,6 +170,12 @@ export default function BookDetailClient({ book }: { book: Book }) {
               {isSold && !showVideo && (
                 <div className="absolute top-4 right-4 bg-rose text-white text-sm px-4 py-1 font-heading">
                   {t('sold')}
+                </div>
+              )}
+              {/* Wishlist heart on product image */}
+              {!isSold && !showVideo && (
+                <div className="absolute top-3 right-3 z-10">
+                  <WishlistHeart bookId={book.id} bookTitle={book.title} />
                 </div>
               )}
             </div>
@@ -308,8 +330,21 @@ export default function BookDetailClient({ book }: { book: Book }) {
                 {inCart ? ('✓ ' + t('inCart')) : t('addToCart')}
               </button>
             ) : (
-              <div className="w-full py-3 text-center bg-parchment text-ink-muted font-heading text-sm">
-                {t('sold')}
+              <div>
+                <div className="w-full py-3 text-center bg-parchment text-ink-muted font-heading text-sm mb-2">
+                  {t('sold')}
+                </div>
+                {/* Waitlist button for sold-out books */}
+                {waitlistJoined ? (
+                  <p className="text-center font-jost text-xs text-moss">✓ You&apos;re on the waitlist</p>
+                ) : (
+                  <button
+                    onClick={handleJoinWaitlist}
+                    className="w-full py-2.5 border border-moss text-moss font-jost text-sm tracking-wide rounded-sm hover:bg-moss hover:text-cream transition-colors"
+                  >
+                    Join Waitlist
+                  </button>
+                )}
               </div>
             )}
 

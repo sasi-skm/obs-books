@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -33,8 +33,29 @@ export default function EditBookPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [waitlist, setWaitlist] = useState<{ id: string; full_name?: string; email: string; created_at: string }[]>([])
 
-  useEffect(() => { loadBook() }, [bookId]) // eslint-disable-line react-hooks/exhaustive-deps
+  const loadWaitlist = useCallback(async () => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'https://placeholder.supabase.co') return
+    try {
+      const { data } = await supabase
+        .from('waitlists')
+        .select('id, email, created_at, profiles(full_name)')
+        .eq('book_id', bookId)
+        .order('created_at', { ascending: true })
+      if (data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setWaitlist(data.map((w: any) => ({
+          id: w.id,
+          email: w.email,
+          created_at: w.created_at,
+          full_name: Array.isArray(w.profiles) ? w.profiles[0]?.full_name : w.profiles?.full_name,
+        })))
+      }
+    } catch {}
+  }, [bookId])
+
+  useEffect(() => { loadBook(); loadWaitlist() }, [bookId, loadWaitlist]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadBook = async () => {
     let book: Book | null = null
@@ -332,6 +353,35 @@ export default function EditBookPage() {
           {saving ? 'Saving...' : 'Update Book'}
         </button>
       </form>
+
+      {/* Waitlist section */}
+      <div className="max-w-xl mt-8">
+        <h2 className="font-heading text-lg font-normal mb-3">Waitlist</h2>
+        {waitlist.length === 0 ? (
+          <p className="text-sm text-ink-muted italic">No one on the waitlist for this title</p>
+        ) : (
+          <table className="w-full text-sm border border-line">
+            <thead>
+              <tr className="bg-parchment border-b border-line">
+                <th className="text-left px-3 py-2 font-heading font-normal text-ink-light">Customer</th>
+                <th className="text-left px-3 py-2 font-heading font-normal text-ink-light">Email</th>
+                <th className="text-left px-3 py-2 font-heading font-normal text-ink-light">Date Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              {waitlist.map((w, i) => (
+                <tr key={w.id} className={i % 2 === 0 ? 'bg-offwhite' : 'bg-cream'}>
+                  <td className="px-3 py-2 text-ink">{w.full_name || '-'}</td>
+                  <td className="px-3 py-2 text-ink-light">{w.email}</td>
+                  <td className="px-3 py-2 text-ink-muted">
+                    {new Date(w.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   )
 }

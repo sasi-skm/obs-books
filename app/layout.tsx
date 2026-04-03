@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Jost, Noto_Sans_Thai } from 'next/font/google'
 import './globals.css'
 import { LanguageProvider } from '@/components/layout/LanguageContext'
 import { CartProvider } from '@/components/cart/CartContext'
+import { AuthProvider } from '@/lib/AuthContext'
 import Nav from '@/components/layout/Nav'
 import Footer from '@/components/layout/Footer'
 import CartDrawer from '@/components/cart/CartDrawer'
@@ -50,13 +51,15 @@ export default function RootLayout({
     <html lang="en" className={`${cormorant.variable} ${jost.variable} ${notoThai.variable}`}>
       <body className="font-body antialiased bg-cream text-ink">
         <LanguageProvider>
-          <CartProvider>
-            <Nav />
-            <CartDrawer />
-            <main>{children}</main>
-            <Footer />
-            <TawktoChat />
-          </CartProvider>
+          <AuthProvider>
+            <CartProvider>
+              <Nav />
+              <CartDrawer />
+              <main>{children}</main>
+              <Footer />
+              <TawktoChat />
+            </CartProvider>
+          </AuthProvider>
         </LanguageProvider>
       </body>
     </html>

@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCart } from '@/components/cart/CartContext'
 import { useLang } from '@/components/layout/LanguageContext'
+import { useAuth } from '@/lib/AuthContext'
 import { generatePromptPayQR } from '@/lib/promptpay'
 import { getShippingRate, thbToUsd, SUPPORTED_COUNTRIES, DEFAULT_BOOK_WEIGHT } from '@/lib/shipping'
 
@@ -13,6 +15,9 @@ type Step = 'details' | 'payment' | 'done'
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart()
   const { lang, t } = useLang()
+  const { user, profile } = useAuth()
+  const router = useRouter()
+  const [guestDismissed, setGuestDismissed] = useState(false)
 
   const [step, setStep] = useState<Step>('details')
   const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', note: '', country: 'TH' })
@@ -28,6 +33,22 @@ export default function CheckoutPage() {
   const shippingUsd = isInternational ? getShippingRate(form.country, totalWeightGrams) : null
   const booksTotalUsd = isInternational ? thbToUsd(total) : null
   const grandTotalUsd = (booksTotalUsd !== null && shippingUsd !== null) ? booksTotalUsd + shippingUsd : null
+
+  // Auto-fill from saved profile
+  useEffect(() => {
+    if (profile) {
+      setForm(prev => ({
+        ...prev,
+        name: prev.name || profile.full_name || '',
+        phone: prev.phone || profile.phone || '',
+        email: prev.email || user?.email || '',
+        address: prev.address || profile.shipping_address?.address || '',
+        country: prev.country !== 'TH' ? prev.country : (profile.shipping_address?.country || 'TH'),
+      }))
+    } else if (user?.email) {
+      setForm(prev => ({ ...prev, email: prev.email || user.email || '' }))
+    }
+  }, [profile, user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (step === 'payment' && payMethod === 'promptpay' && total > 0) {
@@ -81,6 +102,7 @@ export default function CheckoutPage() {
           slip_url: slipUrl || null,
           destination_country: form.country,
           currency: isInternational ? 'USD' : 'THB',
+          user_id: user?.id || null,
           items: items.map(i => ({
             book_id: i.bookId || i.id.split('-')[0],
             title: i.title,
@@ -179,6 +201,29 @@ export default function CheckoutPage() {
             <p className="text-xs text-ink-muted mt-2 italic">{t('internationalNote')}</p>
           )}
         </div>
+
+        {/* Guest sign-in prompt */}
+        {step === 'details' && !user && !guestDismissed && (
+          <div className="mb-5 px-4 py-3 bg-parchment border border-sand rounded-sm flex flex-wrap items-center justify-between gap-3">
+            <p className="font-jost text-xs text-bark">
+              Sign in to save your order history and earn loyalty points
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => router.push('/login?redirect=checkout')}
+                className="px-3 py-1.5 bg-moss text-cream font-jost text-xs rounded-sm hover:opacity-90"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => setGuestDismissed(true)}
+                className="px-3 py-1.5 border border-sand text-bark font-jost text-xs rounded-sm hover:border-moss hover:text-moss transition-colors"
+              >
+                Continue as Guest
+              </button>
+            </div>
+          </div>
+        )}
 
         {step === 'details' && (
           <form onSubmit={handleSubmitDetails}>

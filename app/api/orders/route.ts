@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { customer_name, customer_phone, customer_email, shipping_address, payment_method, note, items, total_amount, slip_url, destination_country, currency } = body
+    const { customer_name, customer_phone, customer_email, shipping_address, payment_method, note, items, total_amount, slip_url, destination_country, currency, user_id } = body
 
     if (!customer_name || !customer_phone || !shipping_address || !items?.length) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
             currency: currency || 'THB',
             payment_status: slip_url ? 'uploaded' : 'pending',
             order_status: 'new',
+            user_id: user_id || null,
           })
           .select()
           .single()

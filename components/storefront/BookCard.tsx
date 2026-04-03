@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Book } from '@/types'
 import { useCart } from '../cart/CartContext'
 import { useLang } from '../layout/LanguageContext'
+import WishlistHeart from './WishlistHeart'
 
 export default function BookCard({ book }: { book: Book }) {
   const { addItem, removeItem, items } = useCart()
@@ -64,6 +65,10 @@ export default function BookCard({ book }: { book: Book }) {
               {t('sold')}
             </div>
           )}
+          {/* Wishlist heart */}
+          <div className="absolute top-2 right-2 z-10" onClick={e => e.preventDefault()}>
+            <WishlistHeart bookId={book.id} bookTitle={book.title} />
+          </div>
           {book.images && book.images.length > 1 && !isSold && (
             <div className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-1.5 py-0.5 font-heading">
               {book.images.length} photos
