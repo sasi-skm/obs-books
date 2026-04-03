@@ -20,6 +20,7 @@ export const TX: Record<string, Record<Lang, string>> = {
   nFeatured: { en: 'Featured', th: 'แนะนำ' },
   nCategories: { en: 'Categories', th: 'หมวดหมู่' },
   nShop: { en: 'Shop', th: 'ร้านค้า' },
+  nShipping: { en: 'Shipping', th: 'จัดส่ง' },
   nAbout: { en: 'About', th: 'เกี่ยวกับ' },
   nContact: { en: 'Contact', th: 'ติดต่อ' },
 

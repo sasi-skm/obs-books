@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Cormorant_Garamond, Crimson_Text, Noto_Sans_Thai } from 'next/font/google'
+import { Cormorant_Garamond, Jost, Noto_Sans_Thai } from 'next/font/google'
 import './globals.css'
 import { LanguageProvider } from '@/components/layout/LanguageContext'
 import { CartProvider } from '@/components/cart/CartContext'
@@ -16,11 +16,10 @@ const cormorant = Cormorant_Garamond({
   display: 'swap',
 })
 
-const crimson = Crimson_Text({
+const jost = Jost({
   subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-crimson',
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-jost',
   display: 'swap',
 })
 
@@ -48,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${crimson.variable} ${notoThai.variable}`}>
+    <html lang="en" className={`${cormorant.variable} ${jost.variable} ${notoThai.variable}`}>
       <body className="font-body antialiased bg-cream text-ink">
         <LanguageProvider>
           <CartProvider>

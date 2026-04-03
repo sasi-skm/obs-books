@@ -14,7 +14,7 @@ export default function AboutSection() {
   const { t } = useLang()
 
   return (
-    <section className="py-16 px-6" id="about">
+    <section className="py-16 px-6 bg-cream" id="about">
       <div className="max-w-[950px] mx-auto grid md:grid-cols-2 gap-10 items-center">
         {/* Image grid */}
         <div className="grid grid-cols-2 gap-2.5 md:order-first order-first">
@@ -24,7 +24,7 @@ export default function AboutSection() {
                 src={src}
                 alt="OBS Books collection"
                 fill
-                className="object-cover border-[3px] border-offwhite shadow-card"
+                className="object-cover border-[3px] border-parchment shadow-card"
                 sizes="(max-width: 768px) 50vw, 25vw"
               />
             </div>
@@ -33,11 +33,15 @@ export default function AboutSection() {
 
         {/* Text */}
         <div>
-          <h2 className="font-heading text-3xl font-normal mb-3">{t('aboutTitle')}</h2>
+          <p className="font-jost text-[11px] uppercase tracking-widest text-ink-muted mb-2">
+            OBS Books
+          </p>
+          <h2 className="font-cormorant text-3xl font-normal text-ink mb-1">{t('aboutTitle')}</h2>
+          <p className="font-jost text-[11px] text-ink-muted tracking-[0.3em] my-3 select-none">— ✦ —</p>
           <p className="text-sm text-ink-light leading-relaxed mb-3">{t('aboutP1')}</p>
           <p className="text-sm text-ink-light leading-relaxed mb-3">{t('aboutP2')}</p>
           <p className="text-sm text-ink-light">📍 Bangkok, Thailand</p>
-          <div className="mt-4 font-heading italic text-base text-sage border-l-2 border-sage-light pl-4">
+          <div className="mt-4 font-cormorant italic text-base text-moss border-l-2 border-moss pl-4">
             {t('aboutQuote')}
           </div>
         </div>

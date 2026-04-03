@@ -12,37 +12,69 @@ const CONDITIONS_ORDER = ['Like New', 'Very Good', 'Good', 'Well Read']
 
 const CONDITION_GUIDE = [
   {
+    star: '★',
     label: 'Like New',
-    desc: 'Pristine condition. No marks, creases, or wear. May have been read once or never.',
+    lines: [
+      'Appears unread or barely handled',
+      'No visible wear to cover or spine',
+      'Clean, unmarked pages',
+      'Dust jacket included and intact (if applicable)',
+    ],
   },
   {
+    star: '★',
     label: 'Very Good',
-    desc: 'Minor signs of previous ownership - e.g. a name inscription or light shelf wear. Spine tight, pages clean.',
+    lines: [
+      'Minimal spine creasing',
+      'Cover shows light shelf wear only',
+      'No notes or highlighting',
+      'Dust jacket included if applicable',
+    ],
   },
   {
+    star: '☆',
     label: 'Good',
-    desc: 'Shows normal use. May have pencil marks, light foxing, or small stamps. Still a great reading copy.',
+    lines: [
+      'Noticeable wear to cover or spine',
+      'Pages clean but may show yellowing',
+      'May have previous owner\'s name or stamp',
+      'No heavy annotations or highlighting',
+    ],
   },
   {
+    star: '☆',
     label: 'Well Read',
-    desc: 'Clearly loved and used. Noticeable wear, possible highlighting or annotations. Content fully intact.',
+    lines: [
+      'Loved and used — wear is visible',
+      'May have notes, underlining, or highlighting',
+      'Pages intact but may show significant yellowing',
+      'All text fully readable',
+    ],
   },
 ]
 
 const CONDITION_DESCRIPTIONS: Record<string, string> = {
-  'Like New': 'Pristine condition - no marks, creases, or wear. May have been read once or never.',
-  'Very Good': 'Minor signs of previous ownership such as a name inscription or light shelf wear. Spine tight, pages clean.',
-  'Good': 'Shows normal use. May have pencil marks, light foxing, or small stamps. Still a great reading copy.',
-  'Well Read': 'Clearly loved and used. Noticeable wear, possible highlighting or annotations. Content fully intact.',
+  'Like New': 'Appears unread or barely handled. No visible wear to cover or spine. Clean, unmarked pages. Dust jacket intact if applicable.',
+  'Very Good': 'Minimal spine creasing. Cover shows light shelf wear only. No notes or highlighting. Dust jacket included if applicable.',
+  'Good': 'Noticeable wear to cover or spine. Pages clean but may show yellowing. May have previous owner\'s name or stamp.',
+  'Well Read': 'Loved and used — wear is visible. May have notes or highlighting. All text fully readable.',
 }
 
-function getNextMonday(): string {
+function getNextMonday(): Date {
   const today = new Date()
   const day = today.getDay()
   const daysUntil = (8 - day) % 7 || 7
-  const nextMonday = new Date(today)
-  nextMonday.setDate(today.getDate() + daysUntil)
-  return nextMonday.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  const next = new Date(today)
+  next.setDate(today.getDate() + daysUntil)
+  return next
+}
+
+function getEstimatedDelivery(): string {
+  const shipDate = getNextMonday()
+  // Default: Thailand +3 days transit
+  const delivery = new Date(shipDate)
+  delivery.setDate(shipDate.getDate() + 3)
+  return delivery.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
 export default function BookDetailClient({ book }: { book: Book }) {
@@ -70,7 +102,7 @@ export default function BookDetailClient({ book }: { book: Book }) {
   const inCart = items.some(i => i.id === cartItemId)
   const isLowStock = !isSold && book.copies > 0 && book.copies <= 2
 
-  const nextMonday = getNextMonday()
+  const estimatedDelivery = getEstimatedDelivery()
 
   const handleCart = () => {
     if (isSold) return
@@ -92,16 +124,16 @@ export default function BookDetailClient({ book }: { book: Book }) {
   }
 
   return (
-    <div className="pt-20 pb-16 px-6 min-h-screen">
+    <div className="pt-20 pb-16 px-6 min-h-screen bg-cream">
       <div className="max-w-[900px] mx-auto">
-        <Link href="/shop" className="font-heading text-sm text-ink-muted hover:text-moss mb-6 inline-block">
+        <Link href="/shop" className="text-[11px] tracking-widest uppercase text-ink-muted hover:text-moss mb-6 inline-block transition-colors">
           {t('backHome')}
         </Link>
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Gallery */}
           <div>
-            <div className="relative aspect-square overflow-hidden border border-line mb-2">
+            <div className="relative aspect-square overflow-hidden border border-sand mb-2">
               {showVideo && book.video_url ? (
                 <video
                   src={book.video_url}
@@ -134,7 +166,7 @@ export default function BookDetailClient({ book }: { book: Book }) {
                     key={i}
                     onClick={() => { setActiveImage(i); setShowVideo(false) }}
                     className={'relative w-16 h-16 shrink-0 border-2 overflow-hidden transition-all ' +
-                      (activeImage === i && !showVideo ? 'border-moss' : 'border-line hover:border-moss/50')}
+                      (activeImage === i && !showVideo ? 'border-moss' : 'border-sand hover:border-moss/50')}
                   >
                     <Image src={img} alt="" fill className="object-cover" sizes="64px" />
                   </button>
@@ -143,7 +175,7 @@ export default function BookDetailClient({ book }: { book: Book }) {
                   <button
                     onClick={() => setShowVideo(true)}
                     className={'w-16 h-16 shrink-0 border-2 flex items-center justify-center bg-ink/80 text-white text-xl transition-all ' +
-                      (showVideo ? 'border-moss' : 'border-line hover:border-moss/50')}
+                      (showVideo ? 'border-moss' : 'border-sand hover:border-moss/50')}
                   >
                     ▶
                   </button>
@@ -154,12 +186,13 @@ export default function BookDetailClient({ book }: { book: Book }) {
 
           {/* Details */}
           <div>
-            <h1 className="font-heading text-2xl font-semibold mb-1">{book.title}</h1>
+            <h1 className="font-heading text-2xl font-semibold mb-1 text-ink">{book.title}</h1>
 
             {/* Feature 6: Author as clickable link */}
             <Link
               href={`/shop?author=${encodeURIComponent(book.author)}`}
-              className="text-sm text-ink-muted italic mb-3 inline-block hover:text-moss transition-colors underline underline-offset-2 decoration-moss/40"
+              className="text-sm italic mb-3 inline-block transition-colors"
+              style={{ color: '#4a6741', borderBottom: '1px solid #4a6741' }}
             >
               {book.author}
             </Link>
@@ -175,20 +208,25 @@ export default function BookDetailClient({ book }: { book: Book }) {
 
             {/* Feature 2: Low stock warning */}
             {isLowStock && (
-              <div className="mb-3 px-3 py-2 bg-rose/10 border border-rose/30 text-xs text-rose font-heading">
-                {book.copies === 1 ? 'Only 1 copy left!' : `Only ${book.copies} copies left!`}
+              <div
+                className="mb-3 px-3 py-2 text-xs font-jost flex items-center gap-1.5"
+                style={{ background: '#fdf0eb', border: '0.5px solid #e8c4b0', color: '#9b4a2a' }}
+              >
+                <span style={{ fontSize: 7 }}>●</span>
+                {book.copies === 1 ? 'Last one — order before it\'s gone' : 'Only 2 left — order before it\'s gone'}
               </div>
             )}
 
             {/* Condition selector */}
             {hasConditionPrices && availableConditions.length > 0 ? (
-              <div className="mb-4">
+              <div className="mb-3">
                 <div className="flex items-center gap-2 mb-2">
                   <p className="text-sm text-ink-light">{t('condition')}:</p>
                   {/* Feature 1: Condition guide link */}
                   <button
                     onClick={() => setShowConditionGuide(true)}
-                    className="text-xs text-moss underline underline-offset-2 hover:opacity-70 transition-opacity"
+                    className="font-jost transition-opacity hover:opacity-70"
+                    style={{ fontSize: 11, color: '#4a6741', textDecoration: 'underline', textDecorationColor: '#4a6741' }}
                   >
                     Condition guide
                   </button>
@@ -200,8 +238,8 @@ export default function BookDetailClient({ book }: { book: Book }) {
                       onClick={() => setSelectedCondition(cond)}
                       className={'px-3 py-1.5 border font-heading text-sm transition-all ' +
                         (selectedCondition === cond
-                          ? 'border-moss bg-moss text-parchment'
-                          : 'border-line text-ink-light hover:border-moss hover:text-moss')}
+                          ? 'border-moss bg-[#eef3ec] text-moss'
+                          : 'border-sand text-ink-light hover:border-moss hover:text-moss')}
                     >
                       {cond}
                       <span className="ml-1.5 text-xs opacity-80">
@@ -210,52 +248,51 @@ export default function BookDetailClient({ book }: { book: Book }) {
                     </button>
                   ))}
                 </div>
-                {/* Feature 3: Condition description */}
-                {CONDITION_DESCRIPTIONS[selectedCondition] && (
-                  <div className="mt-2 pl-3 border-l-2 border-moss text-xs text-ink-muted leading-relaxed">
-                    {CONDITION_DESCRIPTIONS[selectedCondition]}
-                  </div>
-                )}
               </div>
             ) : (
-              <div className="mb-4">
+              <div className="mb-3">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm text-ink-light">
                     {t('condition')}: <span className="font-medium">{book.condition}</span>
                   </span>
                   <button
                     onClick={() => setShowConditionGuide(true)}
-                    className="text-xs text-moss underline underline-offset-2 hover:opacity-70 transition-opacity"
+                    className="font-jost transition-opacity hover:opacity-70"
+                    style={{ fontSize: 11, color: '#4a6741', textDecoration: 'underline', textDecorationColor: '#4a6741' }}
                   >
                     guide
                   </button>
                 </div>
-                {/* Feature 3: Condition description for single condition */}
-                {CONDITION_DESCRIPTIONS[book.condition] && (
-                  <div className="pl-3 border-l-2 border-moss text-xs text-ink-muted leading-relaxed">
-                    {CONDITION_DESCRIPTIONS[book.condition]}
-                  </div>
-                )}
               </div>
             )}
 
-            <div className="font-heading text-3xl font-semibold text-bark mb-1">
-              ฿{currentPrice.toLocaleString()}
-            </div>
+            {/* Feature 3: Condition description */}
+            {CONDITION_DESCRIPTIONS[selectedCondition || book.condition] && (
+              <div
+                className="mb-3 pl-3 py-2 pr-3 font-jost leading-relaxed"
+                style={{ background: '#eee8d8', borderLeft: '2px solid #4a6741', fontSize: 12, color: '#6b5e48' }}
+              >
+                {CONDITION_DESCRIPTIONS[selectedCondition || book.condition]}
+              </div>
+            )}
 
             {/* Feature 4: Pricing note */}
-            <p className="text-xs text-ink-muted italic mb-3">
+            <p className="font-jost mb-3" style={{ fontSize: 11, color: '#8a7d65' }}>
               ✦ All books carefully inspected and honestly described
             </p>
 
+            <div className="font-heading text-3xl font-semibold text-bark mb-2">
+              ฿{currentPrice.toLocaleString()}
+            </div>
+
             {!isSold && book.copies > 2 && (
-              <div className="text-xs text-moss italic mb-4">
+              <div className="text-xs text-moss italic mb-3">
                 {book.copies} {t('copies')}
               </div>
             )}
 
             {book.description && (
-              <p className="text-sm text-ink-light leading-relaxed mb-6 border-t border-line pt-4">
+              <p className="text-sm text-ink-light leading-relaxed mb-5 border-t border-sand pt-4">
                 {book.description}
               </p>
             )}
@@ -263,10 +300,10 @@ export default function BookDetailClient({ book }: { book: Book }) {
             {!isSold ? (
               <button
                 onClick={handleCart}
-                className={'w-full py-3 font-heading text-sm transition-all ' +
+                className={'w-full py-3 font-jost text-sm tracking-wide transition-all rounded-sm ' +
                   (inCart
                     ? 'border border-rose text-rose hover:bg-rose hover:text-white'
-                    : 'bg-moss text-parchment hover:opacity-90')}
+                    : 'bg-moss text-cream hover:opacity-90')}
               >
                 {inCart ? ('✓ ' + t('inCart')) : t('addToCart')}
               </button>
@@ -276,13 +313,16 @@ export default function BookDetailClient({ book }: { book: Book }) {
               </div>
             )}
 
-            {/* Feature 5: Estimated dispatch */}
-            <div className="mt-3 text-center text-xs text-ink-muted">
-              🗓 Ships next Monday ({nextMonday}) - Free shipping in Thailand
+            {/* Feature 5: Estimated delivery */}
+            <div
+              className="mt-3 px-4 py-3 font-jost text-center"
+              style={{ border: '1px solid #d6cdb8', fontSize: 12, color: '#6b5e48' }}
+            >
+              📦 Get delivery by <span className="font-semibold">{estimatedDelivery}</span>
             </div>
 
-            <div className="mt-3 px-4 py-3 bg-offwhite border border-line text-xs text-ink-light">
-              📦 {t('shipNote')}
+            <div className="mt-3 px-4 py-3 bg-parchment border border-sand text-xs text-ink-light font-jost">
+              {t('shipNote')}
             </div>
           </div>
         </div>
@@ -291,30 +331,40 @@ export default function BookDetailClient({ book }: { book: Book }) {
       {/* Feature 1: Condition Guide Modal */}
       {showConditionGuide && (
         <div
-          className="fixed inset-0 z-50 bg-ink/50 flex items-center justify-center px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: 'rgba(44,36,22,0.5)' }}
           onClick={() => setShowConditionGuide(false)}
         >
           <div
-            className="bg-cream border border-line max-w-md w-full p-6 shadow-lg"
+            className="border border-sand max-w-md w-full p-6 shadow-lg"
+            style={{ background: '#f5f0e6' }}
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-heading text-lg font-semibold">Condition Guide</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-heading text-xl font-normal text-ink">Condition Guide</h2>
               <button
                 onClick={() => setShowConditionGuide(false)}
-                className="text-ink-muted hover:text-ink text-2xl leading-none"
+                className="text-ink-muted hover:text-ink text-2xl leading-none transition-colors"
               >
-                ×
+                ✕
               </button>
             </div>
-            <p className="text-xs text-ink-muted italic mb-4">
+            <p className="font-jost text-xs text-ink-muted italic mb-5">
               All conditions are honestly graded. We only sell books we would be happy to receive ourselves.
             </p>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {CONDITION_GUIDE.map(item => (
                 <div key={item.label} className="pl-3 border-l-2 border-moss">
-                  <p className="font-heading text-sm font-semibold text-ink">{item.label}</p>
-                  <p className="text-xs text-ink-muted leading-relaxed">{item.desc}</p>
+                  <p className="font-heading text-sm font-semibold text-ink mb-1">
+                    {item.star} {item.label}
+                  </p>
+                  <ul className="space-y-0.5">
+                    {item.lines.map((line, i) => (
+                      <li key={i} className="font-jost text-xs text-ink-muted">
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               ))}
             </div>

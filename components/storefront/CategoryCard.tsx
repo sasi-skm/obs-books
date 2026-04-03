@@ -11,11 +11,11 @@ export default function CategoryCard({ category, bookCount }: { category: Catego
   return (
     <Link
       href={`/category/${category.id}`}
-      className="block text-center p-6 bg-offwhite border border-line transition-all duration-300 hover:-translate-y-1 hover:shadow-card"
+      className="block text-center p-6 bg-cream border border-sand rounded-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-moss"
     >
       <span className="block text-3xl mb-2">{category.icon}</span>
-      <h3 className="font-heading text-base font-medium">{getCategoryName(category, lang)}</h3>
-      <div className="text-xs text-sage italic mt-1">
+      <h3 className="font-jost text-sm font-medium text-ink">{getCategoryName(category, lang)}</h3>
+      <div className="font-jost text-[11px] text-ink-muted mt-1">
         {bookCount} {t('books')}
       </div>
     </Link>

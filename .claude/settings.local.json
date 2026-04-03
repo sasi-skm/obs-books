@@ -7,7 +7,16 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/admin/books/new)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/admin/login)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/admin/books/new)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3002/admin/books/new)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3002/admin/books/new)",
+      "Bash(gh auth:*)",
+      "WebSearch",
+      "WebFetch(domain:track.thailandpost.co.th)",
+      "WebFetch(domain:www.ninenik.com)",
+      "WebFetch(domain:www.somkiat.cc)",
+      "Bash(npx vercel:*)",
+      "Read(//c/Users/MDPI/.local/share/com.vercel.cli/**)",
+      "Read(//c/Users/MDPI/AppData/Roaming/com.vercel.cli/**)",
+      "Bash(where vercel:*)"
     ]
   }
 }

@@ -38,20 +38,21 @@ function TikTokIcon() {
 }
 
 const SOCIALS = [
-  { icon: <IgIcon />,      name: 'Instagram', handle: '@obs_books', href: 'https://instagram.com/obs_books' },
-  { icon: <FbIcon />,      name: 'Facebook',  handle: 'OBS Books',  href: 'https://www.facebook.com/profile.php?id=122100382010460957' },
-  { icon: <TikTokIcon />,  name: 'TikTok',    handle: '@obs_books', href: 'https://www.tiktok.com/@obs_books' },
+  { icon: <IgIcon />,     name: 'Instagram', handle: '@obs_books', href: 'https://instagram.com/obs_books' },
+  { icon: <FbIcon />,     name: 'Facebook',  handle: 'OBS Books',  href: 'https://www.facebook.com/obsbooks' },
+  { icon: <TikTokIcon />, name: 'TikTok',    handle: '@obs_books', href: 'https://www.tiktok.com/@obs_books' },
 ]
 
 export default function ContactSection() {
   const { t } = useLang()
 
   return (
-    <section className="py-16 px-6 bg-offwhite text-center" id="contact">
+    <section className="py-16 px-6 bg-parchment text-center" id="contact">
       <div className="text-center mb-10">
-        <h2 className="font-heading text-[clamp(1.6rem,3vw,2.3rem)] font-normal">{t('contactTitle')}</h2>
-        <div className="divider divider-white" />
-        <p className="text-sm text-ink-muted italic max-w-[480px] mx-auto mt-2">{t('contactSub')}</p>
+        <p className="font-jost text-[11px] uppercase tracking-widest text-ink-muted mb-2">Bangkok, Thailand</p>
+        <h2 className="font-cormorant text-[clamp(1.6rem,3vw,2.3rem)] font-normal text-ink">{t('contactTitle')}</h2>
+        <p className="font-jost text-[11px] text-ink-muted tracking-[0.3em] my-3 select-none">— ✦ —</p>
+        <p className="font-jost text-sm text-ink-muted max-w-[480px] mx-auto mt-2">{t('contactSub')}</p>
       </div>
 
       <div className="max-w-[600px] mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -61,24 +62,24 @@ export default function ContactSection() {
             href={s.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-offwhite p-6 border border-line text-center transition-all hover:-translate-y-0.5 hover:shadow-card"
+            className="bg-cream p-6 border border-sand rounded-sm text-center transition-all hover:-translate-y-0.5 hover:shadow-card hover:border-moss"
           >
             <div className="flex justify-center mb-2">{s.icon}</div>
-            <h3 className="font-heading text-base font-medium mb-0.5">{s.name}</h3>
-            <p className="text-xs text-ink-muted">{s.handle}</p>
+            <h3 className="font-heading text-base font-medium mb-0.5 text-ink">{s.name}</h3>
+            <p className="font-jost text-xs text-ink-muted">{s.handle}</p>
           </a>
         ))}
         <Link
           href="/track"
-          className="bg-offwhite p-6 border border-line text-center transition-all hover:-translate-y-0.5 hover:shadow-card"
+          className="bg-cream p-6 border border-sand rounded-sm text-center transition-all hover:-translate-y-0.5 hover:shadow-card hover:border-moss"
         >
           <div className="text-2xl mb-2">📦</div>
-          <h3 className="font-heading text-base font-medium mb-0.5">{t('trackOrder')}</h3>
-          <p className="text-xs text-sage font-semibold">{t('trackOrder')}</p>
+          <h3 className="font-heading text-base font-medium mb-0.5 text-ink">{t('trackOrder')}</h3>
+          <p className="font-jost text-xs text-moss font-semibold">{t('trackOrder')}</p>
         </Link>
       </div>
 
-      <div className="mt-6 inline-block px-6 py-3 bg-offwhite border border-line text-sm text-ink-light">
+      <div className="mt-6 inline-block px-6 py-3 bg-cream border border-sand font-jost text-sm text-ink-light rounded-sm">
         📦 {t('shipNote')}
       </div>
     </section>

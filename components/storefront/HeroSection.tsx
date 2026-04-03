@@ -10,7 +10,6 @@ const HERO_IMAGES = [
   'painting-flowers', 'trees-collection', 'haeckel-art', 'nature-diary',
 ]
 
-// Fairy tale particles: stars and tiny flowers floating around the logo
 const PARTICLES = [
   { char: '✦', top: '2%',  left: '30%', size: 11, color: '#B4636E', anim: 'twinkleStar', dur: '2.8s', delay: '0s'    },
   { char: '✧', top: '8%',  left: '72%', size: 8,  color: '#6B7F5E', anim: 'twinkleStar', dur: '3.4s', delay: '0.7s'  },
@@ -52,7 +51,7 @@ export default function HeroSection() {
       </div>
 
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(250,246,240,0.3),rgba(250,246,240,0.82)_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(245,240,230,0.3),rgba(245,240,230,0.85)_70%)]" />
 
       {/* Content */}
       <div className="relative z-10 text-center px-6 animate-fade-up">
@@ -86,27 +85,27 @@ export default function HeroSection() {
             alt="OBS Books"
             width={150}
             height={150}
-            className="rounded-full border-[3px] border-offwhite shadow-soft absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            className="rounded-full border-[3px] border-parchment shadow-soft absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
             priority
           />
         </div>
 
-        <h1 className="font-heading text-[clamp(1.8rem,4vw,3.2rem)] font-light leading-tight mb-2">
+        <h1 className="font-cormorant text-[clamp(2rem,4vw,2.8rem)] font-normal leading-tight mb-2 text-ink">
           {t('heroTitle')}
         </h1>
-        <p className="text-sm text-ink-muted max-w-[500px] mx-auto mb-7">
+        <p className="font-jost text-sm text-bark max-w-[500px] mx-auto mb-7">
           {t('heroSub')}
         </p>
         <div className="flex gap-3 justify-center flex-wrap">
           <Link
             href="/shop"
-            className="font-heading text-sm px-7 py-3 bg-sage text-offwhite border border-sage hover:bg-sage-light transition-colors"
+            className="font-jost text-xs px-7 py-3 bg-moss text-cream tracking-wide rounded-sm hover:opacity-90 transition-opacity"
           >
             {t('browse')}
           </Link>
           <Link
             href="/#about"
-            className="font-heading text-sm px-7 py-3 border border-sage text-sage hover:bg-sage hover:text-offwhite transition-colors"
+            className="font-jost text-xs px-7 py-3 border border-ink text-ink tracking-wide rounded-sm hover:bg-ink hover:text-cream transition-colors"
           >
             {t('story')}
           </Link>

@@ -49,7 +49,7 @@ export default function BookCard({ book }: { book: Book }) {
   }
 
   return (
-    <div className="bg-cream border border-line overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-hover group">
+    <div className="bg-cream border border-sand rounded-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-hover hover:border-moss group">
       <Link href={'/book/' + book.id} className="block">
         <div className="aspect-square overflow-hidden relative">
           <Image
@@ -71,11 +71,26 @@ export default function BookCard({ book }: { book: Book }) {
           )}
         </div>
         <div className="p-4">
-          <h3 className="font-heading text-[0.95rem] font-semibold leading-tight mb-0.5 line-clamp-2">
+          <h3 className="font-heading text-[0.95rem] font-semibold leading-tight mb-0.5 line-clamp-2 text-ink">
             {book.title}
           </h3>
-          <div className="text-xs text-ink-muted italic mb-1">{book.author}</div>
-          <div className="text-[0.67rem] text-sage tracking-wider uppercase mb-2">{book.condition}</div>
+          {/* Feature 6: Author as clickable link */}
+          <div
+            className="text-xs italic mb-1 font-jost"
+            onClick={e => {
+              e.preventDefault()
+              window.location.href = `/shop?author=${encodeURIComponent(book.author)}`
+            }}
+            style={{ color: '#4a6741', textDecoration: 'underline', textDecorationColor: '#4a6741', cursor: 'pointer' }}
+          >
+            {book.author}
+          </div>
+          <div
+            className="font-jost tracking-wide uppercase mb-2"
+            style={{ fontSize: 10, color: '#8a7d65' }}
+          >
+            {book.condition}
+          </div>
           <div className="flex items-center justify-between">
             <span className="font-heading text-lg font-semibold text-bark">
               {priceLabel}
@@ -83,10 +98,10 @@ export default function BookCard({ book }: { book: Book }) {
             {!isSold && (
               <button
                 onClick={handleCartClick}
-                className={'text-xs px-3 py-1.5 border transition-all font-heading ' +
+                className={'text-xs px-3 py-1.5 border transition-all font-jost tracking-wide rounded-sm ' +
                   (inCart
                     ? 'border-rose text-rose hover:bg-rose hover:text-white'
-                    : 'border-sage text-sage hover:bg-sage hover:text-offwhite')}
+                    : 'bg-moss text-cream hover:opacity-90')}
               >
                 {inCart ? ('✓ ' + t('inCart')) : t('addToCart')}
               </button>

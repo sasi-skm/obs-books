@@ -8,11 +8,15 @@ export default function FeaturedSection({ books }: { books: Book[] }) {
   const { t } = useLang()
 
   return (
-    <section className="py-16 px-6 bg-offwhite" id="featured">
+    <section className="py-16 px-6 bg-parchment" id="featured">
       <div className="text-center mb-10">
-        <h2 className="font-heading text-[clamp(1.6rem,3vw,2.3rem)] font-normal">{t('featTitle')}</h2>
-        <div className="divider divider-white" />
-        <p className="text-sm text-ink-muted italic max-w-[480px] mx-auto mt-2">{t('featSub')}</p>
+        <p className="font-jost text-[11px] uppercase tracking-widest text-ink-muted mb-2">
+          {t('featSub')}
+        </p>
+        <h2 className="font-cormorant text-[clamp(1.6rem,3vw,2.3rem)] font-normal text-ink">
+          {t('featTitle')}
+        </h2>
+        <p className="font-jost text-[11px] text-ink-muted tracking-[0.3em] my-3 select-none">— ✦ —</p>
       </div>
       <BookGrid books={books} />
     </section>

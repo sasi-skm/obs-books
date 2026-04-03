@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { key: 'nFeatured', href: '/#featured' },
   { key: 'nCategories', href: '/#categories' },
   { key: 'nShop', href: '/shop' },
+  { key: 'nShipping', href: '/shipping' },
   { key: 'nAbout', href: '/#about' },
   { key: 'nContact', href: '/#contact' },
 ]

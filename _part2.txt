@@ -1,0 +1,173 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter, useParams } from 'next/navigation'
+import Image from 'next/image'
+import Link from 'next/link'
+import { Book } from '@/types'
+import { CATEGORIES } from '@/lib/translations'
+import { supabase } from '@/lib/supabase'
+import { SAMPLE_BOOKS } from '@/lib/books-data'
+
+const CONDITIONS = ['Like New', 'Very Good', 'Good', 'Well Read']
+
+type ImageSlot = { file: File | null; preview: string; existing: string }
+
+export default function EditBookPage() {
+  const router = useRouter()
+  const params = useParams()
+  const bookId = params.id as string
+
+  const [form, setForm] = useState({
+    title: '', author: '', category: 'wildflowers',
+    copies: '1', description: '', featured: false, status: 'available',
+  })
+  const [conditionPrices, setConditionPrices] = useState<Record<string, string>>({
+    'Like New': '', 'Very Good': '', 'Good': '', 'Well Read': '',
+  })
+  const [images, setImages] = useState<ImageSlot[]>(
+    Array(9).fill(null).map(() => ({ file: null, preview: '', existing: '' }))
+  )
+  const [videoUrl, setVideoUrl] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => { loadBook() }, [bookId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadBook = async () => {
+    let book: Book | null = null
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co') {
+      try {
+        const { data } = await supabase.from('books').select('*').eq('id', bookId).single()
+        if (data) book = data as Book
+      } catch {}
+    }
+    if (!book) book = SAMPLE_BOOKS.find(b => b.id === bookId) || null
+
+    if (book) {
+      setForm({
+        title: book.title, author: book.author, category: book.category,
+        copies: String(book.copies), description: book.description || '',
+        featured: book.featured, status: book.status,
+      })
+      setVideoUrl(book.video_url || '')
+
+      // Load condition prices
+      if (book.condition_prices && Object.keys(book.condition_prices).length > 0) {
+        const prices: Record<string, string> = { 'Like New': '', 'Very Good': '', 'Good': '', 'Well Read': '' }
+        for (const [cond, price] of Object.entries(book.condition_prices)) {
+          if (cond in prices) prices[cond] = String(price)
+        }
+        setConditionPrices(prices)
+      } else {
+        // Legacy: single price/condition
+        const prices: Record<string, string> = { 'Like New': '', 'Very Good': '', 'Good': '', 'Well Read': '' }
+        const legacyCond = book.condition === 'Fair' ? 'Well Read' : book.condition
+        if (legacyCond in prices) prices[legacyCond] = String(book.price)
+        setConditionPrices(prices)
+      }
+
+      // Load images
+      const existingImages: ImageSlot[] = Array(9).fill(null).map(() => ({ file: null, preview: '', existing: '' }))
+      const imgArray = book.images && book.images.length > 0 ? book.images : [book.image_url]
+      imgArray.forEach((url, i) => {
+        if (i < 9) existingImages[i] = { file: null, preview: url, existing: url }
+      })
+      setImages(existingImages)
+    }
+    setLoading(false)
+  }
+
+  const handleImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      setImages(prev => {
+        const next = [...prev]
+        next[index] = { file, preview: ev.target?.result as string, existing: next[index].existing }
+        return next
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const removeImage = (index: number) => {
+    setImages(prev => {
+      const next = [...prev]
+      next[index] = { file: null, preview: '', existing: '' }
+      return next
+    })
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.title) { setError('Title is required'); return }
+    const filledPrices = Object.entries(conditionPrices).filter(([, v]) => v && parseInt(v) > 0)
+    if (filledPrices.length === 0) { setError('Set at least one condition price'); return }
+
+    setSaving(true)
+    setError('')
+
+    try {
+      const isSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co'
+      const finalUrls: string[] = []
+
+      for (const slot of images) {
+        if (!slot.preview) continue
+        if (slot.file && isSupabase) {
+          const ext = slot.file.name.split('.').pop() || 'jpg'
+          const fileName = bookId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.' + ext
+          const { error: uploadError } = await supabase.storage
+            .from('book-images').upload(fileName, slot.file, { contentType: slot.file.type })
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage.from('book-images').getPublicUrl(fileName)
+            finalUrls.push(publicUrl)
+          } else {
+            finalUrls.push(slot.existing || slot.preview)
+          }
+        } else {
+          finalUrls.push(slot.existing || slot.preview)
+        }
+      }
+
+      const conditionPricesNum: Record<string, number> = {}
+      for (const [cond, val] of filledPrices) {
+        conditionPricesNum[cond] = parseInt(val)
+      }
+      const prices = Object.values(conditionPricesNum)
+      const lowestPrice = Math.min(...prices)
+      const primaryCondition = filledPrices[0][0]
+      const imageUrl = finalUrls[0] || '/images/hero-botanical.jpeg'
+
+      if (isSupabase) {
+        const { error: updateError } = await supabase.from('books').update({
+          title: form.title,
+          author: form.author,
+          price: lowestPrice,
+          category: form.category,
+          condition: primaryCondition,
+          condition_prices: conditionPricesNum,
+          copies: parseInt(form.copies) || 1,
+          description: form.description || null,
+          featured: form.featured,
+          status: form.status,
+          image_url: imageUrl,
+          images: finalUrls,
+          video_url: videoUrl || null,
+        }).eq('id', bookId)
+        if (updateError) throw updateError
+      }
+
+      router.push('/admin/books')
+    } catch (err) {
+      setError('Failed to update book')
+      console.error(err)
+    }
+    setSaving(false)
+  }
+
+  if (loading) return <p className="text-ink-muted">Loading...</p>
+
+  const filledCount = images.filter(s => s.preview).length

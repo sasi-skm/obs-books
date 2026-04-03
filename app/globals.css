@@ -3,25 +3,39 @@
 @tailwind utilities;
 
 :root {
-  --cream: #FAF6F0;
-  --parchment: #F0EAE0;
+  --cream: #f5f0e6;
+  --parchment: #eee8d8;
   --white: #FFFCF7;
-  --ink: #2C2418;
-  --ink-light: #5C5243;
-  --ink-muted: #8A7E6F;
+  --ink: #2c2416;
+  --ink-light: #6b5e48;
+  --ink-muted: #8a7d65;
   --sage: #6B7F5E;
   --sage-light: #8BA37A;
   --sage-muted: rgba(107, 127, 94, 0.13);
+  --moss: #4a6741;
   --rose: #B4636E;
-  --bark: #7A6048;
-  --line: #E8E2D8;
+  --bark: #6b5e48;
+  --sand: #d6cdb8;
+  --line: #d6cdb8;
   --shadow: rgba(44, 36, 24, 0.07);
 }
 
 body {
-  color: var(--ink);
+  color: var(--bark);
   background: var(--cream);
+  font-size: 14px;
+  line-height: 1.6;
 }
+
+h1, h2, h3 {
+  font-family: var(--font-cormorant), serif;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+h1 { font-size: 36px; }
+h2 { font-size: 26px; }
+h3 { font-size: 20px; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
