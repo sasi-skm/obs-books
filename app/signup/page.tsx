@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase'
 
 export default function SignupPage() {
   const router = useRouter()
-  const [form, setForm] = useState({ fullName: '', email: '', password: '', confirm: '' })
+  const [form, setForm] = useState({ fullName: '', email: '', password: '', confirm: '', dateOfBirth: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -36,9 +36,14 @@ export default function SignupPage() {
     }
 
     if (data.user) {
-      // Update profile with full name (trigger already created the row)
+      // Update profile with full name and birthday (trigger already created the row)
       await supabase.from('profiles')
-        .upsert({ id: data.user.id, email: form.email, full_name: form.fullName })
+        .upsert({
+          id: data.user.id,
+          email: form.email,
+          full_name: form.fullName,
+          date_of_birth: form.dateOfBirth || null,
+        })
 
       // Link any guest orders with matching email to this new account
       try {
@@ -69,6 +74,18 @@ export default function SignupPage() {
               value={form.fullName}
               onChange={e => setForm({ ...form, fullName: e.target.value })}
               required
+              className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss transition-colors"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">
+              Date of Birth <span className="normal-case text-ink-muted">(for birthday surprises)</span>
+            </label>
+            <input
+              type="date"
+              value={form.dateOfBirth}
+              onChange={e => setForm({ ...form, dateOfBirth: e.target.value })}
+              max={new Date().toISOString().split('T')[0]}
               className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss transition-colors"
             />
           </div>

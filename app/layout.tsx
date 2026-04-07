@@ -11,22 +11,21 @@ import TawktoChat from '@/components/layout/TawktoChat'
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  style: ['normal', 'italic'],
+  weight: ['400', '600'],
   variable: '--font-cormorant',
   display: 'swap',
 })
 
 const jost = Jost({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
+  weight: ['400', '500'],
   variable: '--font-jost',
   display: 'swap',
 })
 
 const notoThai = Noto_Sans_Thai({
   subsets: ['thai'],
-  weight: ['300', '400', '500', '600'],
+  weight: ['400', '500'],
   variable: '--font-noto-thai',
   display: 'swap',
 })

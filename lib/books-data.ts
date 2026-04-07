@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { Book } from '@/types'
 
 // Sample book data - matches the prototype's 32 books
@@ -20,48 +21,46 @@ export const SAMPLE_BOOKS: Book[] = [
   { id: '15', title: 'Recipes to Relish', author: 'Joan Wolfenden', price: 750, category: 'cookbooks', condition: 'Very Good', copies: 1, status: 'available', image_url: '/images/summer-recipes.jpeg', featured: false, created_at: '', updated_at: '' },
   { id: '16', title: 'A Table in Tuscany', author: 'Various', price: 680, category: 'cookbooks', condition: 'Good', copies: 1, status: 'available', image_url: '/images/tuscan-soup.jpeg', featured: false, created_at: '', updated_at: '' },
   { id: '17', title: 'Summer Pudding & Country Recipes', author: 'Various', price: 620, category: 'cookbooks', condition: 'Good', copies: 1, status: 'available', image_url: '/images/summer-pudding.jpeg', featured: false, created_at: '', updated_at: '' },
-  { id: '18', title: 'Time for Tea', author: 'Mary Engelbreit', price: 550, category: 'tea-country', condition: 'Good', copies: 1, status: 'available', image_url: '/images/teatime-books.jpeg', featured: false, created_at: '', updated_at: '' },
-  { id: '19', title: 'The English Book of Teas', author: 'Rosa Mashiter', price: 480, category: 'tea-country', condition: 'Good', copies: 1, status: 'available', image_url: '/images/cookbook-spread.jpeg', featured: false, created_at: '', updated_at: '' },
+  { id: '18', title: 'Time for Tea', author: 'Mary Engelbreit', price: 550, category: 'country-life', condition: 'Good', copies: 1, status: 'available', image_url: '/images/teatime-books.jpeg', featured: false, created_at: '', updated_at: '' },
+  { id: '19', title: 'The English Book of Teas', author: 'Rosa Mashiter', price: 480, category: 'country-life', condition: 'Good', copies: 1, status: 'available', image_url: '/images/cookbook-spread.jpeg', featured: false, created_at: '', updated_at: '' },
   { id: '20', title: 'The Secret Book of Gnomes', author: 'David the Gnome', price: 550, category: 'fairytale', condition: 'Good', copies: 1, status: 'available', image_url: '/images/fairytale-gnomes.jpeg', featured: false, created_at: '', updated_at: '' },
-  { id: '21', title: 'Art Forms in Nature', author: 'Ernst Haeckel - TASCHEN', price: 1500, category: 'art-nature', condition: 'Very Good', copies: 2, status: 'available', image_url: '/images/haeckel-art.jpeg', featured: true, created_at: '', updated_at: '' },
-  { id: '22', title: "Janet Marsh's Nature Diary", author: 'Janet Marsh', price: 650, category: 'art-nature', condition: 'Good', copies: 1, status: 'available', image_url: '/images/nature-diary.jpeg', featured: false, created_at: '', updated_at: '' },
-  { id: '23', title: 'Island - Diary of a Year', author: 'Garth & Vicky Waite', price: 580, category: 'art-nature', condition: 'Good', copies: 1, status: 'available', image_url: '/images/island-diary.jpeg', featured: false, created_at: '', updated_at: '' },
-  { id: '24', title: 'A Contemplation upon Flowers', author: 'Henry King', price: 720, category: 'art-nature', condition: 'Very Good', copies: 1, status: 'available', image_url: '/images/flower-poetry.jpeg', featured: false, created_at: '', updated_at: '' },
-  { id: '25', title: 'Flos Solis Maior - Botanical Prints', author: 'Historical Plates', price: 1800, category: 'art-nature', condition: 'Like New', copies: 1, status: 'available', image_url: '/images/hero-botanical.jpeg', featured: true, created_at: '', updated_at: '' },
+  { id: '21', title: 'Art Forms in Nature', author: 'Ernst Haeckel - TASCHEN', price: 1500, category: 'art-illustration', condition: 'Very Good', copies: 2, status: 'available', image_url: '/images/haeckel-art.jpeg', featured: true, created_at: '', updated_at: '' },
+  { id: '22', title: "Janet Marsh's Nature Diary", author: 'Janet Marsh', price: 650, category: 'art-illustration', condition: 'Good', copies: 1, status: 'available', image_url: '/images/nature-diary.jpeg', featured: false, created_at: '', updated_at: '' },
+  { id: '23', title: 'Island - Diary of a Year', author: 'Garth & Vicky Waite', price: 580, category: 'art-illustration', condition: 'Good', copies: 1, status: 'available', image_url: '/images/island-diary.jpeg', featured: false, created_at: '', updated_at: '' },
+  { id: '24', title: 'A Contemplation upon Flowers', author: 'Henry King', price: 720, category: 'art-illustration', condition: 'Very Good', copies: 1, status: 'available', image_url: '/images/flower-poetry.jpeg', featured: false, created_at: '', updated_at: '' },
+  { id: '25', title: 'Flos Solis Maior - Botanical Prints', author: 'Historical Plates', price: 1800, category: 'art-illustration', condition: 'Like New', copies: 1, status: 'available', image_url: '/images/hero-botanical.jpeg', featured: true, created_at: '', updated_at: '' },
   { id: '26', title: 'Blackberry Muffins & Country Baking', author: 'Val Archer', price: 620, category: 'cookbooks', condition: 'Good', copies: 1, status: 'available', image_url: '/images/blackberry-muffins.jpeg', featured: false, created_at: '', updated_at: '' },
   { id: '27', title: 'Flora - An Illustrated History', author: 'Brent Elliott', price: 980, category: 'trees-plants', condition: 'Very Good', copies: 1, status: 'available', image_url: '/images/nature-field-guides.jpeg', featured: false, created_at: '', updated_at: '' },
-  { id: '28', title: "Richard Bell's Britain", author: 'Richard Bell', price: 550, category: 'art-nature', condition: 'Good', copies: 1, status: 'available', image_url: '/images/cornflowers.jpeg', featured: false, created_at: '', updated_at: '' },
+  { id: '28', title: "Richard Bell's Britain", author: 'Richard Bell', price: 550, category: 'art-illustration', condition: 'Good', copies: 1, status: 'available', image_url: '/images/cornflowers.jpeg', featured: false, created_at: '', updated_at: '' },
   { id: '29', title: 'Poppies, Tulips & Pansies', author: 'W. Keble Martin', price: 1100, category: 'wildflowers', condition: 'Very Good', copies: 1, status: 'available', image_url: '/images/poppy-tulips.jpeg', featured: false, created_at: '', updated_at: '' },
   { id: '30', title: 'Pansies & Dahlias', author: 'Various', price: 750, category: 'garden-roses', condition: 'Good', copies: 1, status: 'available', image_url: '/images/pansies-dahlias.jpeg', featured: false, created_at: '', updated_at: '' },
   { id: '31', title: 'Strawberries, Pears & Crab Apples', author: 'Marjorie Blamey', price: 950, category: 'trees-plants', condition: 'Very Good', copies: 1, status: 'available', image_url: '/images/strawberry-detail.jpeg', featured: false, created_at: '', updated_at: '' },
-  { id: '32', title: 'Recording & Painting Flowers', author: 'Marjorie Blamey', price: 880, category: 'art-nature', condition: 'Good', copies: 1, status: 'available', image_url: '/images/painting-flowers.jpeg', featured: false, created_at: '', updated_at: '' },
+  { id: '32', title: 'Recording & Painting Flowers', author: 'Marjorie Blamey', price: 880, category: 'art-illustration', condition: 'Good', copies: 1, status: 'available', image_url: '/images/painting-flowers.jpeg', featured: false, created_at: '', updated_at: '' },
 ]
 
-export async function getBooks(): Promise<Book[]> {
-  // Try Supabase first
+const TIMEOUT = 15000
+const timeout = () => new Promise<null>((r) => setTimeout(() => r(null), TIMEOUT))
+
+// React cache() deduplicates calls within a single render pass.
+// All pages that call getBooks() during one ISR cycle share ONE Supabase query.
+export const getBooks = cache(async (): Promise<Book[]> => {
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co') {
     try {
       const { supabase } = await import('./supabase')
-      const { data, error } = await supabase
-        .from('books')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (!error && data && data.length > 0) return data as Book[]
+      const result = await Promise.race([
+        supabase.from('books').select('*').order('created_at', { ascending: false }),
+        timeout(),
+      ])
+      if (result && 'data' in result && !result.error && result.data && result.data.length > 0) return result.data as Book[]
     } catch {}
   }
-  // Fallback to sample data
   return SAMPLE_BOOKS
-}
+})
 
 export async function getBookById(id: string): Promise<Book | null> {
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co') {
-    try {
-      const { supabase } = await import('./supabase')
-      const { data, error } = await supabase.from('books').select('*').eq('id', id).single()
-      if (!error && data) return data as Book
-    } catch {}
-  }
-  return SAMPLE_BOOKS.find(b => b.id === id) || null
+  // Use the cached getBooks() instead of a separate query
+  const books = await getBooks()
+  return books.find(b => b.id === id) || null
 }
 
 export async function getBooksByCategory(category: string): Promise<Book[]> {

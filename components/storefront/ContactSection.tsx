@@ -37,6 +37,16 @@ function TikTokIcon() {
   )
 }
 
+function EmailIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="32" height="32" xmlns="http://www.w3.org/2000/svg" fill="none">
+      <rect width="20" height="20" x="2" y="2" rx="6" fill="#6B7F5E" />
+      <path d="M6 8l6 5 6-5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <rect x="6" y="8" width="12" height="8" rx="1" stroke="white" strokeWidth="1.5" fill="none" />
+    </svg>
+  )
+}
+
 const SOCIALS = [
   { icon: <IgIcon />,     name: 'Instagram', handle: '@obs_books', href: 'https://instagram.com/obs_books' },
   { icon: <FbIcon />,     name: 'Facebook',  handle: 'OBS Books',  href: 'https://www.facebook.com/obsbooks' },
@@ -50,12 +60,13 @@ export default function ContactSection() {
     <section className="py-16 px-6 bg-parchment text-center" id="contact">
       <div className="text-center mb-10">
         <p className="font-jost text-[11px] uppercase tracking-widest text-ink-muted mb-2">Bangkok, Thailand</p>
-        <h2 className="font-cormorant text-[clamp(1.6rem,3vw,2.3rem)] font-normal text-ink">{t('contactTitle')}</h2>
+        <h2 className="font-cormorant text-[clamp(1.6rem,3vw,2.3rem)] font-normal text-ink">{t('findUsTitle')}</h2>
         <p className="font-jost text-[11px] text-ink-muted tracking-[0.3em] my-3 select-none">— ✦ —</p>
-        <p className="font-jost text-sm text-ink-muted max-w-[480px] mx-auto mt-2">{t('contactSub')}</p>
+        <p className="font-jost text-sm text-ink-muted max-w-[480px] mx-auto mt-2">{t('findUsSub')}</p>
       </div>
 
-      <div className="max-w-[600px] mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Social cards — 2x2 grid */}
+      <div className="max-w-[600px] mx-auto grid grid-cols-2 gap-4 mb-4">
         {SOCIALS.map(s => (
           <a
             key={s.name}
@@ -69,18 +80,31 @@ export default function ContactSection() {
             <p className="font-jost text-xs text-ink-muted">{s.handle}</p>
           </a>
         ))}
-        <Link
-          href="/track"
+
+        {/* Email support card */}
+        <a
+          href="mailto:obsbooksstore@gmail.com"
           className="bg-cream p-6 border border-sand rounded-sm text-center transition-all hover:-translate-y-0.5 hover:shadow-card hover:border-moss"
         >
-          <div className="text-2xl mb-2">📦</div>
-          <h3 className="font-heading text-base font-medium mb-0.5 text-ink">{t('trackOrder')}</h3>
-          <p className="font-jost text-xs text-moss font-semibold">{t('trackOrder')}</p>
-        </Link>
+          <div className="flex justify-center mb-2"><EmailIcon /></div>
+          <h3 className="font-heading text-base font-medium mb-0.5 text-ink">{t('emailSupport')}</h3>
+          <p className="font-jost text-xs text-ink-muted">obsbooksstore@gmail.com</p>
+          <p className="font-jost text-[10px] text-moss mt-1">{t('emailSupportSub')}</p>
+        </a>
       </div>
 
-      <div className="mt-6 inline-block px-6 py-3 bg-cream border border-sand font-jost text-sm text-ink-light rounded-sm">
-        📦 {t('shipNote')}
+      {/* Track Order — full width */}
+      <div className="max-w-[600px] mx-auto">
+        <Link
+          href="/track"
+          className="flex items-center justify-center gap-3 bg-cream p-5 border border-sand rounded-sm text-center transition-all hover:-translate-y-0.5 hover:shadow-card hover:border-moss w-full"
+        >
+          <span className="text-2xl">📦</span>
+          <div className="text-left">
+            <h3 className="font-heading text-base font-medium text-ink">{t('trackOrder')}</h3>
+            <p className="font-jost text-xs text-moss">{t('shippedMonday')}</p>
+          </div>
+        </Link>
       </div>
     </section>
   )

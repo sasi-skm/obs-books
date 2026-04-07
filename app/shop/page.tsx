@@ -1,7 +1,7 @@
 import { getBooks } from '@/lib/books-data'
 import ShopClient from './ShopClient'
 
-export const revalidate = 60
+export const revalidate = 600
 
 export default async function ShopPage({
   searchParams,

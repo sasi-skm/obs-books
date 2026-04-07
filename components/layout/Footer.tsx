@@ -22,7 +22,7 @@ export default function Footer() {
         className="font-cormorant italic mb-4"
         style={{ fontSize: 12, color: '#8a7d65' }}
       >
-        {t('aboutQuote')}
+        {t('footerTagline')}
       </div>
       <div className="flex justify-center gap-5 mb-4">
         <a href="https://instagram.com/obs_books" target="_blank" rel="noopener noreferrer"
@@ -59,15 +59,6 @@ export default function Footer() {
           onMouseLeave={e => (e.currentTarget.style.color = '#8a7d65')}
         >
           {t('trackOrder')}
-        </Link>
-        <Link
-          href="/admin/login"
-          className="font-jost transition-colors"
-          style={{ fontSize: 11, color: '#3a2e20' }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#5a4e3a')}
-          onMouseLeave={e => (e.currentTarget.style.color = '#3a2e20')}
-        >
-          Admin
         </Link>
       </div>
       <div className="font-jost" style={{ fontSize: 10, color: '#5a4e3a' }}>

@@ -7,6 +7,7 @@ interface CartContextType {
   items: CartItem[]
   addItem: (item: CartItem) => void
   removeItem: (id: string) => void
+  updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
   isInCart: (id: string) => boolean
   total: number
@@ -26,7 +27,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setMounted(true)
     const saved = localStorage.getItem('obs-cart')
     if (saved) {
-      try { setItems(JSON.parse(saved)) } catch {}
+      try {
+        const parsed = JSON.parse(saved)
+        // Migrate old cart items without quantity
+        setItems(parsed.map((i: CartItem) => ({ ...i, quantity: i.quantity || 1 })))
+      } catch {}
     }
   }, [])
 
@@ -37,14 +42,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, mounted])
 
   const addItem = (item: CartItem) => {
-    if (!items.some(i => i.id === item.id)) {
-      setItems(prev => [...prev, item])
-      setIsOpen(true)
-    }
+    setItems(prev => {
+      const existing = prev.find(i => i.id === item.id)
+      if (existing) {
+        return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + (item.quantity || 1) } : i)
+      }
+      return [...prev, { ...item, quantity: item.quantity || 1 }]
+    })
+    setIsOpen(true)
   }
 
   const removeItem = (id: string) => {
     setItems(prev => prev.filter(i => i.id !== id))
+  }
+
+  const updateQuantity = (id: string, quantity: number) => {
+    if (quantity < 1) {
+      setItems(prev => prev.filter(i => i.id !== id))
+    } else {
+      setItems(prev => prev.map(i => i.id === id ? { ...i, quantity } : i))
+    }
   }
 
   const clearCart = () => {
@@ -54,11 +71,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const isInCart = (id: string) => items.some(i => i.id === id)
 
-  const total = items.reduce((sum, i) => sum + i.price, 0)
-  const count = items.length
+  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  const count = items.reduce((sum, i) => sum + i.quantity, 0)
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, clearCart, isInCart, total, count, isOpen, setIsOpen }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, isInCart, total, count, isOpen, setIsOpen }}>
       {children}
     </CartContext.Provider>
   )

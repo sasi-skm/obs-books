@@ -6,8 +6,24 @@ import { getCategoryName } from '@/lib/translations'
 import { useLang } from '@/components/layout/LanguageContext'
 import BookGrid from '@/components/storefront/BookGrid'
 
+const CATEGORY_DESC_KEY: Record<string, string> = {
+  'wildflowers': 'catWildFlowers',
+  'garden-roses': 'catGardenRoses',
+  'trees-plants': 'catTreesPlants',
+  'butterflies': 'catButterflies',
+  'wildlife-birds-animals': 'catWildlifeAnimals',
+  'cookbooks': 'catCookbooks',
+  'country-life': 'catTeaCountry',
+  'fairytale': 'catFairyTales',
+  'art-illustration': 'catArtJournals',
+  'rare-items': 'catRareItems',
+  'embroidery-fabric': 'catEmbroideryFabric',
+  'sale': 'catSale',
+}
+
 export default function CategoryClient({ category, books }: { category: Category; books: Book[] }) {
   const { lang, t } = useLang()
+  const descKey = CATEGORY_DESC_KEY[category.id]
 
   return (
     <div className="pt-20 pb-16 px-6 bg-offwhite min-h-screen">
@@ -21,6 +37,11 @@ export default function CategoryClient({ category, books }: { category: Category
             {getCategoryName(category, lang)}
           </h1>
           <div className="divider divider-white" />
+          {descKey && (
+            <p className="font-cormorant italic text-base text-ink-light max-w-[620px] mx-auto mt-3 mb-1 leading-relaxed">
+              {t(descKey)}
+            </p>
+          )}
           <p className="text-sm text-ink-muted italic mt-2">
             {books.length} {t('books')}
           </p>

@@ -11,6 +11,7 @@ export interface Profile {
   phone?: string
   shipping_address?: { address?: string; country?: string }
   points_balance: number
+  date_of_birth?: string
   created_at: string
 }
 

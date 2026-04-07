@@ -19,9 +19,16 @@ export default function AdminLoginPage() {
     try {
       // Try Supabase auth if configured
       if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co') {
-        const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+        const { data: { user }, error: authError } = await supabase.auth.signInWithPassword({ email, password })
         if (authError) {
           setError(authError.message)
+          setLoading(false)
+          return
+        }
+        // Only allow the owner
+        if (user?.email !== 'sasiwimolskm@gmail.com') {
+          await supabase.auth.signOut()
+          setError('Access denied.')
           setLoading(false)
           return
         }

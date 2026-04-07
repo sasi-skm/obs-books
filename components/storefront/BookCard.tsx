@@ -2,12 +2,41 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import { Book } from '@/types'
 import { useCart } from '../cart/CartContext'
 import { useLang } from '../layout/LanguageContext'
 import WishlistHeart from './WishlistHeart'
+import { supabase } from '@/lib/supabase'
+
+// Module-level cache so each title is only fetched once per session
+const ratingCache = new Map<string, { avg: number; count: number } | null>()
+
+async function fetchRating(bookTitle: string): Promise<{ avg: number; count: number } | null> {
+  if (ratingCache.has(bookTitle)) return ratingCache.get(bookTitle) || null
+  try {
+    const { data } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq('book_title', bookTitle)
+      .eq('status', 'approved')
+    const result =
+      data && data.length > 0
+        ? { avg: data.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / data.length, count: data.length }
+        : null
+    ratingCache.set(bookTitle, result)
+    return result
+  } catch {
+    return null
+  }
+}
 
 export default function BookCard({ book }: { book: Book }) {
+  const [rating, setRating] = useState<{ avg: number; count: number } | null>(null)
+
+  useEffect(() => {
+    fetchRating(book.title).then(setRating)
+  }, [book.title])
   const { addItem, removeItem, items } = useCart()
   const { t } = useLang()
 
@@ -45,6 +74,8 @@ export default function BookCard({ book }: { book: Book }) {
         category: book.category,
         condition: defaultCondition,
         weight_grams: book.weight_grams,
+        quantity: 1,
+        maxQuantity: book.copies,
       })
     }
   }
@@ -79,6 +110,11 @@ export default function BookCard({ book }: { book: Book }) {
           <h3 className="font-heading text-[0.95rem] font-semibold leading-tight mb-0.5 line-clamp-2 text-ink">
             {book.title}
           </h3>
+          {rating && rating.count >= 1 && (
+            <p className="font-jost mb-0.5" style={{ fontSize: 12, color: '#8a7d65' }}>
+              {rating.avg.toFixed(1)} ★ ({rating.count})
+            </p>
+          )}
           {/* Feature 6: Author as clickable link */}
           <div
             className="text-xs italic mb-1 font-jost"

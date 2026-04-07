@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Image from 'next/image'
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import Link from 'next/link'
 import { Book } from '@/types'
 import { CATEGORIES, getCategoryName } from '@/lib/translations'
@@ -9,6 +10,7 @@ import { useCart } from '@/components/cart/CartContext'
 import { useLang } from '@/components/layout/LanguageContext'
 import { useAuth } from '@/lib/AuthContext'
 import WishlistHeart from '@/components/storefront/WishlistHeart'
+import ReviewSection from '@/components/storefront/ReviewSection'
 import { supabase } from '@/lib/supabase'
 
 const CONDITIONS_ORDER = ['Like New', 'Very Good', 'Good', 'Well Read']
@@ -56,11 +58,10 @@ const CONDITION_GUIDE = [
   },
 ]
 
-const CONDITION_DESCRIPTIONS: Record<string, string> = {
-  'Like New': 'Appears unread or barely handled. No visible wear to cover or spine. Clean, unmarked pages. Dust jacket intact if applicable.',
-  'Very Good': 'Minimal spine creasing. Cover shows light shelf wear only. No notes or highlighting. Dust jacket included if applicable.',
-  'Good': 'Noticeable wear to cover or spine. Pages clean but may show yellowing. May have previous owner\'s name or stamp.',
-  'Well Read': 'Loved and used — wear is visible. May have notes or highlighting. All text fully readable.',
+const CONDITION_KEY_MAP: Record<string, string> = {
+  'Like New': 'conditionLikeNew',
+  'Very Good': 'conditionVeryGood',
+  'Good': 'conditionGood',
 }
 
 function getNextMonday(): Date {
@@ -74,19 +75,19 @@ function getNextMonday(): Date {
 
 function getEstimatedDelivery(): string {
   const shipDate = getNextMonday()
-  // Default: Thailand +3 days transit
   const delivery = new Date(shipDate)
   delivery.setDate(shipDate.getDate() + 3)
   return delivery.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
-export default function BookDetailClient({ book }: { book: Book }) {
+export default function BookDetailClient({ book, relatedBooks = [] }: { book: Book; relatedBooks?: Book[] }) {
   const { addItem, removeItem, items } = useCart()
   const { lang, t } = useLang()
   const { user } = useAuth()
   const category = CATEGORIES.find(c => c.id === book.category)
   const [showConditionGuide, setShowConditionGuide] = useState(false)
   const [waitlistJoined, setWaitlistJoined] = useState(false)
+  const [qty, setQty] = useState(1)
 
   const handleJoinWaitlist = async () => {
     if (!user) { window.location.href = '/login'; return }
@@ -102,21 +103,60 @@ export default function BookDetailClient({ book }: { book: Book }) {
   const galleryImages = (book.images && book.images.length > 0) ? book.images : [book.image_url]
   const [activeImage, setActiveImage] = useState(0)
   const [showVideo, setShowVideo] = useState(false)
+  const [isZoomed, setIsZoomed] = useState(false)
+  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isZoomed || showVideo) return
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() }
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (isZoomed || showVideo || !touchStartRef.current) return
+    const dx = e.changedTouches[0].clientX - touchStartRef.current.x
+    const dy = e.changedTouches[0].clientY - touchStartRef.current.y
+    const dt = Date.now() - touchStartRef.current.t
+    touchStartRef.current = null
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50 && dt < 350) {
+      if (dx < 0) setActiveImage(i => Math.min(i + 1, galleryImages.length - 1))
+      else setActiveImage(i => Math.max(i - 1, 0))
+    }
+  }
 
   const hasConditionPrices = book.condition_prices && Object.keys(book.condition_prices).length > 0
+  const hasConditionCopies = book.condition_copies && Object.keys(book.condition_copies).length > 0
+
   const availableConditions = hasConditionPrices
-    ? CONDITIONS_ORDER.filter(c => book.condition_prices![c] !== undefined)
+    ? CONDITIONS_ORDER.filter(c => {
+        if (book.condition_prices![c] === undefined) return false
+        if (hasConditionCopies) return (book.condition_copies![c] ?? 0) > 0
+        return true
+      })
     : [book.condition]
-  const [selectedCondition, setSelectedCondition] = useState(availableConditions[0] || book.condition)
+
+  const defaultCondition = (() => {
+    if (hasConditionCopies && availableConditions.length > 0) {
+      return availableConditions.reduce((best, c) =>
+        (book.condition_copies![c] ?? 0) > (book.condition_copies![best] ?? 0) ? c : best
+      )
+    }
+    return availableConditions[0] || book.condition
+  })()
+
+  const [selectedCondition, setSelectedCondition] = useState(defaultCondition)
 
   const currentPrice = hasConditionPrices
     ? (book.condition_prices![selectedCondition] ?? book.price)
     : book.price
 
+  const conditionStock = hasConditionCopies
+    ? (book.condition_copies![selectedCondition] ?? 0)
+    : book.copies
+
   const cartItemId = book.id + '-' + selectedCondition
-  const isSold = book.status === 'sold' || book.copies <= 0
+  const isSold = book.status === 'sold' || book.copies <= 0 || (hasConditionCopies && availableConditions.length === 0)
   const inCart = items.some(i => i.id === cartItemId)
-  const isLowStock = !isSold && book.copies > 0 && book.copies <= 2
+  const isLowStock = !isSold && conditionStock > 0 && conditionStock <= 2
 
   const estimatedDelivery = getEstimatedDelivery()
 
@@ -135,68 +175,116 @@ export default function BookDetailClient({ book }: { book: Book }) {
         category: book.category,
         condition: selectedCondition,
         weight_grams: book.weight_grams,
+        quantity: qty,
+        maxQuantity: conditionStock,
       })
     }
   }
 
+  // Description: prefer lang-specific, fall back to generic description
+  const description = lang === 'th'
+    ? (book.description_th || book.description_en || book.description)
+    : (book.description_en || book.description)
+
+  // Book specs
+  const specs: { label: string; value: string }[] = []
+  if (book.publisher) specs.push({ label: 'Publisher', value: book.publisher })
+  if (book.year_published) specs.push({ label: 'Year', value: String(book.year_published) })
+  if (book.pages) specs.push({ label: 'Pages', value: String(book.pages) })
+  if (book.cover_type) specs.push({ label: 'Cover', value: book.cover_type })
+  if (book.language) specs.push({ label: 'Language', value: book.language })
+  if (book.height_cm || book.width_cm) {
+    const dims = [book.height_cm && `${book.height_cm} cm`, book.width_cm && `${book.width_cm} cm`].filter(Boolean).join(' x ')
+    specs.push({ label: 'Dimensions', value: dims })
+  }
+
   return (
     <div className="pt-20 pb-16 px-6 min-h-screen bg-cream">
-      <div className="max-w-[900px] mx-auto">
+      <div className="max-w-[1100px] mx-auto">
         <Link href="/shop" className="text-[11px] tracking-widest uppercase text-ink-muted hover:text-moss mb-6 inline-block transition-colors">
           {t('backHome')}
         </Link>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Gallery */}
+        <div className="grid md:grid-cols-[45%_55%] gap-10">
+          {/* LEFT: Gallery + Description */}
           <div>
-            <div className="relative aspect-square overflow-hidden border border-sand mb-2">
+            {/* Main image - portrait */}
+            <div
+              className="relative overflow-hidden border border-sand mb-2"
+              style={{ aspectRatio: '2/3' }}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
               {showVideo && book.video_url ? (
                 <video
                   src={book.video_url}
                   className="w-full h-full object-contain bg-black"
                   controls
                   autoPlay
+                  muted
+                  playsInline
                 />
               ) : (
-                <Image
-                  src={galleryImages[activeImage] || galleryImages[0]}
-                  alt={book.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  priority
-                />
+                <TransformWrapper
+                  initialScale={1}
+                  minScale={1}
+                  maxScale={4}
+                  doubleClick={{ mode: 'reset' }}
+                  wheel={{ disabled: true }}
+                  panning={{ disabled: !isZoomed }}
+                  onTransform={(_ref, state) => setIsZoomed(state.scale > 1.05)}
+                >
+                  <TransformComponent
+                    wrapperStyle={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+                    contentStyle={{ width: '100%', height: '100%' }}
+                  >
+                    <Image
+                      src={galleryImages[activeImage] || galleryImages[0]}
+                      alt={book.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 45vw"
+                      priority
+                    />
+                  </TransformComponent>
+                </TransformWrapper>
               )}
               {isSold && !showVideo && (
-                <div className="absolute top-4 right-4 bg-rose text-white text-sm px-4 py-1 font-heading">
+                <div className="absolute top-4 right-4 bg-rose text-white text-sm px-4 py-1 font-heading z-10">
                   {t('sold')}
                 </div>
               )}
-              {/* Wishlist heart on product image */}
               {!isSold && !showVideo && (
                 <div className="absolute top-3 right-3 z-10">
                   <WishlistHeart bookId={book.id} bookTitle={book.title} />
+                </div>
+              )}
+              {!showVideo && !isZoomed && galleryImages.length > 1 && (
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10 pointer-events-none">
+                  {galleryImages.map((_, i) => (
+                    <span key={i} className={`w-1.5 h-1.5 rounded-full ${i === activeImage ? 'bg-white' : 'bg-white/40'}`} />
+                  ))}
                 </div>
               )}
             </div>
 
             {/* Thumbnails */}
             {(galleryImages.length > 1 || book.video_url) && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex gap-2 overflow-x-auto pb-1 mb-6">
                 {galleryImages.map((img, i) => (
                   <button
                     key={i}
                     onClick={() => { setActiveImage(i); setShowVideo(false) }}
-                    className={'relative w-16 h-16 shrink-0 border-2 overflow-hidden transition-all ' +
+                    className={'relative w-14 h-14 shrink-0 border-2 overflow-hidden transition-all ' +
                       (activeImage === i && !showVideo ? 'border-moss' : 'border-sand hover:border-moss/50')}
                   >
-                    <Image src={img} alt="" fill className="object-cover" sizes="64px" />
+                    <Image src={img} alt="" fill className="object-cover" sizes="56px" />
                   </button>
                 ))}
                 {book.video_url && (
                   <button
                     onClick={() => setShowVideo(true)}
-                    className={'w-16 h-16 shrink-0 border-2 flex items-center justify-center bg-ink/80 text-white text-xl transition-all ' +
+                    className={'w-14 h-14 shrink-0 border-2 flex items-center justify-center bg-ink/80 text-white text-xl transition-all ' +
                       (showVideo ? 'border-moss' : 'border-sand hover:border-moss/50')}
                   >
                     ▶
@@ -204,13 +292,22 @@ export default function BookDetailClient({ book }: { book: Book }) {
                 )}
               </div>
             )}
+
+            {/* Description */}
+            {description && (
+              <div className="border-t border-sand pt-5">
+                <p className="font-heading text-xs tracking-widest uppercase text-ink-muted mb-3">About this book</p>
+                <p className="font-cormorant text-base text-ink leading-relaxed" style={{ fontSize: '1.05rem' }}>
+                  {description}
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Details */}
+          {/* RIGHT: Details + Specs + Related */}
           <div>
             <h1 className="font-heading text-2xl font-semibold mb-1 text-ink">{book.title}</h1>
 
-            {/* Feature 6: Author as clickable link */}
             <Link
               href={`/shop?author=${encodeURIComponent(book.author)}`}
               className="text-sm italic mb-3 inline-block transition-colors"
@@ -228,14 +325,14 @@ export default function BookDetailClient({ book }: { book: Book }) {
               </Link>
             )}
 
-            {/* Feature 2: Low stock warning */}
+            {/* Low stock warning */}
             {isLowStock && (
               <div
                 className="mb-3 px-3 py-2 text-xs font-jost flex items-center gap-1.5"
                 style={{ background: '#fdf0eb', border: '0.5px solid #e8c4b0', color: '#9b4a2a' }}
               >
                 <span style={{ fontSize: 7 }}>●</span>
-                {book.copies === 1 ? 'Last one — order before it\'s gone' : 'Only 2 left — order before it\'s gone'}
+                {conditionStock === 1 ? 'Last one — order before it\'s gone' : `Only ${conditionStock} left — order before it\'s gone`}
               </div>
             )}
 
@@ -244,7 +341,6 @@ export default function BookDetailClient({ book }: { book: Book }) {
               <div className="mb-3">
                 <div className="flex items-center gap-2 mb-2">
                   <p className="text-sm text-ink-light">{t('condition')}:</p>
-                  {/* Feature 1: Condition guide link */}
                   <button
                     onClick={() => setShowConditionGuide(true)}
                     className="font-jost transition-opacity hover:opacity-70"
@@ -288,17 +384,16 @@ export default function BookDetailClient({ book }: { book: Book }) {
               </div>
             )}
 
-            {/* Feature 3: Condition description */}
-            {CONDITION_DESCRIPTIONS[selectedCondition || book.condition] && (
+            {/* Condition description */}
+            {CONDITION_KEY_MAP[selectedCondition || book.condition] && (
               <div
                 className="mb-3 pl-3 py-2 pr-3 font-jost leading-relaxed"
                 style={{ background: '#eee8d8', borderLeft: '2px solid #4a6741', fontSize: 12, color: '#6b5e48' }}
               >
-                {CONDITION_DESCRIPTIONS[selectedCondition || book.condition]}
+                {t(CONDITION_KEY_MAP[selectedCondition || book.condition])}
               </div>
             )}
 
-            {/* Feature 4: Pricing note */}
             <p className="font-jost mb-3" style={{ fontSize: 11, color: '#8a7d65' }}>
               ✦ All books carefully inspected and honestly described
             </p>
@@ -307,34 +402,52 @@ export default function BookDetailClient({ book }: { book: Book }) {
               ฿{currentPrice.toLocaleString()}
             </div>
 
-            {!isSold && book.copies > 2 && (
+            {!isSold && conditionStock > 2 && (
               <div className="text-xs text-moss italic mb-3">
-                {book.copies} {t('copies')}
+                {conditionStock} {t('copies')}
               </div>
             )}
 
-            {book.description && (
-              <p className="text-sm text-ink-light leading-relaxed mb-5 border-t border-sand pt-4">
-                {book.description}
-              </p>
-            )}
-
             {!isSold ? (
-              <button
-                onClick={handleCart}
-                className={'w-full py-3 font-jost text-sm tracking-wide transition-all rounded-sm ' +
-                  (inCart
-                    ? 'border border-rose text-rose hover:bg-rose hover:text-white'
-                    : 'bg-moss text-cream hover:opacity-90')}
-              >
-                {inCart ? ('✓ ' + t('inCart')) : t('addToCart')}
-              </button>
+              <div className="space-y-2 mb-4">
+                {!inCart && (
+                  <div className="flex items-center gap-3">
+                    <span className="font-jost text-xs text-bark tracking-wide">Qty</span>
+                    <div className="flex items-center border border-sand rounded">
+                      <button
+                        onClick={() => setQty(q => Math.max(1, q - 1))}
+                        className="w-8 h-8 flex items-center justify-center text-bark hover:text-moss transition-colors"
+                      >
+                        −
+                      </button>
+                      <span className="w-8 text-center font-jost text-sm text-ink">{qty}</span>
+                      <button
+                        onClick={() => setQty(q => Math.min(conditionStock, q + 1))}
+                        className="w-8 h-8 flex items-center justify-center text-bark hover:text-moss transition-colors"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={handleCart}
+                  className={'w-full py-3 font-jost text-sm tracking-wide transition-all rounded-sm ' +
+                    (inCart
+                      ? 'border border-rose text-rose hover:bg-rose hover:text-white'
+                      : 'bg-moss text-cream hover:opacity-90')}
+                >
+                  {inCart ? ('✓ ' + t('inCart')) : t('addToCart')}
+                </button>
+              </div>
             ) : (
-              <div>
+              <div className="mb-4">
                 <div className="w-full py-3 text-center bg-parchment text-ink-muted font-heading text-sm mb-2">
                   {t('sold')}
                 </div>
-                {/* Waitlist button for sold-out books */}
+                <p className="font-jost text-xs text-ink-muted leading-relaxed mb-3 text-center italic">
+                  {t('outOfStock')}
+                </p>
                 {waitlistJoined ? (
                   <p className="text-center font-jost text-xs text-moss">✓ You&apos;re on the waitlist</p>
                 ) : (
@@ -348,22 +461,68 @@ export default function BookDetailClient({ book }: { book: Book }) {
               </div>
             )}
 
-            {/* Feature 5: Estimated delivery */}
+            {/* Estimated delivery */}
             <div
-              className="mt-3 px-4 py-3 font-jost text-center"
+              className="mb-3 px-4 py-3 font-jost text-center"
               style={{ border: '1px solid #d6cdb8', fontSize: 12, color: '#6b5e48' }}
             >
               📦 Get delivery by <span className="font-semibold">{estimatedDelivery}</span>
             </div>
 
-            <div className="mt-3 px-4 py-3 bg-parchment border border-sand text-xs text-ink-light font-jost">
+            <div className="mb-6 px-4 py-3 bg-parchment border border-sand text-xs text-ink-light font-jost">
               {t('shipNote')}
             </div>
+
+            {/* Book Details specs */}
+            {specs.length > 0 && (
+              <div className="mb-8 border border-sand">
+                <div className="px-4 py-2 bg-parchment border-b border-sand">
+                  <p className="font-heading text-xs tracking-widest uppercase text-ink-muted">Book Details</p>
+                </div>
+                <div className="divide-y divide-sand">
+                  {specs.map(spec => (
+                    <div key={spec.label} className="flex px-4 py-2.5 gap-4">
+                      <span className="font-heading text-xs text-ink-muted w-24 shrink-0">{spec.label}</span>
+                      <span className="font-jost text-xs text-ink">{spec.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* You Might Also Like */}
+            {relatedBooks.length > 0 && (
+              <div>
+                <p className="font-heading text-xs tracking-widest uppercase text-ink-muted mb-4">You Might Also Like</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {relatedBooks.map(rb => (
+                    <Link key={rb.id} href={`/book/${rb.id}`} className="group">
+                      <div className="relative overflow-hidden border border-sand mb-1.5" style={{ aspectRatio: '2/3' }}>
+                        <Image
+                          src={rb.image_url}
+                          alt={rb.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          sizes="120px"
+                        />
+                      </div>
+                      <p className="font-heading text-[11px] text-ink leading-tight truncate">{rb.title}</p>
+                      <p className="font-jost text-[10px] text-bark">฿{rb.price.toLocaleString()}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-12">
+          <ReviewSection bookId={book.id} bookTitle={book.title} />
         </div>
       </div>
 
-      {/* Feature 1: Condition Guide Modal */}
+      {/* Condition Guide Modal */}
       {showConditionGuide && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center px-4"

@@ -34,8 +34,18 @@ export default function AdminBooksPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this book?')) return
 
+    const book = books.find(b => b.id === id)
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co') {
-      await supabase.from('books').delete().eq('id', id)
+      const res = await fetch('/api/admin/delete-book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, category: book?.category }),
+      })
+      if (!res.ok) {
+        const text = await res.text()
+        try { const d = JSON.parse(text); alert('Failed to delete: ' + d.error) } catch { alert('Failed to delete. Please try again.') }
+        return
+      }
     }
     setBooks(prev => prev.filter(b => b.id !== id))
   }
@@ -50,12 +60,20 @@ export default function AdminBooksPage() {
     <div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h1 className="font-heading text-2xl font-normal">Books ({books.length})</h1>
-        <Link
-          href="/admin/books/new"
-          className="px-4 py-2 bg-sage text-offwhite font-heading text-sm hover:bg-sage-light transition-colors"
-        >
-          + Add Book
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/admin/books/import"
+            className="px-4 py-2 border border-sage text-sage font-heading text-sm hover:bg-sage/10 transition-colors"
+          >
+            Import CSV
+          </Link>
+          <Link
+            href="/admin/books/new"
+            className="px-4 py-2 bg-sage text-offwhite font-heading text-sm hover:bg-sage-light transition-colors"
+          >
+            + Add Book
+          </Link>
+        </div>
       </div>
 
       <input

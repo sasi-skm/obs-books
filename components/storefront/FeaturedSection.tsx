@@ -14,7 +14,7 @@ export default function FeaturedSection({ books }: { books: Book[] }) {
           {t('featSub')}
         </p>
         <h2 className="font-cormorant text-[clamp(1.6rem,3vw,2.3rem)] font-normal text-ink">
-          {t('featTitle')}
+          {t('newArrivalsTitle')}
         </h2>
         <p className="font-jost text-[11px] text-ink-muted tracking-[0.3em] my-3 select-none">— ✦ —</p>
       </div>

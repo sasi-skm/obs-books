@@ -36,15 +36,16 @@ export default function HeroSection() {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background mosaic */}
       <div className="absolute inset-0 grid grid-cols-3 md:grid-cols-4 grid-rows-3 gap-0.5 opacity-[0.35] saturate-75">
-        {HERO_IMAGES.map(name => (
+        {HERO_IMAGES.map((name, i) => (
           <div key={name} className="relative">
             <Image
               src={`/images/${name}.jpeg`}
               alt=""
               fill
               className="object-cover"
-              sizes="25vw"
-              priority={false}
+              sizes="(max-width: 768px) 34vw, 25vw"
+              quality={40}
+              priority={i < 3}
             />
           </div>
         ))}
@@ -81,7 +82,7 @@ export default function HeroSection() {
             </span>
           ))}
           <Image
-            src="/images/logo.jpg"
+            src="/images/logo-new.jpg"
             alt="OBS Books"
             width={150}
             height={150}
@@ -94,7 +95,7 @@ export default function HeroSection() {
           {t('heroTitle')}
         </h1>
         <p className="font-jost text-sm text-bark max-w-[500px] mx-auto mb-7">
-          {t('heroSub')}
+          {t('heroSubtitle')}
         </p>
         <div className="flex gap-3 justify-center flex-wrap">
           <Link

@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  staticPageGenerationTimeout: 120,
   images: {
     remotePatterns: [
       {
@@ -8,6 +9,20 @@ const nextConfig = {
         pathname: '/storage/v1/object/public/**',
       },
     ],
+  },
+  async redirects() {
+    return [
+      {
+        source: '/category/tea-country',
+        destination: '/category/country-life',
+        permanent: true,
+      },
+      {
+        source: '/category/art-nature',
+        destination: '/category/art-illustration',
+        permanent: true,
+      },
+    ]
   },
 };
 

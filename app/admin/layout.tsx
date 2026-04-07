@@ -9,6 +9,10 @@ const NAV_ITEMS = [
   { label: 'Dashboard', href: '/admin', icon: '📊' },
   { label: 'Books', href: '/admin/books', icon: '📚' },
   { label: 'Orders', href: '/admin/orders', icon: '📋' },
+  { label: 'Reviews', href: '/admin/reviews', icon: '⭐' },
+  { label: 'Customers', href: '/admin/customers', icon: '👤' },
+  { label: 'Vouchers', href: '/admin/vouchers', icon: '🏷️' },
+  { label: 'Subscriptions', href: '/admin/subscriptions', icon: '🌸' },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -16,6 +20,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname()
   const [checking, setChecking] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [pendingSlips, setPendingSlips] = useState(0)
+
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co') {
+      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('payment_status', 'uploaded')
+        .then(({ count }) => { if (count) setPendingSlips(count) })
+    }
+  }, [])
 
   // Skip auth check on login page
   const isLoginPage = pathname === '/admin/login'
@@ -30,6 +42,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co') {
         const { data: { session } } = await supabase.auth.getSession()
         if (!session) {
+          router.push('/admin/login')
+          return
+        }
+        // Block anyone who isn't the owner
+        if (session.user.email !== 'sasiwimolskm@gmail.com') {
+          await supabase.auth.signOut()
           router.push('/admin/login')
           return
         }
@@ -109,6 +127,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <span>{item.icon}</span>
                 {item.label}
+                {item.label === 'Orders' && pendingSlips > 0 && (
+                  <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose text-white">{pendingSlips}</span>
+                )}
               </Link>
             ))}
           </nav>

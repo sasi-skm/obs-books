@@ -1,15 +1,41 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useCart } from './CartContext'
 import { useLang } from '../layout/LanguageContext'
+import { supabase } from '@/lib/supabase'
 
 export default function CartDrawer() {
   const pathname = usePathname()
-  const { items, removeItem, total, count, isOpen, setIsOpen } = useCart()
+  const { items, removeItem, updateQuantity, total, count, isOpen, setIsOpen } = useCart()
   const { t } = useLang()
+  const [stockLimits, setStockLimits] = useState<Record<string, number>>({})
+
+  // Fetch real-time stock whenever cart opens
+  useEffect(() => {
+    if (!isOpen || items.length === 0) return
+    const bookIds = items.map(i => i.bookId).filter((id, idx, arr) => arr.indexOf(id) === idx)
+    supabase
+      .from('books')
+      .select('id, copies, condition_copies')
+      .in('id', bookIds)
+      .then(({ data }) => {
+        if (!data) return
+        const limits: Record<string, number> = {}
+        for (const item of items) {
+          const book = data.find(b => b.id === item.bookId)
+          if (!book) continue
+          const condCopies = book.condition_copies as Record<string, number> | null
+          limits[item.id] = (item.condition && condCopies?.[item.condition] !== undefined)
+            ? condCopies[item.condition]
+            : (book.copies ?? 99)
+        }
+        setStockLimits(limits)
+      })
+  }, [isOpen, items])
 
   if (pathname.startsWith('/admin')) return null
 
@@ -29,7 +55,7 @@ export default function CartDrawer() {
         {/* Header */}
         <div className="px-5 py-4 border-b border-line flex items-center justify-between">
           <h2 className="font-heading text-lg">
-            🛒 {t('cart')} ({count})
+            🛒 {t('cartTitle')} ({count})
           </h2>
           <button onClick={() => setIsOpen(false)} className="text-xl text-ink-light hover:text-ink">
             ✕
@@ -44,35 +70,64 @@ export default function CartDrawer() {
               <p>{t('cartEmpty')}</p>
             </div>
           ) : (
-            items.map(item => (
-              <div key={item.id} className="flex gap-3 py-3 border-b border-line">
-                <div className="w-14 h-14 flex-shrink-0 relative">
-                  <Image
-                    src={item.image_url}
-                    alt={item.title}
-                    fill
-                    className="object-cover"
-                    sizes="56px"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-heading text-sm font-semibold truncate">{item.title}</div>
-                  <div className="text-xs text-ink-muted italic">{item.author}</div>
-                  {item.condition && (
-                    <div className="text-[0.65rem] text-sage tracking-wider uppercase">{item.condition}</div>
-                  )}
-                  <div className="font-heading text-sm font-semibold text-bark mt-0.5">
-                    ฿{item.price.toLocaleString()}
+            items.map(item => {
+              const stock = item.maxQuantity ?? stockLimits[item.id]
+              const atMax = stock !== undefined && item.quantity >= stock
+              return (
+                <div key={item.id} className="flex gap-3 py-3 border-b border-line">
+                  <div className="w-14 h-14 flex-shrink-0 relative">
+                    <Image
+                      src={item.image_url}
+                      alt={item.title}
+                      fill
+                      className="object-cover"
+                      sizes="56px"
+                    />
                   </div>
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="text-xs text-ink-muted underline hover:text-rose mt-0.5"
-                  >
-                    {t('remove')}
-                  </button>
+                  <div className="flex-1 min-w-0">
+                    <Link
+                      href={`/book/${item.bookId}`}
+                      onClick={() => setIsOpen(false)}
+                      className="font-heading text-sm font-semibold truncate block hover:text-moss transition-colors"
+                    >
+                      {item.title}
+                    </Link>
+                    <div className="text-xs text-ink-muted italic">{item.author}</div>
+                    {item.condition && (
+                      <div className="text-[0.65rem] text-sage tracking-wider uppercase">{item.condition}</div>
+                    )}
+                    <div className="flex items-center justify-between mt-1.5">
+                      {/* Quantity controls */}
+                      <div className="flex items-center border border-sand rounded">
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          className="w-7 h-7 flex items-center justify-center text-bark hover:text-moss transition-colors text-sm"
+                        >
+                          −
+                        </button>
+                        <span className="w-7 text-center font-jost text-sm text-ink">{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          disabled={atMax}
+                          className="w-7 h-7 flex items-center justify-center text-bark hover:text-moss transition-colors text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <div className="font-heading text-sm font-semibold text-bark">
+                        ฿{(item.price * item.quantity).toLocaleString()}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="text-xs text-ink-muted underline hover:text-rose mt-0.5"
+                    >
+                      {t('remove')}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
 

@@ -38,12 +38,12 @@ export default function AboutSection() {
           </p>
           <h2 className="font-cormorant text-3xl font-normal text-ink mb-1">{t('aboutTitle')}</h2>
           <p className="font-jost text-[11px] text-ink-muted tracking-[0.3em] my-3 select-none">— ✦ —</p>
-          <p className="text-sm text-ink-light leading-relaxed mb-3">{t('aboutP1')}</p>
-          <p className="text-sm text-ink-light leading-relaxed mb-3">{t('aboutP2')}</p>
+          <p className="text-sm text-ink-light leading-relaxed mb-3 font-cormorant italic text-base">{t('welcomeText')}</p>
+          <div className="my-3 border-t border-sand" />
+          {t('aboutStory').split('\n\n').map((para, i) => (
+            <p key={i} className="text-sm text-ink-light leading-relaxed mb-3">{para}</p>
+          ))}
           <p className="text-sm text-ink-light">📍 Bangkok, Thailand</p>
-          <div className="mt-4 font-cormorant italic text-base text-moss border-l-2 border-moss pl-4">
-            {t('aboutQuote')}
-          </div>
         </div>
       </div>
     </section>

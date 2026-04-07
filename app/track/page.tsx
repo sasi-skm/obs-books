@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useLang } from '@/components/layout/LanguageContext'
 import { COURIERS, getCourierName } from '@/lib/tracking'
 import { Order } from '@/types'
@@ -22,12 +23,34 @@ const STATUS_STEPS = [
 ]
 
 export default function TrackPage() {
+  return <Suspense><TrackPageInner /></Suspense>
+}
+
+function TrackPageInner() {
   const { lang, t } = useLang()
+  const searchParams = useSearchParams()
   const [orderNum, setOrderNum] = useState('')
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [trackEvents, setTrackEvents] = useState<TrackingEvent[]>([])
+  const autoSearched = useRef(false)
+
+  // Auto-fill and search if order number is in URL
+  useEffect(() => {
+    const param = searchParams.get('order')
+    if (param && !autoSearched.current) {
+      autoSearched.current = true
+      setOrderNum(param)
+      setLoading(true)
+      setError('')
+      fetch(`/api/orders?order_number=${encodeURIComponent(param)}`)
+        .then(r => { if (!r.ok) throw new Error(); return r.json() })
+        .then(data => setOrder(data))
+        .catch(() => setError(t('orderNotFound')))
+        .finally(() => setLoading(false))
+    }
+  }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (order?.tracking_number && order?.courier === 'thailand-post') {

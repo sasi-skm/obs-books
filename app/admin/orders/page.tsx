@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { Order } from '@/types'
 import { supabase } from '@/lib/supabase'
 
@@ -35,7 +36,7 @@ export default function AdminOrdersPage() {
       try {
         const { data } = await supabase
           .from('orders')
-          .select('*')
+          .select('*, items:order_items(*)')
           .order('created_at', { ascending: false })
         if (data) setOrders(data as Order[])
       } catch {}
@@ -49,23 +50,25 @@ export default function AdminOrdersPage() {
   })
 
   const handleConfirmPayment = async (orderId: string) => {
-    await supabase
-      .from('orders')
-      .update({ payment_status: 'confirmed', order_status: 'paid' })
-      .eq('id', orderId)
+    await fetch(`/api/orders/${orderId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'confirm_payment' }),
+    })
     loadOrders()
   }
 
   const handleConfirmShip = async () => {
     if (!shippingForm || !shippingForm.tracking.trim()) return
-    await supabase
-      .from('orders')
-      .update({
-        order_status: 'shipped',
-        courier: shippingForm.courier,
+    await fetch(`/api/orders/${shippingForm.orderId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'ship',
         tracking_number: shippingForm.tracking.trim(),
-      })
-      .eq('id', shippingForm.orderId)
+        courier: shippingForm.courier,
+      }),
+    })
     setShippingForm(null)
     loadOrders()
   }
@@ -125,9 +128,45 @@ export default function AdminOrdersPage() {
                     <p className="font-mono text-xs font-medium text-sage">{order.order_number}</p>
                     <p className="font-heading font-medium text-sm">{order.customer_name}</p>
                     <p className="text-xs text-ink-muted">{order.customer_phone}</p>
+                    {order.customer_email && (
+                      <p className="text-xs text-ink-muted">{order.customer_email}</p>
+                    )}
+                    {order.shipping_address && (
+                      <p className="text-xs text-ink-muted mt-1 max-w-[220px] leading-relaxed">📍 {order.shipping_address}</p>
+                    )}
                   </div>
                   <p className="font-heading text-bark font-semibold">฿{order.total_amount.toLocaleString()}</p>
                 </div>
+
+                {/* Book list */}
+                {order.items && order.items.length > 0 && (
+                  <div className="mb-3 pt-2 border-t border-line">
+                    <p className="text-[10px] uppercase tracking-wide text-ink-muted mb-1.5">Order items</p>
+                    <div className="space-y-1.5">
+                      {order.items.map((item: { id: string; image_url?: string; title: string; author: string; price: number; condition?: string; quantity?: number }) => (
+                        <div key={item.id} className="flex items-center gap-2">
+                          {item.image_url ? (
+                            <div className="relative shrink-0 border border-line overflow-hidden" style={{ width: 32, height: 32 }}>
+                              <Image src={item.image_url} alt={item.title} fill className="object-cover" sizes="32px" />
+                            </div>
+                          ) : (
+                            <div className="shrink-0 border border-line bg-parchment flex items-center justify-center" style={{ width: 32, height: 32, fontSize: 14 }}>📖</div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-heading text-xs font-medium text-ink truncate">{item.title}</p>
+                            <p className="text-[10px] text-ink-muted">
+                              {item.author}
+                              {item.condition && <span className="ml-1 text-sage font-medium">· {item.condition}</span>}
+                              {item.quantity && item.quantity > 1 && <span className="ml-1 text-bark">× {item.quantity}</span>}
+                            </p>
+                          </div>
+                          <span className="text-xs text-bark shrink-0">฿{(item.price * (item.quantity || 1)).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-2 mb-3 flex-wrap">
                   <span className={`text-xs px-2 py-0.5 ${PAYMENT_COLORS[order.payment_status] || ''}`}>
                     {order.payment_status}
@@ -220,6 +259,21 @@ export default function AdminOrdersPage() {
                     <td className="p-3">
                       <div className="font-heading font-medium">{order.customer_name}</div>
                       <div className="text-xs text-ink-muted">{order.customer_phone}</div>
+                      {order.customer_email && <div className="text-xs text-ink-muted">{order.customer_email}</div>}
+                      {order.shipping_address && (
+                        <div className="text-[10px] text-ink-muted mt-0.5 max-w-[200px] leading-relaxed">📍 {order.shipping_address}</div>
+                      )}
+                      {order.items && order.items.length > 0 && (
+                        <div className="mt-1 space-y-0.5">
+                          {order.items.map((item: { id: string; title: string; condition?: string; quantity?: number }) => (
+                            <div key={item.id} className="text-[10px] text-ink-muted truncate max-w-[180px]">
+                              · {item.title}
+                              {item.condition && <span className="text-sage font-medium ml-1">({item.condition})</span>}
+                              {item.quantity && item.quantity > 1 && <span className="text-bark ml-1">×{item.quantity}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="p-3 font-heading text-bark">฿{order.total_amount.toLocaleString()}</td>
                     <td className="p-3">

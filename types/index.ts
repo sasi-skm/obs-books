@@ -6,12 +6,22 @@ export interface Book {
   category: string
   condition: string
   condition_prices?: Record<string, number>
+  condition_copies?: Record<string, number>
   copies: number
   status: 'available' | 'sold'
   image_url: string
   images?: string[]
   video_url?: string
   description?: string
+  description_en?: string
+  description_th?: string
+  publisher?: string
+  year_published?: number
+  pages?: number
+  cover_type?: string
+  language?: string
+  height_cm?: number
+  width_cm?: number
   featured: boolean
   created_at: string
   weight_grams?: number
@@ -34,7 +44,7 @@ export interface Order {
   shipping_address: string
   payment_method: 'promptpay' | 'transfer'
   payment_status: 'pending' | 'uploaded' | 'confirmed'
-  order_status: 'new' | 'paid' | 'packing' | 'shipped' | 'delivered'
+  order_status: 'new' | 'paid' | 'packing' | 'shipped' | 'delivered' | 'cancelled'
   slip_url?: string
   total_amount: number
   note?: string
@@ -67,6 +77,8 @@ export interface CartItem {
   category: string
   condition?: string
   weight_grams?: number
+  quantity: number
+  maxQuantity?: number
 }
 
 export type Lang = 'en' | 'th'

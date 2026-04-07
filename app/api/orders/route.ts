@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { customer_name, customer_phone, customer_email, shipping_address, payment_method, note, items, total_amount, slip_url, destination_country, currency, user_id } = body
+    const { customer_name, customer_phone, customer_email, shipping_address, payment_method, note, items, total_amount, slip_url, destination_country, currency, user_id, redeem_points, voucher_id, voucher_email, subscriber_discount_applied, subscriber_discount_amount } = body
 
     if (!customer_name || !customer_phone || !shipping_address || !items?.length) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -35,6 +35,8 @@ export async function POST(req: NextRequest) {
             payment_status: slip_url ? 'uploaded' : 'pending',
             order_status: 'new',
             user_id: user_id || null,
+            subscriber_discount_applied: subscriber_discount_applied || false,
+            subscriber_discount_amount: subscriber_discount_amount || 0,
           })
           .select()
           .single()
@@ -42,39 +44,108 @@ export async function POST(req: NextRequest) {
         if (orderError) throw orderError
 
         // Create order items
-        const orderItems = items.map((item: { book_id: string; title: string; author: string; price: number; image_url?: string }) => ({
+        const orderItems = items.map((item: { book_id: string; title: string; author: string; price: number; image_url?: string; condition?: string; quantity?: number }) => ({
           order_id: order.id,
           book_id: item.book_id,
           title: item.title,
           author: item.author,
           price: item.price,
           image_url: item.image_url,
+          condition: item.condition || null,
+          quantity: item.quantity || 1,
         }))
 
         await supabaseAdmin.from('order_items').insert(orderItems)
 
-        // Decrement book copies
+        // Decrement book copies (per condition if available, repeat for quantity)
         for (const item of items) {
-          await supabaseAdmin.rpc('decrement_book_copies', { book_id_param: item.book_id })
+          const qty = item.quantity || 1
+          for (let q = 0; q < qty; q++) {
+            await supabaseAdmin.rpc('decrement_book_copies', {
+              book_id_param: item.book_id,
+              condition_param: item.condition || null,
+            })
+          }
         }
 
-        // Send Telegram notification (non-blocking)
+        // Record voucher use
+        if (voucher_id && voucher_email) {
+          try {
+            await supabaseAdmin.from('voucher_uses').insert({
+              voucher_id,
+              email: voucher_email,
+              order_id: order.id,
+            })
+          } catch (vErr) {
+            console.error('Voucher recording error:', vErr)
+          }
+        }
+
+        // Handle points redemption
+        if (redeem_points && user_id) {
+          try {
+            const { data: profile } = await supabaseAdmin
+              .from('profiles')
+              .select('points_balance')
+              .eq('id', user_id)
+              .single()
+
+            if (profile && profile.points_balance >= 100) {
+              await supabaseAdmin
+                .from('profiles')
+                .update({ points_balance: profile.points_balance - 100 })
+                .eq('id', user_id)
+
+              await supabaseAdmin.from('points_transactions').insert({
+                user_id,
+                points: -100,
+                type: 'redeemed',
+                reference_id: order.id,
+                book_title: null,
+              })
+            }
+          } catch (pointsErr) {
+            console.error('Points redemption error:', pointsErr)
+          }
+        }
+
+        // Send emails (non-blocking)
         try {
-          const { sendTelegramOrderNotification } = await import('@/lib/telegram')
-          await sendTelegramOrderNotification({
-            order_number: orderNumber,
-            customer_name,
-            customer_phone,
-            shipping_address,
-            total_amount,
-            items: items.map((i: { title: string; price: number; condition?: string }) => ({
-              title: i.title,
-              price: i.price,
-              condition: i.condition,
-            })),
-          })
-        } catch (telegramErr) {
-          console.error('Telegram notification failed:', telegramErr)
+          const { sendAdminNewOrderEmail, sendOrderConfirmationEmail } = await import('@/lib/email')
+          await Promise.allSettled([
+            sendAdminNewOrderEmail({
+              orderNumber,
+              customerName: customer_name,
+              customerPhone: customer_phone,
+              customerEmail: customer_email,
+              totalAmount: total_amount,
+              paymentMethod: payment_method,
+              items: items.map((i: { title: string; price: number; quantity?: number; condition?: string }) => ({
+                title: i.title,
+                price: i.price,
+                quantity: i.quantity || 1,
+                condition: i.condition,
+              })),
+            }),
+            customer_email
+              ? sendOrderConfirmationEmail({
+                  to: customer_email,
+                  customerName: customer_name,
+                  orderNumber,
+                  items: items.map((i: { title: string; price: number; quantity?: number; condition?: string }) => ({
+                    title: i.title,
+                    price: i.price,
+                    quantity: i.quantity || 1,
+                    condition: i.condition,
+                  })),
+                  totalAmount: total_amount,
+                  paymentMethod: payment_method,
+                  shippingAddress: shipping_address,
+                })
+              : Promise.resolve(),
+          ])
+        } catch (emailErr) {
+          console.error('Email notification failed:', emailErr)
         }
 
         return NextResponse.json({ order_number: orderNumber, id: order.id })
