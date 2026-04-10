@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { adminFetch } from '@/lib/admin-fetch'
 
 interface Customer {
   id: string
@@ -24,7 +25,7 @@ export default function CustomersPage() {
   }, [])
 
   const loadCustomers = async () => {
-    const res = await fetch('/api/admin/customers')
+    const res = await adminFetch('/api/admin/customers')
     if (res.ok) {
       const data = await res.json()
       setCustomers(data)

@@ -3,9 +3,16 @@
   "configurations": [
     {
       "name": "OBS Books Dev",
-      "runtimeExecutable": "C:\Program Files\nodejs\npm.cmd",
+      "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "Flower Letter Dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../flower-letter", "run", "dev"],
+      "port": 3001,
       "autoPort": true
     }
   ]

@@ -16,7 +16,19 @@
       "Bash(npx vercel:*)",
       "Read(//c/Users/MDPI/.local/share/com.vercel.cli/**)",
       "Read(//c/Users/MDPI/AppData/Roaming/com.vercel.cli/**)",
-      "Bash(where vercel:*)"
+      "Bash(where vercel:*)",
+      "Bash(Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue)",
+      "Bash(cmd /c \"rd /s /q \"\"C:\\\\Users\\\\MDPI\\\\OneDrive - MDPI AG\\\\Documents\\\\Desktop\\\\Sasi\\\\OBS\\\\OBS Website\\\\OBS-Books-Complete\\\\.next\"\"\")",
+      "Bash(cmd /c \"rd /s /q \"\"C:\\\\Users\\\\MDPI\\\\OneDrive - MDPI AG\\\\Documents\\\\Desktop\\\\Sasi\\\\OBS\\\\OBS Website\\\\OBS-Books-Complete\\\\.vercel\"\"\")",
+      "Bash(timeout /t 3)",
+      "Bash(find 'C:\\\\Users\\\\MDPI\\\\OneDrive - MDPI AG\\\\Documents\\\\Desktop\\\\Sasi\\\\OBS\\\\OBS Website\\\\OBS-Books-Complete' -path */supabase/* -name *.sql -type f)",
+      "Bash(grep -r \"points_balance\\\\|points_transactions\\\\|reviews\\\\|wishlists\\\\|profiles\" 'C:\\\\Users\\\\MDPI\\\\OneDrive - MDPI AG\\\\Documents\\\\Desktop\\\\Sasi\\\\OBS\\\\OBS Website\\\\OBS-Books-Complete\\\\app' --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"points_transactions\\\\|reviews\\\\|wishlists\" 'C:\\\\Users\\\\MDPI\\\\OneDrive - MDPI AG\\\\Documents\\\\Desktop\\\\Sasi\\\\OBS\\\\OBS Website\\\\OBS-Books-Complete\\\\components' --include=*.tsx)",
+      "Bash(grep -r .from\\\\\\('C:\\\\Users\\\\MDPI\\\\OneDrive - MDPI AG\\\\Documents\\\\Desktop\\\\Sasi\\\\OBS\\\\OBS Website\\\\OBS-Books-Complete\\\\app' --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"insert\\\\|INSERT\" 'C:\\\\Users\\\\MDPI\\\\OneDrive - MDPI AG\\\\Documents\\\\Desktop\\\\Sasi\\\\OBS\\\\OBS Website\\\\OBS-Books-Complete\\\\app' --include=*.ts --include=*.tsx)",
+      "Bash(npx tsc:*)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s http://localhost:3001)"
     ]
   }
 }

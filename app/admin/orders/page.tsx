@@ -11,7 +11,15 @@ const STATUS_COLORS: Record<string, string> = {
   packing: 'bg-amber-100 text-amber-700',
   shipped: 'bg-purple-100 text-purple-700',
   delivered: 'bg-green-100 text-green-700',
+  cancelled: 'bg-red-100 text-red-700',
+  partially_cancelled: 'bg-orange-100 text-orange-700',
 }
+
+const STATUS_LABELS: Record<string, string> = {
+  partially_cancelled: 'partially cancelled',
+}
+
+const CANCEL_REASONS = ['Out of stock', 'Book condition too poor to sell']
 
 const PAYMENT_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -26,6 +34,11 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('all')
   const [shippingForm, setShippingForm] = useState<{ orderId: string; tracking: string; courier: string } | null>(null)
+  const [cancelModal, setCancelModal] = useState<Order | null>(null)
+  const [cancelSelectedBooks, setCancelSelectedBooks] = useState<Record<string, boolean>>({})
+  const [cancelReasons, setCancelReasons] = useState<Record<string, string>>({})
+  const [cancelNote, setCancelNote] = useState('')
+  const [cancelLoading, setCancelLoading] = useState(false)
 
   useEffect(() => {
     loadOrders()
@@ -79,6 +92,59 @@ export default function AdminOrdersPage() {
       .update({ order_status: 'delivered' })
       .eq('id', orderId)
     loadOrders()
+  }
+
+  const openCancelModal = (order: Order) => {
+    const items = order.items || []
+    const sel: Record<string, boolean> = {}
+    const reasons: Record<string, string> = {}
+    // For single-book orders, auto-select the only book
+    if (items.length === 1) {
+      sel[items[0].id] = true
+      reasons[items[0].id] = CANCEL_REASONS[0]
+    }
+    setCancelSelectedBooks(sel)
+    setCancelReasons(reasons)
+    setCancelNote('')
+    setCancelModal(order)
+  }
+
+  const handleCancelSubmit = async () => {
+    if (!cancelModal) return
+    const items = cancelModal.items || []
+    const selectedItems = items.filter(item => cancelSelectedBooks[item.id])
+    if (selectedItems.length === 0) return
+
+    setCancelLoading(true)
+    try {
+      const cancelled_items = selectedItems.map(item => ({
+        book_id: item.book_id,
+        title: item.title,
+        price: item.price * ((item as { quantity?: number }).quantity || 1),
+        reason: cancelReasons[item.id] || CANCEL_REASONS[0],
+      }))
+
+      const res = await fetch(`/api/orders/${cancelModal.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'admin_cancel',
+          cancelled_items,
+          admin_note: cancelNote.trim() || undefined,
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        alert('Error: ' + (err.error || 'Failed to cancel'))
+      } else {
+        setCancelModal(null)
+        loadOrders()
+      }
+    } catch {
+      alert('Network error')
+    }
+    setCancelLoading(false)
   }
 
   const tabs: { key: Tab; label: string; count: number }[] = [
@@ -172,7 +238,7 @@ export default function AdminOrdersPage() {
                     {order.payment_status}
                   </span>
                   <span className={`text-xs px-2 py-0.5 ${STATUS_COLORS[order.order_status] || ''}`}>
-                    {order.order_status}
+                    {STATUS_LABELS[order.order_status] || order.order_status}
                   </span>
                   {order.destination_country && order.destination_country !== 'TH' && (
                     <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600">{order.destination_country}</span>
@@ -228,6 +294,11 @@ export default function AdminOrdersPage() {
                   {order.order_status === 'shipped' && (
                     <button onClick={() => handleMarkDelivered(order.id)} className="text-xs px-3 py-1.5 bg-green-700 text-white hover:bg-green-800">
                       Delivered
+                    </button>
+                  )}
+                  {order.order_status !== 'cancelled' && order.order_status !== 'partially_cancelled' && (
+                    <button onClick={() => openCancelModal(order)} className="text-xs px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                      Cancel
                     </button>
                   )}
                   {order.tracking_number && (
@@ -288,7 +359,7 @@ export default function AdminOrdersPage() {
                     </td>
                     <td className="p-3">
                       <span className={`text-xs px-2 py-0.5 inline-block ${STATUS_COLORS[order.order_status] || ''}`}>
-                        {order.order_status}
+                        {STATUS_LABELS[order.order_status] || order.order_status}
                       </span>
                     </td>
                     <td className="p-3">
@@ -344,6 +415,11 @@ export default function AdminOrdersPage() {
                             Delivered
                           </button>
                         )}
+                        {order.order_status !== 'cancelled' && order.order_status !== 'partially_cancelled' && (
+                          <button onClick={() => openCancelModal(order)} className="text-xs px-2 py-1 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                            Cancel
+                          </button>
+                        )}
                         {order.tracking_number && (
                           <span className="text-xs text-ink-muted font-mono">{order.tracking_number}</span>
                         )}
@@ -353,6 +429,152 @@ export default function AdminOrdersPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+      {/* Cancel Order Modal */}
+      {cancelModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => !cancelLoading && setCancelModal(null)}
+        >
+          <div
+            className="bg-white border border-line max-w-lg w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-heading text-lg font-medium text-ink">
+                Cancel Order {cancelModal.order_number}
+              </h2>
+              <button
+                onClick={() => !cancelLoading && setCancelModal(null)}
+                className="text-ink-muted hover:text-ink text-xl leading-none"
+              >
+                x
+              </button>
+            </div>
+
+            {/* Multi-book: show book selection */}
+            {(cancelModal.items || []).length > 1 && (
+              <div className="mb-4">
+                <p className="text-xs text-ink-muted mb-2 uppercase tracking-wide">Select books to cancel:</p>
+                <div className="space-y-2">
+                  {(cancelModal.items || []).map((item: { id: string; title: string; author: string; price: number; image_url?: string; quantity?: number }) => (
+                    <div key={item.id} className="border border-line p-3">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!cancelSelectedBooks[item.id]}
+                          onChange={e => {
+                            const checked = e.target.checked
+                            setCancelSelectedBooks(prev => ({ ...prev, [item.id]: checked }))
+                            if (checked && !cancelReasons[item.id]) {
+                              setCancelReasons(prev => ({ ...prev, [item.id]: CANCEL_REASONS[0] }))
+                            }
+                          }}
+                          className="mt-0.5 accent-red-600"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-heading text-sm font-medium text-ink">{item.title}</p>
+                          <p className="text-xs text-ink-muted">{item.author}</p>
+                          <p className="text-xs text-bark mt-0.5">฿{(item.price * ((item as { quantity?: number }).quantity || 1)).toLocaleString()}</p>
+                        </div>
+                      </label>
+                      {cancelSelectedBooks[item.id] && (
+                        <div className="mt-2 ml-7">
+                          <select
+                            value={cancelReasons[item.id] || CANCEL_REASONS[0]}
+                            onChange={e => setCancelReasons(prev => ({ ...prev, [item.id]: e.target.value }))}
+                            className="text-xs px-2 py-1.5 border border-line bg-cream outline-none focus:border-sage w-full"
+                          >
+                            {CANCEL_REASONS.map(r => (
+                              <option key={r} value={r}>{r}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Single-book: show reason only */}
+            {(cancelModal.items || []).length === 1 && (
+              <div className="mb-4">
+                <p className="text-xs text-ink-muted mb-1 uppercase tracking-wide">Reason:</p>
+                <select
+                  value={cancelReasons[(cancelModal.items || [])[0]?.id] || CANCEL_REASONS[0]}
+                  onChange={e => {
+                    const itemId = (cancelModal.items || [])[0]?.id
+                    if (itemId) setCancelReasons(prev => ({ ...prev, [itemId]: e.target.value }))
+                  }}
+                  className="text-sm px-3 py-2 border border-line bg-cream outline-none focus:border-sage w-full"
+                >
+                  {CANCEL_REASONS.map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Admin note */}
+            <div className="mb-4">
+              <p className="text-xs text-ink-muted mb-1 uppercase tracking-wide">Note to customer (optional):</p>
+              <textarea
+                value={cancelNote}
+                onChange={e => setCancelNote(e.target.value)}
+                placeholder="Add a personal message..."
+                rows={3}
+                className="text-sm px-3 py-2 border border-line bg-cream outline-none focus:border-sage w-full resize-none"
+              />
+            </div>
+
+            {/* Info box */}
+            {cancelModal.customer_email && (
+              <div className="mb-4 px-3 py-2.5 bg-blue-50 border border-blue-200 text-xs text-blue-700">
+                A cancellation email will be sent to <strong>{cancelModal.customer_email}</strong>
+              </div>
+            )}
+            {!cancelModal.customer_email && (
+              <div className="mb-4 px-3 py-2.5 bg-yellow-50 border border-yellow-200 text-xs text-yellow-700">
+                No email on file - the customer will not receive an email notification
+              </div>
+            )}
+
+            {/* Summary */}
+            {(() => {
+              const items = cancelModal.items || []
+              const selectedCount = Object.values(cancelSelectedBooks).filter(Boolean).length
+              const isFullCancel = selectedCount >= items.length
+              return selectedCount > 0 && (
+                <div className="mb-4 px-3 py-2 bg-parchment border border-sand text-xs text-ink">
+                  {isFullCancel
+                    ? `Full cancellation - order status will change to "cancelled"`
+                    : `Partial cancellation (${selectedCount} of ${items.length} books) - order status will change to "partially cancelled"`
+                  }
+                </div>
+              )
+            })()}
+
+            {/* Actions */}
+            <div className="flex gap-2">
+              <button
+                onClick={handleCancelSubmit}
+                disabled={cancelLoading || Object.values(cancelSelectedBooks).filter(Boolean).length === 0}
+                className="flex-1 py-2.5 bg-red-600 text-white text-sm font-heading hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {cancelLoading ? 'Cancelling...' : 'Confirm Cancellation'}
+              </button>
+              <button
+                onClick={() => setCancelModal(null)}
+                disabled={cancelLoading}
+                className="px-4 py-2.5 border border-line text-ink-muted text-sm font-heading hover:border-sage transition-colors disabled:opacity-50"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

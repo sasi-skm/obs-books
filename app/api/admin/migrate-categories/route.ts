@@ -1,9 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/admin-auth'
 
 // One-time migration: rename category IDs in the books table
 // GET /api/admin/migrate-categories  — run once then this endpoint is harmless (updates 0 rows)
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const admin = await requireAdmin(req)
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const { error: e1, data: d1 } = await supabaseAdmin
       .from('books')

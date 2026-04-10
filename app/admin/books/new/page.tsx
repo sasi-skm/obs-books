@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { CATEGORIES } from '@/lib/translations'
+import { adminFetch } from '@/lib/admin-fetch'
 import { supabase } from '@/lib/supabase'
 
 const CONDITIONS = ['Like New', 'Very Good', 'Good', 'Well Read']
@@ -150,7 +151,7 @@ export default function NewBookPage() {
     try {
       const rawDataUrl = images[0]?.preview?.startsWith('data:') ? images[0].preview : null
       const coverDataUrl = rawDataUrl ? await resizeImageForAI(rawDataUrl) : null
-      const res = await fetch('/api/admin/generate-description', {
+      const res = await adminFetch('/api/admin/generate-description', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -201,22 +202,27 @@ export default function NewBookPage() {
       let uploadedVideoUrl: string | null = null
 
       if (isSupabase) {
+        // Upload images ONE AT A TIME to preserve correct order
         const imageSlots = images.filter(s => s.file)
-        const imageResults = await Promise.all(imageSlots.map(async (slot) => {
-          const resized = await resizeImage(slot.file!, 1600, 0.9)
-          const fd = new FormData()
-          fd.append('file', resized)
-          const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
-          if (!res.ok) return null
-          const { url } = await res.json()
-          return url as string | null
-        }))
-        uploadedUrls.push(...imageResults.filter((u): u is string => !!u))
+        for (const slot of imageSlots) {
+          try {
+            const resized = await resizeImage(slot.file!, 1600, 0.9)
+            const fd = new FormData()
+            fd.append('file', resized)
+            const res = await adminFetch('/api/admin/upload-image', { method: 'POST', body: fd })
+            if (res.ok) {
+              const { url } = await res.json()
+              if (url) uploadedUrls.push(url)
+            }
+          } catch {
+            // Skip failed uploads, continue with next
+          }
+        }
 
         if (videoSlot.file) {
           const fd = new FormData()
           fd.append('file', videoSlot.file)
-          const res = await fetch('/api/admin/upload-video', { method: 'POST', body: fd })
+          const res = await adminFetch('/api/admin/upload-video', { method: 'POST', body: fd })
           if (res.ok) {
             const { url } = await res.json()
             if (url) uploadedVideoUrl = url
@@ -279,7 +285,7 @@ export default function NewBookPage() {
       }
 
       // Revalidate storefront cache
-      await fetch('/api/admin/revalidate', {
+      await adminFetch('/api/admin/revalidate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ categories: [form.category] }),

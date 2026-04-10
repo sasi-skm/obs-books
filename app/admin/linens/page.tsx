@@ -7,38 +7,38 @@ import { Book } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { adminFetch } from '@/lib/admin-fetch'
 
-export default function AdminBooksPage() {
-  const [books, setBooks] = useState<Book[]>([])
+export default function AdminLinensPage() {
+  const [linens, setLinens] = useState<Book[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadBooks()
+    loadLinens()
   }, [])
 
-  const loadBooks = async () => {
+  const loadLinens = async () => {
     try {
       const { data } = await supabase
         .from('books')
         .select('*')
-        .or('product_type.eq.book,product_type.is.null')
+        .eq('product_type', 'textile')
         .order('created_at', { ascending: false })
       if (data) {
-        setBooks(data as Book[])
+        setLinens(data as Book[])
       }
     } catch {}
     setLoading(false)
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this book?')) return
+    if (!confirm('Delete this linen?')) return
 
-    const book = books.find(b => b.id === id)
+    const item = linens.find(b => b.id === id)
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co') {
       const res = await adminFetch('/api/admin/delete-book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, category: book?.category }),
+        body: JSON.stringify({ id, category: item?.category }),
       })
       if (!res.ok) {
         const text = await res.text()
@@ -46,44 +46,39 @@ export default function AdminBooksPage() {
         return
       }
     }
-    setBooks(prev => prev.filter(b => b.id !== id))
+    setLinens(prev => prev.filter(b => b.id !== id))
   }
 
-  const filtered = books.filter(b => {
+  const formatDimensions = (item: Book): string => {
+    if (item.dimensions_width && item.dimensions_length) {
+      return `${item.dimensions_width} × ${item.dimensions_length} cm`
+    }
+    return '—'
+  }
+
+  const filtered = linens.filter(b => {
     if (!search) return true
     const q = search.toLowerCase()
-    return b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)
+    return b.title.toLowerCase().includes(q) || (b.material || '').toLowerCase().includes(q)
   })
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h1 className="font-heading text-2xl font-normal">Books ({books.length})</h1>
+        <h1 className="font-heading text-2xl font-normal">Linens ({linens.length})</h1>
         <div className="flex gap-2">
           <Link
-            href="/admin/books/import"
-            className="px-4 py-2 border border-sage text-sage font-heading text-sm hover:bg-sage/10 transition-colors"
-          >
-            Import CSV
-          </Link>
-          <Link
-            href="/admin/books/bulk-upload"
-            className="px-4 py-2 border border-bark text-bark font-heading text-sm hover:bg-bark/10 transition-colors"
-          >
-            Bulk Upload
-          </Link>
-          <Link
-            href="/admin/books/new"
+            href="/admin/linens/new"
             className="px-4 py-2 bg-sage text-offwhite font-heading text-sm hover:bg-sage-light transition-colors"
           >
-            + Add Book
+            + Add Linen
           </Link>
         </div>
       </div>
 
       <input
         type="text"
-        placeholder="Search books..."
+        placeholder="Search linens..."
         value={search}
         onChange={e => setSearch(e.target.value)}
         className="w-full max-w-md px-4 py-2.5 border border-line bg-offwhite font-body text-sm outline-none focus:border-sage mb-6"
@@ -95,34 +90,35 @@ export default function AdminBooksPage() {
         <div>
           {/* Mobile: card layout */}
           <div className="md:hidden space-y-2">
-            {filtered.map(book => (
-              <div key={book.id} className="bg-offwhite border border-line p-3 flex gap-3 items-center">
-                <div className="w-12 h-12 relative flex-shrink-0">
-                  <Image src={book.image_url} alt="" fill className="object-cover" sizes="48px" />
+            {filtered.map(item => (
+              <div key={item.id} className="bg-offwhite border border-line p-3 flex gap-3 items-center">
+                <div className="w-12 h-12 relative flex-shrink-0 bg-parchment">
+                  {item.image_url && (
+                    <Image src={item.image_url} alt="" fill className="object-cover" sizes="48px" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-heading font-medium text-sm truncate">{book.title}</p>
-                  <p className="text-xs text-ink-muted truncate">{book.author}</p>
+                  <p className="font-heading font-medium text-sm truncate">{item.title}</p>
+                  <p className="text-xs text-ink-muted truncate">{item.material || '—'} · {formatDimensions(item)}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="font-heading text-xs text-bark">฿{book.price.toLocaleString()}</span>
+                    <span className="font-heading text-xs text-bark">฿{item.price.toLocaleString()}</span>
                     <span className={`text-[0.6rem] px-1.5 py-0.5 ${
-                      book.status === 'available' ? 'bg-sage/10 text-sage' : 'bg-rose/10 text-rose'
-                    }`}>{book.status}</span>
-                    <span className="text-[0.6rem] text-ink-muted">{book.copies} copies</span>
+                      item.status === 'available' ? 'bg-sage/10 text-sage' : 'bg-rose/10 text-rose'
+                    }`}>{item.status}</span>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1 flex-shrink-0">
-                  <Link href={`/admin/books/${book.id}`} className="text-xs text-sage hover:text-sage-light underline">
+                  <Link href={`/admin/linens/${item.id}/edit`} className="text-xs text-sage hover:text-sage-light underline">
                     Edit
                   </Link>
-                  <button onClick={() => handleDelete(book.id)} className="text-xs text-rose hover:text-rose/80 underline">
+                  <button onClick={() => handleDelete(item.id)} className="text-xs text-rose hover:text-rose/80 underline">
                     Delete
                   </button>
                 </div>
               </div>
             ))}
             {filtered.length === 0 && (
-              <p className="text-center py-8 text-ink-muted italic">No books found</p>
+              <p className="text-center py-8 text-ink-muted italic">No linens yet. Click "+ Add Linen" to add your first piece.</p>
             )}
           </div>
 
@@ -133,38 +129,40 @@ export default function AdminBooksPage() {
                 <tr className="border-b border-line bg-parchment">
                   <th className="text-left p-3 font-heading font-medium">Photo</th>
                   <th className="text-left p-3 font-heading font-medium">Title</th>
-                  <th className="text-left p-3 font-heading font-medium">Author</th>
+                  <th className="text-left p-3 font-heading font-medium">Material</th>
+                  <th className="text-left p-3 font-heading font-medium">Dimensions</th>
                   <th className="text-left p-3 font-heading font-medium">Price</th>
-                  <th className="text-left p-3 font-heading font-medium">Copies</th>
                   <th className="text-left p-3 font-heading font-medium">Status</th>
                   <th className="text-left p-3 font-heading font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(book => (
-                  <tr key={book.id} className="border-b border-line hover:bg-parchment/50">
+                {filtered.map(item => (
+                  <tr key={item.id} className="border-b border-line hover:bg-parchment/50">
                     <td className="p-3">
-                      <div className="w-10 h-10 relative">
-                        <Image src={book.image_url} alt="" fill className="object-cover" sizes="40px" />
+                      <div className="w-10 h-10 relative bg-parchment">
+                        {item.image_url && (
+                          <Image src={item.image_url} alt="" fill className="object-cover" sizes="40px" />
+                        )}
                       </div>
                     </td>
-                    <td className="p-3 font-heading font-medium max-w-[200px] truncate">{book.title}</td>
-                    <td className="p-3 text-ink-muted">{book.author}</td>
-                    <td className="p-3 font-heading text-bark">฿{book.price.toLocaleString()}</td>
-                    <td className="p-3">{book.copies}</td>
+                    <td className="p-3 font-heading font-medium max-w-[240px] truncate">{item.title}</td>
+                    <td className="p-3 text-ink-muted">{item.material || '—'}</td>
+                    <td className="p-3 text-ink-muted">{formatDimensions(item)}</td>
+                    <td className="p-3 font-heading text-bark">฿{item.price.toLocaleString()}</td>
                     <td className="p-3">
                       <span className={`text-xs px-2 py-0.5 ${
-                        book.status === 'available' ? 'bg-sage/10 text-sage' : 'bg-rose/10 text-rose'
+                        item.status === 'available' ? 'bg-sage/10 text-sage' : 'bg-rose/10 text-rose'
                       }`}>
-                        {book.status}
+                        {item.status}
                       </span>
                     </td>
                     <td className="p-3">
                       <div className="flex gap-2">
-                        <Link href={`/admin/books/${book.id}`} className="text-xs text-sage hover:text-sage-light underline">
+                        <Link href={`/admin/linens/${item.id}/edit`} className="text-xs text-sage hover:text-sage-light underline">
                           Edit
                         </Link>
-                        <button onClick={() => handleDelete(book.id)} className="text-xs text-rose hover:text-rose/80 underline">
+                        <button onClick={() => handleDelete(item.id)} className="text-xs text-rose hover:text-rose/80 underline">
                           Delete
                         </button>
                       </div>
@@ -174,7 +172,7 @@ export default function AdminBooksPage() {
               </tbody>
             </table>
             {filtered.length === 0 && (
-              <p className="text-center py-8 text-ink-muted italic">No books found</p>
+              <p className="text-center py-8 text-ink-muted italic">No linens yet. Click "+ Add Linen" to add your first piece.</p>
             )}
           </div>
         </div>

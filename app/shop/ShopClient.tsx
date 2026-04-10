@@ -97,7 +97,16 @@ export default function ShopClient({
         </div>
       )}
 
-      {filtered.length === 0 ? (
+      {books.length === 0 ? (
+        <div className="text-center py-20 max-w-md mx-auto">
+          <p className="text-4xl mb-4">🌿</p>
+          <p className="font-heading text-xl text-ink mb-2">We&apos;ll be right back</p>
+          <p className="text-sm text-ink-muted italic mb-6">Our collection is temporarily unavailable. Please check back in a few minutes.</p>
+          <button onClick={() => window.location.reload()} className="text-xs px-5 py-2 border border-moss text-moss hover:bg-moss hover:text-parchment transition-all font-heading">
+            Try Again
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
         <p className="text-center text-ink-muted italic py-10">{t('noResults')} 🌿</p>
       ) : (
         <BookGrid books={filtered} />

@@ -5,11 +5,14 @@ import { writeFile, unlink, readFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import path from 'path'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/admin-auth'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
+  const admin = await requireAdmin(req)
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const inputPath = path.join(tmpdir(), `obs-vid-in-${Date.now()}`)
   const outputPath = path.join(tmpdir(), `obs-vid-out-${Date.now()}.mp4`)
 

@@ -11,7 +11,7 @@ export const CATEGORIES: Category[] = [
   { id: 'fairytale', en: 'Fairy Tales & Fantasy', th: 'นิทานและแฟนตาซี', icon: '🧚' },
   { id: 'art-illustration', en: 'Art, Sketchbooks & Illustration', th: 'ศิลปะ สมุดสเก็ตช์ และภาพประกอบ', icon: '🎨' },
   { id: 'rare-items', en: 'Rare Items', th: 'Rare Items', icon: '💎' },
-  { id: 'embroidery-fabric', en: 'Embroidery Fabric', th: 'ผ้าปักและงานปักเย็บ', icon: '🧵' },
+  { id: 'embroidery-fabric', en: 'Vintage Linens & Embroidery', th: 'ผ้าปักและงานปักวินเทจ', icon: '🧵' },
   { id: 'sale', en: 'Sale', th: 'ลดราคา', icon: '🏷️' },
 ]
 
@@ -68,7 +68,7 @@ export const TX: Record<string, Record<Lang, string>> = {
   addToCart: { en: 'Add to Cart', th: 'เพิ่มลงตะกร้า' },
   inCart: { en: 'In Cart', th: 'อยู่ในตะกร้า' },
   sold: { en: 'SOLD', th: 'ขายแล้ว' },
-  books: { en: 'books', th: 'เล่ม' },
+  books: { en: 'items', th: 'ชิ้น' },
 
   // Checkout
   checkoutTitle: { en: 'Checkout', th: 'ชำระเงิน' },
@@ -140,6 +140,16 @@ export const TX: Record<string, Record<Lang, string>> = {
   copies: { en: 'copies left', th: 'เหลือ' },
   bookDetails: { en: 'Book Details', th: 'รายละเอียดหนังสือ' },
 
+  // Textile / linen product page
+  linenDetails: { en: 'Linen Details', th: 'รายละเอียดผ้า' },
+  aboutThisPiece: { en: 'About this piece', th: 'เกี่ยวกับชิ้นนี้' },
+  conditionDetails: { en: 'Condition Note', th: 'รายละเอียดสภาพ' },
+  linenHonest: { en: 'All linens honestly graded and carefully photographed', th: 'ผ้าทุกผืนประเมินสภาพตามจริงและถ่ายภาพอย่างละเอียด' },
+  specDimensions: { en: 'Dimensions', th: 'ขนาด' },
+  specMaterial: { en: 'Material', th: 'วัสดุ' },
+  specTechnique: { en: 'Technique', th: 'เทคนิค' },
+  specEra: { en: 'Era', th: 'ยุคสมัย' },
+
   // --- NEW KEYS ---
 
   // Homepage
@@ -160,7 +170,7 @@ export const TX: Record<string, Record<Lang, string>> = {
   catFairyTales: { en: 'Once upon a time, books were made to enchant. Illustrated fairy tales, folklore, and fantasy editions with artwork that transports you — timeless stories that deserve to be held, not just read.', th: 'กาลครั้งหนึ่ง หนังสือถูกสร้างมาเพื่อมนต์ขลัง นิทานพื้นบ้าน ตำนาน และแฟนตาซีพร้อมภาพประกอบที่พาคุณเดินทาง เรื่องราวเหนือกาลเวลาที่ควรถูกถือในมือ ไม่ใช่แค่อ่านผ่านตา' },
   catArtJournals: { en: 'Books where illustration is the point. From fine art prints and sketchbooks to botanical drawings, whimsical picture books, and artist monographs — a collection for readers who believe a beautiful image is worth a thousand words, and a thousand words still cannot replace it.', th: 'หนังสือที่ภาพประกอบคือจุดหมายปลายทาง ตั้งแต่ภาพพิมพ์ศิลปะและสมุดสเก็ตช์ ไปจนถึงภาพวาดพฤกษศาสตร์ หนังสือภาพที่มีเสน่ห์ และหนังสือศิลปิน สำหรับผู้อ่านที่เชื่อว่าภาพสวยงามหนึ่งภาพมีค่ามากกว่าคำพันคำ' },
   catRareItems: { en: 'The ones that stop you mid-scroll. First editions, out-of-print treasures, and illustrated volumes so beautiful they belong in a collection. Difficult to find, priced to reflect it — and worth every baht.', th: 'หนังสือที่ทำให้คุณหยุดเลื่อนหน้าจอ ฉบับพิมพ์ครั้งแรก สิ่งพิมพ์ที่หาได้ยาก และหนังสือภาพประกอบที่สวยงามจนสมควรอยู่ในคอลเลคชัน หายาก ราคาสะท้อนคุณค่า — และคุ้มค่าทุกบาท' },
-  catEmbroideryFabric: { en: 'Needlework, textile arts, and the quiet craft of making things by hand. A collection of embroidery pattern books, fabric guides, and illustrated craft volumes for those who find beauty in thread, cloth, and the meditative rhythm of the stitch.', th: 'งานปักเข็ม ศิลปะสิ่งทอ และความงดงามของงานทำมือ คอลเลคชันหนังสือลายปัก คู่มือผ้า และหนังสืองานฝีมือภาพประกอบ สำหรับผู้ที่เห็นความงามในด้าย ผ้า และจังหวะสงบของการปัก' },
+  catEmbroideryFabric: { en: 'Vintage linens, hand embroidery, and the quiet craft of making things by hand. A collection of embroidered tablecloths, runners, and textile pieces alongside pattern books and fabric guides — for those who find beauty in thread, cloth, and the meditative rhythm of the stitch.', th: 'ผ้าลินินวินเทจ งานปักมือ และความงดงามของงานทำมือ คอลเลคชันผ้าปูโต๊ะปักมือ ผ้ารองจาน และผ้าปักวินเทจ พร้อมด้วยหนังสือลายปักและคู่มือผ้า สำหรับผู้ที่เห็นความงามในด้าย ผ้า และจังหวะสงบของการปัก' },
   catSale: { en: 'Dead stock clearance — beautiful books at reduced prices. Each title is one of a kind, so once it is gone, it is gone. A good place to look if you are after something special without the wait.', th: 'เคลียร์สต็อก — หนังสือสวยในราคาพิเศษ แต่ละเล่มมีเพียงเล่มเดียว เมื่อหมดแล้วหมดเลย เหมาะสำหรับผู้ที่มองหาของพิเศษในราคาที่เข้าถึงได้' },
 
   // Product page

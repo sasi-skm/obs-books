@@ -31,13 +31,39 @@ const notoThai = Noto_Sans_Thai({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.obsbooks.com'),
   title: 'OBS Books - The Book Itself Is a Treasure',
   description: 'Curated vintage & used illustrated books - especially flowers & nature. Based in Bangkok, Thailand.',
   keywords: ['used books', 'vintage books', 'botanical books', 'illustrated books', 'Bangkok', 'Thailand', 'OBS Books'],
+  alternates: {
+    canonical: 'https://www.obsbooks.com',
+  },
   openGraph: {
     title: 'OBS Books - The Book Itself Is a Treasure',
-    description: 'Curated vintage & used illustrated books - especially flowers & nature.',
+    description: 'Curated vintage & used illustrated books - especially flowers & nature. Based in Bangkok, Thailand.',
     type: 'website',
+    url: 'https://www.obsbooks.com',
+    siteName: 'OBS Books',
+    images: [
+      {
+        url: '/images/obs-display.png',
+        width: 1200,
+        height: 630,
+        alt: 'OBS Books - Vintage illustrated books collection',
+      },
+    ],
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'OBS Books - The Book Itself Is a Treasure',
+    description: 'Curated vintage & used illustrated books - especially flowers & nature.',
+    images: ['/images/obs-display.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
   },
 }
 

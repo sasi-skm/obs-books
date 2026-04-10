@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/admin-auth'
 
 async function getAdmin() {
   const { supabaseAdmin } = await import('@/lib/supabase-server')
@@ -7,6 +8,9 @@ async function getAdmin() {
 
 // GET /api/admin/reviews?status=pending|all
 export async function GET(req: NextRequest) {
+  const adminUser = await requireAdmin(req)
+  if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
     const admin = await getAdmin()
     const status = req.nextUrl.searchParams.get('status') || 'all'
@@ -32,6 +36,9 @@ export async function GET(req: NextRequest) {
 
 // PATCH /api/admin/reviews - approve or hide a review
 export async function PATCH(req: NextRequest) {
+  const adminUser = await requireAdmin(req)
+  if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
     const admin = await getAdmin()
     const { id, action } = await req.json() // action: 'approve' | 'hide'
@@ -98,6 +105,9 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE /api/admin/reviews
 export async function DELETE(req: NextRequest) {
+  const adminUser = await requireAdmin(req)
+  if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
     const admin = await getAdmin()
     const { id } = await req.json()

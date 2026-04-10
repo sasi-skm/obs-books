@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/admin-auth'
 
 export async function POST(req: NextRequest) {
+  const admin = await requireAdmin(req)
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
     const { id, category } = await req.json()
     if (!id) return NextResponse.json({ error: 'Missing book id' }, { status: 400 })
@@ -19,6 +23,7 @@ export async function POST(req: NextRequest) {
     revalidatePath('/shop')
     revalidatePath(`/book/${id}`)
     if (category) revalidatePath(`/category/${category}`)
+    revalidateTag('books')
 
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {

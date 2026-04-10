@@ -6,8 +6,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Book } from '@/types'
 import { CATEGORIES } from '@/lib/translations'
+import { adminFetch } from '@/lib/admin-fetch'
 import { supabase } from '@/lib/supabase'
-import { SAMPLE_BOOKS } from '@/lib/books-data'
+// No sample books fallback - admin always reads from Supabase
 
 const CONDITIONS = ['Like New', 'Very Good', 'Good', 'Well Read']
 const COVER_TYPES = ['Hardcover', 'Softcover', 'Paperback', 'Spiral-bound', 'Other']
@@ -114,13 +115,10 @@ export default function EditBookPage() {
 
   const loadBook = async () => {
     let book: Book | null = null
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co') {
-      try {
-        const { data } = await supabase.from('books').select('*').eq('id', bookId).single()
-        if (data) book = data as Book
-      } catch {}
-    }
-    if (!book) book = SAMPLE_BOOKS.find(b => b.id === bookId) || null
+    try {
+      const { data } = await supabase.from('books').select('*').eq('id', bookId).single()
+      if (data) book = data as Book
+    } catch {}
 
     if (book) {
       setForm({
@@ -248,7 +246,7 @@ export default function EditBookPage() {
       // Only send base64 data URLs (newly uploaded), not existing Supabase URLs
       const rawDataUrl = images[0]?.preview?.startsWith('data:') ? images[0].preview : null
       const coverDataUrl = rawDataUrl ? await resizeImageForAI(rawDataUrl) : null
-      const res = await fetch('/api/admin/generate-description', {
+      const res = await adminFetch('/api/admin/generate-description', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -299,24 +297,38 @@ export default function EditBookPage() {
       let finalVideoUrl: string | null = videoSlot.existing || null
 
       if (isSupabase) {
-        const imageResults = await Promise.all(images.filter(s => s.preview).map(async (slot) => {
-          if (!slot.file) return slot.existing || slot.preview
-          const resized = await resizeImage(slot.file, 1600, 0.9)
-          const fd = new FormData()
-          fd.append('file', resized)
-          fd.append('bookId', bookId)
-          const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
-          if (!res.ok) return slot.existing || slot.preview
-          const { url } = await res.json()
-          return (url as string | null) || slot.existing || slot.preview
-        }))
-        finalUrls.push(...imageResults.filter((u): u is string => !!u))
+        // Upload images ONE AT A TIME to preserve correct order
+        const activeSlots = images.filter(s => s.preview)
+        for (const slot of activeSlots) {
+          if (!slot.file) {
+            // Keep existing image URL in its correct position
+            const existingUrl = slot.existing || slot.preview
+            if (existingUrl) finalUrls.push(existingUrl)
+          } else {
+            try {
+              const resized = await resizeImage(slot.file, 1600, 0.9)
+              const fd = new FormData()
+              fd.append('file', resized)
+              fd.append('bookId', bookId)
+              const res = await adminFetch('/api/admin/upload-image', { method: 'POST', body: fd })
+              if (res.ok) {
+                const { url } = await res.json()
+                if (url) finalUrls.push(url)
+                else finalUrls.push(slot.existing || slot.preview)
+              } else {
+                finalUrls.push(slot.existing || slot.preview)
+              }
+            } catch {
+              finalUrls.push(slot.existing || slot.preview)
+            }
+          }
+        }
 
         if (videoSlot.file) {
           const fd = new FormData()
           fd.append('file', videoSlot.file)
           fd.append('bookId', bookId)
-          const res = await fetch('/api/admin/upload-video', { method: 'POST', body: fd })
+          const res = await adminFetch('/api/admin/upload-video', { method: 'POST', body: fd })
           if (res.ok) {
             const { url } = await res.json()
             if (url) finalVideoUrl = url
@@ -379,7 +391,7 @@ export default function EditBookPage() {
       }
 
       // Revalidate storefront cache for affected category pages
-      await fetch('/api/admin/revalidate', {
+      await adminFetch('/api/admin/revalidate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

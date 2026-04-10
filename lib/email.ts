@@ -380,6 +380,217 @@ export async function sendOrderStatusEmail({
   })
 }
 
+// ── Order cancellation email (full) ─────────────────────────────────────────
+export async function sendFullCancellationEmail({
+  to, customerName, orderNumber, items, totalAmount, reason, adminNote, lang,
+}: {
+  to: string
+  customerName: string
+  orderNumber: string
+  items: { title: string; price: number; quantity?: number }[]
+  totalAmount: number
+  reason: string
+  adminNote?: string
+  lang: 'en' | 'th'
+}) {
+  const firstName = customerName.split(' ')[0]
+
+  const reasonTh: Record<string, string> = {
+    'Out of stock': 'สินค้าหมด',
+    'Book condition too poor to sell': 'สภาพหนังสือไม่ผ่านมาตรฐาน',
+  }
+
+  const itemRows = items.map(item =>
+    `<tr>
+      <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;">${item.title}${item.quantity && item.quantity > 1 ? ` x${item.quantity}` : ''}</td>
+      <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;text-align:right;">฿${(item.price * (item.quantity || 1)).toLocaleString()}</td>
+    </tr>`
+  ).join('')
+
+  const noteBox = adminNote
+    ? `<div style="margin:20px 0;padding:14px 16px;background:#fffbf0;border-left:3px solid #e8c35a;">
+        <p style="margin:0 0 6px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;letter-spacing:2px;color:#8a7d65;text-transform:uppercase;">${lang === 'th' ? 'หมายเหตุจากร้าน' : 'Note from OBS Books'}</p>
+        <p style="margin:0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:1.6;color:#4a3f32;">${adminNote}</p>
+      </div>`
+    : ''
+
+  if (lang === 'th') {
+    const content = `
+      ${h1(`คำสั่งซื้อถูกยกเลิก`)}
+      ${divider()}
+      ${p(`เรียน ${firstName}`)}
+      ${p(`เราต้องขออภัยเป็นอย่างยิ่งที่ต้องแจ้งว่าคำสั่งซื้อหมายเลข <strong>${orderNumber}</strong> ของคุณถูกยกเลิกแล้ว ทางร้านต้องขออภัยในความไม่สะดวกด้วยนะคะ`)}
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;padding:16px;background:#fdf8f2;border:1px solid #d6cdb8;">
+        ${itemRows}
+        <tr><td colspan="2" style="padding-top:10px;border-top:1px solid #d6cdb8;"></td></tr>
+        <tr>
+          <td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;">ยอดรวมที่จะคืน</td>
+          <td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;text-align:right;">฿${totalAmount.toLocaleString()}</td>
+        </tr>
+      </table>
+      ${p(`<strong>เหตุผล:</strong> ${reasonTh[reason] || reason}`)}
+      ${noteBox}
+      ${p(`เพื่อรับเงินคืนจำนวน <strong>฿${totalAmount.toLocaleString()}</strong> กรุณาตอบกลับอีเมลนี้ด้วยช่องทางที่คุณลูกค้าสะดวกเพื่อรับเงินคืน`)}
+      ${p(`· ชื่อธนาคาร (เช่น กสิกรไทย, SCB, กรุงเทพ)<br/>· ชื่อเจ้าของบัญชี<br/>· เลขที่บัญชี`)}
+      ${p(`หรือจะส่งรูป QR Code พร้อมเพย์กลับมาทางอีเมลนี้ก็ได้ค่ะ`)}
+      ${p(`ทางร้านจะโอนเงินคืนภายใน 3-5 วันทำการหลังจากได้รับข้อมูลนะคะ`)}
+      ${p(`แล้วกลับมาเลือกชมสินค้าอื่นๆ อีกน้า - มีหนังสือใหม่เข้าร้านอยู่เรื่อยๆ เลยค่ะ 🥰`)}
+      <p style="margin:24px 0 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;">ขอบพระคุณค่ะ<br/>Sasi<br/>OBS Books</p>
+    `
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `คำสั่งซื้อถูกยกเลิก - ${orderNumber}`,
+      html: baseTemplate(content),
+    })
+  } else {
+    const content = `
+      ${h1(`Order Cancelled`)}
+      ${divider()}
+      ${p(`Dear ${firstName},`)}
+      ${p(`We are very sorry to let you know that your order <strong>${orderNumber}</strong> has been cancelled. We understand this is disappointing and we sincerely apologise.`)}
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;padding:16px;background:#fdf8f2;border:1px solid #d6cdb8;">
+        ${itemRows}
+        <tr><td colspan="2" style="padding-top:10px;border-top:1px solid #d6cdb8;"></td></tr>
+        <tr>
+          <td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;">Refund amount</td>
+          <td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;text-align:right;">฿${totalAmount.toLocaleString()}</td>
+        </tr>
+      </table>
+      ${p(`<strong>Reason:</strong> ${reason}`)}
+      ${noteBox}
+      ${p(`To receive your refund of <strong>฿${totalAmount.toLocaleString()}</strong>, please reply to this email with your bank account details:`)}
+      ${p(`· Bank name (e.g. Kasikorn, SCB, Bangkok Bank)<br/>· Account holder name<br/>· Account number`)}
+      ${p(`Or you may send us your PromptPay QR code image as a reply to this email.`)}
+      ${p(`We will transfer the refund within 3-5 business days of receiving your details.`)}
+      ${p(`We hope you will visit us again - new books are added to the shop regularly.`)}
+      <p style="margin:24px 0 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;">Warm regards,<br/>Sasi<br/>OBS Books</p>
+    `
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `Your OBS Books order has been cancelled - ${orderNumber}`,
+      html: baseTemplate(content),
+    })
+  }
+}
+
+// ── Order partial cancellation email ────────────────────────────────────────
+export async function sendPartialCancellationEmail({
+  to, customerName, orderNumber, allItems, cancelledItems, refundAmount, adminNote, lang,
+}: {
+  to: string
+  customerName: string
+  orderNumber: string
+  allItems: { title: string; price: number; quantity?: number; book_id: string }[]
+  cancelledItems: { book_id: string; title: string; price: number; reason: string }[]
+  refundAmount: number
+  adminNote?: string
+  lang: 'en' | 'th'
+}) {
+  const firstName = customerName.split(' ')[0]
+  const cancelledIds = new Set(cancelledItems.map(ci => ci.book_id))
+  const cancelledMap = new Map(cancelledItems.map(ci => [ci.book_id, ci]))
+
+  const reasonTh: Record<string, string> = {
+    'Out of stock': 'สินค้าหมด',
+    'Book condition too poor to sell': 'สภาพหนังสือไม่ผ่านมาตรฐาน',
+  }
+
+  const noteBox = adminNote
+    ? `<div style="margin:20px 0;padding:14px 16px;background:#fffbf0;border-left:3px solid #e8c35a;">
+        <p style="margin:0 0 6px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;letter-spacing:2px;color:#8a7d65;text-transform:uppercase;">${lang === 'th' ? 'หมายเหตุจากร้าน' : 'Note from OBS Books'}</p>
+        <p style="margin:0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:1.6;color:#4a3f32;">${adminNote}</p>
+      </div>`
+    : ''
+
+  const itemRows = allItems.map(item => {
+    const isCancelled = cancelledIds.has(item.book_id)
+    const ci = cancelledMap.get(item.book_id)
+    const qty = item.quantity || 1
+
+    if (isCancelled && ci) {
+      const reasonText = lang === 'th' ? (reasonTh[ci.reason] || ci.reason) : ci.reason
+      const cancelTag = lang === 'th' ? 'ยกเลิก' : 'cancelled'
+      return `<tr>
+        <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;">
+          ${item.title}${qty > 1 ? ` x${qty}` : ''}
+          <span style="display:inline-block;margin-left:6px;padding:1px 6px;background:#fde8e8;color:#b4636e;font-size:10px;border-radius:2px;">${cancelTag}</span>
+          <br/><span style="font-size:11px;color:#8a7d65;font-style:italic;">${reasonText}</span>
+        </td>
+        <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#b4636e;text-align:right;">-฿${(item.price * qty).toLocaleString()}</td>
+      </tr>`
+    } else {
+      const shipTag = lang === 'th' ? 'จัดส่งวันจันทร์' : 'ships Monday'
+      return `<tr>
+        <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;">
+          ${item.title}${qty > 1 ? ` x${qty}` : ''}
+          <span style="display:inline-block;margin-left:6px;padding:1px 6px;background:#eef3ec;color:#4a6741;font-size:10px;border-radius:2px;">${shipTag}</span>
+        </td>
+        <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;text-align:right;">฿${(item.price * qty).toLocaleString()}</td>
+      </tr>`
+    }
+  }).join('')
+
+  const refundLabel = lang === 'th' ? 'ยอดเงินคืนบางส่วน' : 'Partial refund'
+
+  const orderSummary = `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;padding:16px;background:#fdf8f2;border:1px solid #d6cdb8;">
+      ${itemRows}
+      <tr><td colspan="2" style="padding-top:10px;border-top:1px solid #d6cdb8;"></td></tr>
+      <tr>
+        <td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;">${refundLabel}</td>
+        <td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;text-align:right;">฿${refundAmount.toLocaleString()}</td>
+      </tr>
+    </table>`
+
+  if (lang === 'th') {
+    const content = `
+      ${h1(`อัปเดตคำสั่งซื้อ`)}
+      ${divider()}
+      ${p(`เรียน ${firstName}`)}
+      ${p(`เราขอแจ้งให้ทราบว่าสินค้าบางรายการในคำสั่งซื้อหมายเลข <strong>${orderNumber}</strong> ของคุณไม่สามารถจัดส่งได้ ขออภัยในความไม่สะดวกอย่างยิ่งค่ะ`)}
+      ${orderSummary}
+      ${noteBox}
+      ${p(`เพื่อรับเงินคืนจำนวน <strong>฿${refundAmount.toLocaleString()}</strong> กรุณาตอบกลับอีเมลนี้ด้วยช่องทางที่คุณลูกค้าสะดวกเพื่อรับเงินคืน`)}
+      ${p(`· ชื่อธนาคาร (เช่น กสิกรไทย, SCB, กรุงเทพ)<br/>· ชื่อเจ้าของบัญชี<br/>· เลขที่บัญชี`)}
+      ${p(`หรือจะส่งรูป QR Code พร้อมเพย์กลับมาทางอีเมลนี้ก็ได้ค่ะ`)}
+      ${p(`ทางร้านจะโอนเงินคืนภายใน 3-5 วันทำการหลังจากได้รับข้อมูลของคุณ`)}
+      ${p(`หนังสือที่เหลือในคำสั่งซื้อจะถูกจัดส่งในวันจันทร์ที่จะถึงนี้ตามกำหนดค่ะ คุณลูกค้าจะได้รับอีเมลยืนยันการจัดส่งอีกครั้งเมื่อพัสดุออกเดินทางแล้ว`)}
+      ${p(`ทางร้านขอขอบคุณที่เข้าใจและการสนับสนุน OBS Books เสมอมานะคะ 🥰`)}
+      <p style="margin:24px 0 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;">ขอบพระคุณค่ะ<br/>Sasi<br/>OBS Books</p>
+    `
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `อัปเดตคำสั่งซื้อ - ${orderNumber}`,
+      html: baseTemplate(content),
+    })
+  } else {
+    const content = `
+      ${h1(`Order Update`)}
+      ${divider()}
+      ${p(`Dear ${firstName},`)}
+      ${p(`We are writing to let you know that one item in your order <strong>${orderNumber}</strong> unfortunately cannot be fulfilled. We sincerely apologise for the inconvenience.`)}
+      ${orderSummary}
+      ${noteBox}
+      ${p(`To receive your partial refund of <strong>฿${refundAmount.toLocaleString()}</strong>, please reply to this email with your bank account details:`)}
+      ${p(`· Bank name (e.g. Kasikorn, SCB, Bangkok Bank)<br/>· Account holder name<br/>· Account number`)}
+      ${p(`Or you may send us your PromptPay QR code image as a reply to this email.`)}
+      ${p(`We will transfer the refund within 3-5 business days of receiving your details.`)}
+      ${p(`The remaining book(s) in your order will be shipped this coming Monday as scheduled. You will receive a shipping confirmation once they are on their way.`)}
+      ${p(`Thank you for your understanding and continued support of OBS Books.`)}
+      <p style="margin:24px 0 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;">Warm regards,<br/>Sasi<br/>OBS Books</p>
+    `
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `An update on your OBS Books order - ${orderNumber}`,
+      html: baseTemplate(content),
+    })
+  }
+}
+
 // ── PDF flower letter delivery email ─────────────────────────────────────────
 export async function sendFlowerLetterEmail({
   to, name, month, year, pdfUrl,

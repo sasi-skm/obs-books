@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { adminFetch } from '@/lib/admin-fetch'
 
 interface Review {
   id: string
@@ -54,7 +55,7 @@ export default function AdminReviewsPage() {
   const fetchPending = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/reviews?status=pending')
+      const res = await adminFetch('/api/admin/reviews?status=pending')
       const data = await res.json()
       setReviews(Array.isArray(data) ? data : [])
     } catch {}
@@ -64,7 +65,7 @@ export default function AdminReviewsPage() {
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/reviews?status=all')
+      const res = await adminFetch('/api/admin/reviews?status=all')
       const data = await res.json()
       setAllReviews(Array.isArray(data) ? data : [])
     } catch {}
@@ -80,13 +81,13 @@ export default function AdminReviewsPage() {
     setActionLoading(id + action)
     try {
       if (action === 'delete') {
-        await fetch('/api/admin/reviews', {
+        await adminFetch('/api/admin/reviews', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id }),
         })
       } else {
-        await fetch('/api/admin/reviews', {
+        await adminFetch('/api/admin/reviews', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id, action }),

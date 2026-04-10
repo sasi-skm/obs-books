@@ -31,7 +31,7 @@ async function fetchRating(bookTitle: string): Promise<{ avg: number; count: num
   }
 }
 
-export default function BookCard({ book }: { book: Book }) {
+export default function BookCard({ book, priority = false }: { book: Book; priority?: boolean }) {
   const [rating, setRating] = useState<{ avg: number; count: number } | null>(null)
 
   useEffect(() => {
@@ -90,6 +90,7 @@ export default function BookCard({ book }: { book: Book }) {
             fill
             className="object-cover transition-transform duration-400 group-hover:scale-[1.04]"
             sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw"
+            priority={priority}
           />
           {isSold && (
             <div className="absolute top-2.5 right-2.5 bg-rose text-white text-xs px-2 py-0.5 font-heading">

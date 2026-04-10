@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { adminFetch } from '@/lib/admin-fetch'
 
 interface Voucher {
   id: string
@@ -32,7 +33,7 @@ export default function AdminVouchersPage() {
   const loadVouchers = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/vouchers')
+      const res = await adminFetch('/api/admin/vouchers')
       if (res.ok) {
         const { vouchers: data } = await res.json()
         if (data) setVouchers(data as Voucher[])
@@ -49,7 +50,7 @@ export default function AdminVouchersPage() {
     setSuccess('')
 
     try {
-      const res = await fetch('/api/admin/vouchers', {
+      const res = await adminFetch('/api/admin/vouchers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -75,7 +76,7 @@ export default function AdminVouchersPage() {
   }
 
   const handleToggle = async (voucher: Voucher) => {
-    await fetch('/api/admin/vouchers', {
+    await adminFetch('/api/admin/vouchers', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: voucher.id, active: !voucher.active }),
