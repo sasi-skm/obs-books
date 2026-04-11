@@ -183,9 +183,13 @@ export async function GET(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co') {
     try {
       const { supabaseAdmin } = await import('@/lib/supabase-server')
+      // Pull extra fields (id, customer_name/email) ONLY so the lazy-
+      // expire helper has what it needs. They are NOT returned to the
+      // client — the response below is still the non-PII subset.
       const { data: order, error } = await supabaseAdmin
         .from('orders')
         .select(`
+          id,
           order_number,
           order_status,
           payment_status,
@@ -197,7 +201,10 @@ export async function GET(req: NextRequest) {
           courier,
           created_at,
           cancelled_items,
-          items:order_items(id, title, price, image_url, condition, quantity)
+          customer_name,
+          customer_email,
+          customer_phone,
+          items:order_items(id, book_id, title, price, image_url, condition, quantity)
         `)
         .eq('order_number', orderNumber)
         .single()
@@ -206,11 +213,30 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Order not found' }, { status: 404 })
       }
 
-      // Explicit pick of safe fields — defense in depth in case the select
-      // above is ever loosened by accident.
+      // Lazy-expire before returning so the customer sees the real
+      // status if this order is past its 24h payment window.
+      let effectiveStatus = order.order_status
+      let effectiveCancelled = order.cancelled_items
+      if (order.payment_status === 'pending' && order.order_status === 'new') {
+        const { maybeExpireOrder } = await import('@/lib/expire-order')
+        const cancelled = await maybeExpireOrder(supabaseAdmin, order)
+        if (cancelled) {
+          effectiveStatus = 'cancelled'
+          effectiveCancelled = (order.items || []).map((it: { book_id: string; title: string; price: number; quantity?: number }) => ({
+            book_id: it.book_id,
+            title: it.title,
+            price: (Number(it.price) || 0) * (Number(it.quantity) || 1),
+            reason: 'auto-cancelled: no payment received within 24 hours',
+          }))
+        }
+      }
+
+      // Explicit pick of safe fields — defense in depth. No PII ever
+      // leaves this endpoint even though we selected it internally
+      // for the expire check.
       return NextResponse.json({
         order_number: order.order_number,
-        order_status: order.order_status,
+        order_status: effectiveStatus,
         payment_status: order.payment_status,
         payment_method: order.payment_method,
         total_amount: order.total_amount,
@@ -219,8 +245,15 @@ export async function GET(req: NextRequest) {
         tracking_number: order.tracking_number,
         courier: order.courier,
         created_at: order.created_at,
-        cancelled_items: order.cancelled_items,
-        items: order.items,
+        cancelled_items: effectiveCancelled,
+        items: (order.items || []).map((it: { id: string; title: string; price: number; image_url?: string; condition?: string; quantity?: number }) => ({
+          id: it.id,
+          title: it.title,
+          price: it.price,
+          image_url: it.image_url,
+          condition: it.condition,
+          quantity: it.quantity,
+        })),
       })
     } catch (err) {
       console.error('[api/orders GET] failed:', err)
