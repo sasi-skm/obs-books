@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, Suspense } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useLang } from '@/components/layout/LanguageContext'
@@ -228,6 +229,103 @@ function TrackPageInner() {
                 )
               })}
             </div>
+
+            {/* Payment required — show QR / bank details + upload-slip CTA
+                for any order that has not yet been paid or confirmed. */}
+            {(order.payment_status === 'pending' || order.payment_status === 'uploaded') && order.order_status !== 'cancelled' && (
+              <div
+                className="mb-4 p-4 border"
+                style={{
+                  background: order.payment_status === 'uploaded' ? '#eef3ec' : '#fdf8f2',
+                  borderColor: order.payment_status === 'uploaded' ? '#b8ccad' : '#e8c4b0',
+                }}
+              >
+                {order.payment_status === 'uploaded' ? (
+                  <div className="text-center">
+                    <p className="text-sm font-heading mb-1" style={{ color: '#4a6741' }}>
+                      {lang === 'th' ? '✓ ได้รับสลิปแล้ว' : '✓ Payment slip received'}
+                    </p>
+                    <p className="text-xs italic" style={{ color: '#6b5e48' }}>
+                      {lang === 'th'
+                        ? 'เรากำลังตรวจสอบการชำระเงินของคุณ คุณจะได้รับการยืนยันโดยเร็ว'
+                        : 'We are reviewing your payment. You will receive confirmation shortly.'}
+                    </p>
+                    <Link
+                      href={`/slip-upload/${order.order_number}`}
+                      className="inline-block mt-3 text-[11px] px-4 py-1.5 border border-sage text-sage hover:bg-sage hover:text-offwhite transition-colors font-heading"
+                    >
+                      {lang === 'th' ? 'อัปโหลดสลิปใหม่' : 'Re-upload slip'}
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs uppercase tracking-widest mb-3 font-heading" style={{ color: '#9b4a2a' }}>
+                      ⚠ {lang === 'th' ? 'รอการชำระเงิน' : 'Payment Required'}
+                    </p>
+                    {order.payment_method === 'promptpay' ? (
+                      <div className="text-center">
+                        <p className="text-xs text-ink-muted mb-1">{t('promptpayTitle')}</p>
+                        <p className="text-xs text-ink-muted mb-1">ศศิวิมล แก้วกมล (Sasiwimol Kaewkamol)</p>
+                        <p className="font-heading text-base font-semibold text-bark mb-3">
+                          {t('promptpayAmount')}:{' '}
+                          {order.currency === 'USD' ? '$' : '฿'}
+                          {order.total_amount.toLocaleString()}
+                        </p>
+                        <Image
+                          src="/images/promptpay-qr.jpg"
+                          alt="PromptPay QR"
+                          width={220}
+                          height={220}
+                          className="mx-auto mb-2"
+                        />
+                        <p className="text-[11px] text-ink-muted italic">{t('promptpayInstructions')}</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="p-3 bg-cream border border-line">
+                          <p className="text-xs font-heading mb-1">KBank / กสิกรไทย</p>
+                          <p className="text-xs text-ink-muted">
+                            {t('bankAccount')}: <span className="font-mono text-ink">021-3-24417-5</span>
+                          </p>
+                          <p className="text-xs text-ink-muted">
+                            {t('bankHolder')}: <span className="text-ink">ศศิวิมล แก้วกมล</span>
+                          </p>
+                        </div>
+                        <div className="p-3 bg-cream border border-line">
+                          <p className="text-xs font-heading mb-1">Krungsri / กรุงศรี</p>
+                          <p className="text-xs text-ink-muted">
+                            {t('bankAccount')}: <span className="font-mono text-ink">719-1-26847-2</span>
+                          </p>
+                          <p className="text-xs text-ink-muted">
+                            {t('bankHolder')}: <span className="text-ink">ศศิวิมล แก้วกมล</span>
+                          </p>
+                        </div>
+                        <div className="text-center py-1">
+                          <span className="text-xs text-ink-muted">{t('promptpayAmount')}: </span>
+                          <span className="font-heading text-base font-bold text-bark">
+                            {order.currency === 'USD' ? '$' : '฿'}
+                            {order.total_amount.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="mt-4 pt-3 border-t text-center" style={{ borderColor: '#e8c4b0' }}>
+                      <Link
+                        href={`/slip-upload/${order.order_number}`}
+                        className="inline-block font-heading text-xs px-5 py-2.5 bg-sage text-offwhite hover:bg-sage-light transition-colors"
+                      >
+                        📎 {lang === 'th' ? 'อัปโหลดสลิปการชำระเงิน' : 'Upload Payment Slip'}
+                      </Link>
+                      <p className="text-[11px] text-ink-muted italic mt-2">
+                        {lang === 'th'
+                          ? 'หลังจากชำระเงินแล้ว อัปโหลดภาพสลิปเพื่อให้เรายืนยันคำสั่งซื้อของคุณ'
+                          : 'After paying, upload your slip so we can confirm your order.'}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Tracking info */}
             {order.tracking_number && order.courier && (

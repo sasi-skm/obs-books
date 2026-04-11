@@ -106,6 +106,7 @@ export const TX: Record<string, Record<Lang, string>> = {
   statusNew: { en: 'Order Received', th: 'รับคำสั่งซื้อแล้ว' },
   statusPending: { en: 'Awaiting Payment', th: 'รอชำระเงิน' },
   statusUploaded: { en: 'Slip Uploaded', th: 'อัพโหลดสลิปแล้ว' },
+  statusPaid: { en: 'Payment Confirmed', th: 'ชำระเงินแล้ว' },
   statusConfirmed: { en: 'Payment Confirmed', th: 'ยืนยันชำระเงินแล้ว' },
   statusPacking: { en: 'Packing', th: 'กำลังแพ็คสินค้า' },
   statusShipped: { en: 'Shipped', th: 'จัดส่งแล้ว' },
