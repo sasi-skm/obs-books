@@ -112,6 +112,21 @@ export const TX: Record<string, Record<Lang, string>> = {
   statusShipped: { en: 'Shipped', th: 'จัดส่งแล้ว' },
   statusDelivered: { en: 'Delivered', th: 'ได้รับสินค้าแล้ว' },
 
+  // 24-hour payment window warnings
+  pay24hHeading: { en: 'Complete payment within 24 hours', th: 'กรุณาชำระเงินภายใน 24 ชั่วโมง' },
+  pay24hBody: {
+    en: 'Orders that are not paid within 24 hours are automatically cancelled and the books return to the shop for other customers.',
+    th: 'คำสั่งซื้อที่ไม่ได้รับการชำระเงินภายใน 24 ชั่วโมงจะถูกยกเลิกโดยอัตโนมัติ และหนังสือจะกลับไปอยู่ในร้านให้ลูกค้าท่านอื่นสามารถสั่งซื้อได้',
+  },
+  pay24hExpired: {
+    en: 'This order has expired',
+    th: 'คำสั่งซื้อนี้หมดเวลาแล้ว',
+  },
+  pay24hRemaining: {
+    en: 'Time remaining',
+    th: 'เวลาที่เหลือ',
+  },
+
   // PromptPay
   promptpayTitle: { en: 'Scan to Pay with PromptPay', th: 'สแกนจ่ายด้วยพร้อมเพย์' },
   promptpayAmount: { en: 'Amount', th: 'จำนวนเงิน' },

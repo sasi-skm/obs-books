@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation'
 import { useLang } from '@/components/layout/LanguageContext'
 import { COURIERS, getCourierName } from '@/lib/tracking'
 import { getRecentOrders, removeRecentOrder, RecentOrder } from '@/lib/recent-orders'
+import PaymentCountdown from '@/components/storefront/PaymentCountdown'
 import { Order } from '@/types'
 
 interface TrackingEvent {
@@ -261,6 +262,14 @@ function TrackPageInner() {
                   <>
                     <p className="text-xs uppercase tracking-widest mb-3 font-heading" style={{ color: '#9b4a2a' }}>
                       ⚠ {lang === 'th' ? 'รอการชำระเงิน' : 'Payment Required'}
+                    </p>
+                    {order.created_at && (
+                      <div className="mb-3">
+                        <PaymentCountdown createdAt={order.created_at} />
+                      </div>
+                    )}
+                    <p className="text-[11px] text-ink-muted italic mb-3 leading-snug text-center">
+                      {t('pay24hBody')}
                     </p>
                     {order.payment_method === 'promptpay' ? (
                       <div className="text-center">

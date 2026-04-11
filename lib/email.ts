@@ -223,6 +223,11 @@ export async function sendOrderConfirmationEmail({
       </tr>
     </table>
     ${paymentInstructions}
+    <div style="margin:16px 0;padding:12px 14px;background:#fdf0eb;border-left:3px solid #9b4a2a;">
+      <p style="margin:0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#7a3a1f;line-height:1.6;">
+        <strong>⏰ Please complete payment within 24 hours.</strong> Orders that are not paid within 24 hours are automatically cancelled and the books return to the shop for other customers.
+      </p>
+    </div>
     ${p(`<strong>Shipping to:</strong> ${shippingAddress.replace(/\n/g, ', ')}`)}
     ${p(`After paying, please upload your payment slip so we can confirm your order:`)}
     ${ctaButton('Upload Payment Slip', `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.obsbooks.com'}/slip-upload/${orderNumber}`)}
@@ -618,6 +623,57 @@ export async function sendFlowerLetterEmail({
     from: FROM_EMAIL,
     to,
     subject: `Your Flower Letter is here 🌸 — ${month} ${year}`,
+    html: baseTemplate(content),
+  })
+}
+
+// ── Auto-cancellation email (24h unpaid) ──────────────────────────────────
+export async function sendAutoCancellationEmail({
+  to, customerName, orderNumber, totalAmount, currency, items,
+}: {
+  to: string
+  customerName: string
+  orderNumber: string
+  totalAmount: number
+  currency: 'THB' | 'USD'
+  items: { title: string; price: number; quantity: number }[]
+}) {
+  const symbol = currency === 'USD' ? '$' : '฿'
+  const itemRows = items.map(item =>
+    `<tr>
+      <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;">${item.title}${item.quantity > 1 ? ` ×${item.quantity}` : ''}</td>
+      <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;text-align:right;">${symbol}${(item.price * item.quantity).toLocaleString()}</td>
+    </tr>`
+  ).join('')
+
+  const content = `
+    ${h1(`A little note about your order, ${customerName} 🌿`)}
+    ${divider()}
+    ${p(`We did not receive your payment for order <strong>${orderNumber}</strong> within 24 hours, so the order has been automatically cancelled and the books have been returned to our shelves for other readers.`)}
+    ${p(`No payment was taken from you.`)}
+    <p style="margin:0 0 6px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;letter-spacing:2px;color:#8a7d65;text-transform:uppercase;">Cancelled Order</p>
+    <p style="margin:0 0 14px;font-family:'Georgia',serif;font-size:20px;color:#4a6741;font-weight:400;">${orderNumber}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:4px;">
+      ${itemRows}
+      <tr><td colspan="2" style="padding-top:10px;border-top:1px solid #d6cdb8;"></td></tr>
+      <tr>
+        <td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;">Total</td>
+        <td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;text-align:right;">${symbol}${totalAmount.toLocaleString()}</td>
+      </tr>
+    </table>
+    <div style="margin:22px 0;padding:14px;background:#eef3ec;border-left:3px solid #4a6741;">
+      <p style="margin:0 0 6px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;letter-spacing:2px;color:#4a6741;text-transform:uppercase;">Still want these books?</p>
+      <p style="margin:0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;">
+        They are back in the shop right now. Feel free to re-order — we will be happy to send them your way.
+      </p>
+    </div>
+    ${ctaButton('Back to the Shop', `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.obsbooks.com'}/shop`)}
+    <p style="margin:24px 0 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#8a7d65;font-style:italic;">With warm wishes from Bangkok — Sasi at OBS Books 🌿</p>
+  `
+  await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: `Order ${orderNumber} cancelled — payment not received`,
     html: baseTemplate(content),
   })
 }

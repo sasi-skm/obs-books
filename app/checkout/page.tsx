@@ -460,6 +460,13 @@ export default function CheckoutPage() {
             </div>
           )}
 
+          {/* 24-hour payment window warning — always shown on the done
+              screen so the customer knows the clock is ticking. */}
+          <div className="mt-4 px-4 py-3 border-l-4 border-rose bg-rose/5">
+            <p className="font-heading text-sm text-rose mb-1">⏰ {t('pay24hHeading')}</p>
+            <p className="text-xs text-ink-light leading-relaxed">{t('pay24hBody')}</p>
+          </div>
+
           {/* If the slip upload failed mid-checkout (or if the customer skipped it),
               always show a clear link to the public slip upload page so they can
               send it at any time without needing an account. */}
@@ -823,6 +830,12 @@ export default function CheckoutPage() {
 
         {step === 'payment' && (
           <div>
+            {/* 24-hour payment window warning */}
+            <div className="mb-4 px-4 py-3 border-l-4 border-rose bg-rose/5">
+              <p className="font-heading text-sm text-rose mb-1">⏰ {t('pay24hHeading')}</p>
+              <p className="text-xs text-ink-light leading-relaxed">{t('pay24hBody')}</p>
+            </div>
+
             {/* Payment method selector */}
             <div className="mb-6">
               <label className="block font-heading text-sm mb-2">{t('payMethod')}</label>

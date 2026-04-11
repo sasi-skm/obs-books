@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     const { supabaseAdmin } = await import('@/lib/supabase-server')
     const { data, error } = await supabaseAdmin
       .from('orders')
-      .select('order_number, total_amount, payment_method, payment_status, currency')
+      .select('order_number, total_amount, payment_method, payment_status, currency, created_at, order_status')
       .eq('order_number', orderNumber)
       .single()
 

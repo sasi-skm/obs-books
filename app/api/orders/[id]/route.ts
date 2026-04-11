@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { restoreStock } from '@/lib/restore-stock'
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params
@@ -111,10 +112,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   if (body.action === 'cancel') {
-    // Only allow cancelling orders that are new + pending payment
+    // Only allow cancelling orders that are new + pending payment.
+    // Fetch with items so we can restore stock atomically.
     const { data: order, error: fetchError } = await supabaseAdmin
       .from('orders')
-      .select('id, order_status, payment_status')
+      .select('id, order_status, payment_status, items:order_items(book_id, condition, quantity)')
       .eq('id', id)
       .single()
 
@@ -133,6 +135,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Restore inventory so the books become available to other customers.
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const items = (order.items || []) as any[]
+      const result = await restoreStock(supabaseAdmin, items.map(i => ({
+        book_id: i.book_id,
+        condition: i.condition,
+        quantity: i.quantity,
+      })))
+      if (result.failures.length > 0) {
+        console.error('[orders/cancel] stock restore partial failures:', result.failures)
+      }
+    } catch (restoreErr) {
+      console.error('[orders/cancel] restoreStock threw:', restoreErr)
     }
 
     return NextResponse.json({ success: true })
@@ -191,6 +209,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+      // Restore stock for every item in the order.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await restoreStock(supabaseAdmin, allItems.map((it: any) => ({
+          book_id: it.book_id,
+          condition: it.condition,
+          quantity: it.quantity,
+        })))
+        if (result.failures.length > 0) {
+          console.error('[admin_cancel full] stock restore partial failures:', result.failures)
+        }
+      } catch (restoreErr) {
+        console.error('[admin_cancel full] restoreStock threw:', restoreErr)
+      }
+
       // Send full cancellation email
       if (order.customer_email) {
         try {
@@ -228,6 +261,23 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         .eq('id', id)
 
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+      // Restore stock for the subset that was cancelled. cancelled_items
+      // doesn't carry condition/quantity — look them up from allItems so
+      // we restore the exact condition and qty the customer had reserved.
+      try {
+        const cancelledBookIds = new Set(cancelled_items.map(ci => ci.book_id))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const itemsToRestore = (allItems as any[])
+          .filter(it => cancelledBookIds.has(it.book_id))
+          .map(it => ({ book_id: it.book_id, condition: it.condition, quantity: it.quantity }))
+        const result = await restoreStock(supabaseAdmin, itemsToRestore)
+        if (result.failures.length > 0) {
+          console.error('[admin_cancel partial] stock restore partial failures:', result.failures)
+        }
+      } catch (restoreErr) {
+        console.error('[admin_cancel partial] restoreStock threw:', restoreErr)
+      }
 
       // Send partial cancellation email
       if (order.customer_email) {

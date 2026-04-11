@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import PaymentCountdown from '@/components/storefront/PaymentCountdown'
+import { useLang } from '@/components/layout/LanguageContext'
 
 interface OrderSummary {
   order_number: string
@@ -10,9 +12,12 @@ interface OrderSummary {
   payment_method: 'promptpay' | 'transfer'
   payment_status: 'pending' | 'uploaded' | 'confirmed'
   currency?: 'THB' | 'USD'
+  created_at?: string
+  order_status?: string
 }
 
 export default function SlipUploadClient({ orderNumber }: { orderNumber: string }) {
+  const { t } = useLang()
   const [order, setOrder] = useState<OrderSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -151,6 +156,14 @@ export default function SlipUploadClient({ orderNumber }: { orderNumber: string 
           </div>
         ) : (
           <div className="border border-sand p-6 bg-offwhite">
+            {order.created_at && order.payment_status === 'pending' && (
+              <div className="mb-4">
+                <PaymentCountdown createdAt={order.created_at} />
+                <p className="text-[11px] text-ink-muted italic mt-2 leading-snug text-center">
+                  {t('pay24hBody')}
+                </p>
+              </div>
+            )}
             <p className="text-sm text-ink-muted mb-4">
               After paying via {order.payment_method === 'promptpay' ? 'PromptPay' : 'bank transfer'},
               upload a screenshot of your payment confirmation so we can confirm your order.
