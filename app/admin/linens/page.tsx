@@ -118,7 +118,7 @@ export default function AdminLinensPage() {
               </div>
             ))}
             {filtered.length === 0 && (
-              <p className="text-center py-8 text-ink-muted italic">No linens yet. Click "+ Add Linen" to add your first piece.</p>
+              <p className="text-center py-8 text-ink-muted italic">No linens yet. Click &ldquo;+ Add Linen&rdquo; to add your first piece.</p>
             )}
           </div>
 
@@ -172,7 +172,7 @@ export default function AdminLinensPage() {
               </tbody>
             </table>
             {filtered.length === 0 && (
-              <p className="text-center py-8 text-ink-muted italic">No linens yet. Click "+ Add Linen" to add your first piece.</p>
+              <p className="text-center py-8 text-ink-muted italic">No linens yet. Click &ldquo;+ Add Linen&rdquo; to add your first piece.</p>
             )}
           </div>
         </div>
