@@ -38,7 +38,7 @@ npm run dev
 
 ## How to Deploy
 ```bash
-npx vercel --yes --prod --scope julians-projects-0e1b3890
+npx vercel --yes --prod --scope sasiwimolkaewkamol-7306s-projects
 ```
 
 ## Database
