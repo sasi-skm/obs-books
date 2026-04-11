@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Book } from '@/types'
 import { CATEGORIES, getCategoryName } from '@/lib/translations'
 import { useLang } from '@/components/layout/LanguageContext'
@@ -17,6 +17,17 @@ export default function ShopClient({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [authorFilter, setAuthorFilter] = useState(initialAuthorFilter || '')
+
+  // If the server rendered an empty grid (Supabase was slow or in cold start
+  // when the page was built), automatically retry the RSC fetch after 6s so
+  // the visitor recovers without touching anything.
+  useEffect(() => {
+    if (books.length > 0) return
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined') window.location.reload()
+    }, 6000)
+    return () => clearTimeout(timer)
+  }, [books.length])
 
   const filtered = books.filter(b => {
     if (selectedCategory && b.category !== selectedCategory) return false
@@ -100,10 +111,15 @@ export default function ShopClient({
       {books.length === 0 ? (
         <div className="text-center py-20 max-w-md mx-auto">
           <p className="text-4xl mb-4">🌿</p>
-          <p className="font-heading text-xl text-ink mb-2">We&apos;ll be right back</p>
-          <p className="text-sm text-ink-muted italic mb-6">Our collection is temporarily unavailable. Please check back in a few minutes.</p>
+          <p className="font-heading text-xl text-ink mb-2">Loading our collection...</p>
+          <p className="text-sm text-ink-muted italic mb-6">One moment — we&apos;re fetching the latest books for you.</p>
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className="inline-block w-2 h-2 bg-moss rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+            <span className="inline-block w-2 h-2 bg-moss rounded-full animate-pulse" style={{ animationDelay: '200ms' }} />
+            <span className="inline-block w-2 h-2 bg-moss rounded-full animate-pulse" style={{ animationDelay: '400ms' }} />
+          </div>
           <button onClick={() => window.location.reload()} className="text-xs px-5 py-2 border border-moss text-moss hover:bg-moss hover:text-parchment transition-all font-heading">
-            Try Again
+            Refresh Now
           </button>
         </div>
       ) : filtered.length === 0 ? (

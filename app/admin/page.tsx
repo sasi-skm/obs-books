@@ -22,21 +22,46 @@ export default function AdminDashboard() {
   const loadStats = async () => {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co') {
       try {
-        const [ordersRes, booksRes] = await Promise.all([
-          supabase.from('orders').select('order_status, payment_status, total_amount'),
-          supabase.from('books').select('copies, status'),
+        // Head-only count queries scale with O(1) payload instead of pulling
+        // every row. Revenue still needs the rows, but narrowed to the
+        // confirmed ones only.
+        const [
+          newOrdersRes,
+          awaitingShipmentRes,
+          lowStockRes,
+          revenueRes,
+        ] = await Promise.all([
+          supabase
+            .from('orders')
+            .select('id', { count: 'exact', head: true })
+            .eq('order_status', 'new'),
+          supabase
+            .from('orders')
+            .select('id', { count: 'exact', head: true })
+            .eq('payment_status', 'confirmed')
+            .eq('order_status', 'paid'),
+          supabase
+            .from('books')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'available')
+            .lte('copies', 1),
+          supabase
+            .from('orders')
+            .select('total_amount')
+            .eq('payment_status', 'confirmed'),
         ])
 
-        const orders = ordersRes.data || []
-        const books = booksRes.data || []
+        const revenueRows = (revenueRes.data || []) as { total_amount: number }[]
 
         setStats({
-          newOrders: orders.filter(o => o.order_status === 'new').length,
-          awaitingShipment: orders.filter(o => o.payment_status === 'confirmed' && o.order_status === 'paid').length,
-          lowStock: books.filter(b => b.status === 'available' && b.copies <= 1).length,
-          totalRevenue: orders.filter(o => o.payment_status === 'confirmed').reduce((s, o) => s + (o.total_amount || 0), 0),
+          newOrders: newOrdersRes.count ?? 0,
+          awaitingShipment: awaitingShipmentRes.count ?? 0,
+          lowStock: lowStockRes.count ?? 0,
+          totalRevenue: revenueRows.reduce((s, o) => s + (o.total_amount || 0), 0),
         })
-      } catch {}
+      } catch (err) {
+        console.error('[admin/page] loadStats failed:', err)
+      }
     }
     setLoading(false)
   }

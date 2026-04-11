@@ -4,6 +4,9 @@ import { CATEGORIES } from '@/lib/translations'
 import HomeClient from './HomeClient'
 
 export const revalidate = 60
+// Give Supabase room to cold-start. Vercel Hobby ceiling is 10s; picking 10
+// explicitly so we don't depend on platform defaults.
+export const maxDuration = 10
 
 export const metadata: Metadata = {
   title: 'OBS Books - Vintage Illustrated Books | Bangkok, Thailand',

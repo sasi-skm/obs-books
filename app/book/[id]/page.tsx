@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation'
 // ISR: regenerate every 60 seconds. Cached pages survive temporary Supabase outages.
 export const revalidate = 60
 export const dynamicParams = true
+export const maxDuration = 10
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const book = await getBookById(params.id)

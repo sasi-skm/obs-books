@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { revalidatePath, revalidateTag } from 'next/cache'
+import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/admin-auth'
+import { resetBooksCache } from '@/lib/books-data'
 
 // Called after saving/deleting a book to instantly clear storefront cache
 export async function POST(req: NextRequest) {
@@ -10,25 +11,23 @@ export async function POST(req: NextRequest) {
   try {
     const { bookId, categories } = await req.json()
 
-    // Revalidate all category pages that may have changed
+    // 1. Clear the in-memory module cache in this lambda instance so the
+    //    next getBooks() call refetches from Supabase.
+    resetBooksCache()
+
+    // 2. Invalidate Next's ISR HTML caches for every route that renders books.
     if (categories && Array.isArray(categories)) {
       for (const cat of categories) {
         if (cat) revalidatePath(`/category/${cat}`)
       }
     }
-
-    // Revalidate the book's own page
     if (bookId) revalidatePath(`/book/${bookId}`)
-
-    // Revalidate shop and homepage
     revalidatePath('/shop')
     revalidatePath('/')
 
-    // Also clear the unstable_cache data cache so next request gets fresh data
-    revalidateTag('books')
-
     return NextResponse.json({ ok: true })
   } catch (err: unknown) {
+    console.error('[api/admin/revalidate] failed:', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }

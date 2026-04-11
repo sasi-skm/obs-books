@@ -5,6 +5,7 @@ import CategoryClient from './CategoryClient'
 import { notFound } from 'next/navigation'
 
 export const revalidate = 60
+export const maxDuration = 10
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const category = CATEGORIES.find(c => c.id === params.slug)

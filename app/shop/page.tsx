@@ -3,6 +3,7 @@ import { getBooks } from '@/lib/books-data'
 import ShopClient from './ShopClient'
 
 export const revalidate = 60
+export const maxDuration = 10
 
 export const metadata: Metadata = {
   title: 'Shop All Books | OBS Books Bangkok',

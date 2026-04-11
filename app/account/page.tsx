@@ -353,7 +353,12 @@ export default function AccountPage() {
         setWishlistEntries(wl as WishlistEntry[])
         const bookIds = wl.map((w: WishlistEntry) => w.book_id)
         if (bookIds.length > 0) {
-          const { data: books } = await supabase.from('books').select('*').in('id', bookIds)
+          // Narrow select — we only render title/author/price/cover in the
+          // wishlist grid, no need to pull images[], descriptions, or video.
+          const { data: books } = await supabase
+            .from('books')
+            .select('id, title, author, price, category, condition, copies, status, image_url, product_type, featured, created_at, updated_at')
+            .in('id', bookIds)
           if (books) {
             const map: Record<string, Book> = {}
             books.forEach((b: Book) => { map[b.id] = b })
@@ -361,7 +366,9 @@ export default function AccountPage() {
           }
         }
       }
-    } catch {}
+    } catch (err) {
+      console.error('[account] fetchWishlist failed:', err)
+    }
     setWishlistLoading(false)
   }, [user])
 
