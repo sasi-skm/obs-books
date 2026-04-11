@@ -87,3 +87,11 @@ html { scroll-behavior: smooth; }
   33%      { transform: translateY(-7px) rotate(14deg); opacity: 1;    }
   66%      { transform: translateY(3px)  rotate(-9deg); opacity: 0.8;  }
 }
+
+/* Print-friendly styles for the order confirmation screen */
+@media print {
+  .no-print { display: none !important; }
+  header, nav, footer { display: none !important; }
+  body { background: white !important; color: #000 !important; }
+}
+

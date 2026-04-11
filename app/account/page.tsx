@@ -218,7 +218,17 @@ export default function AccountPage() {
   const [tab, setTab] = useState<Tab>('profile')
 
   // Profile form
-  const [profileForm, setProfileForm] = useState({ fullName: '', phone: '', address: '', country: 'TH', dateOfBirth: '' })
+  const [profileForm, setProfileForm] = useState({
+    fullName: '',
+    phone: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    province: '',
+    postalCode: '',
+    country: 'TH',
+    dateOfBirth: '',
+  })
   const [savingProfile, setSavingProfile] = useState(false)
   const [profileSaved, setProfileSaved] = useState(false)
 
@@ -260,14 +270,21 @@ export default function AccountPage() {
     if (!loading && !user) router.push('/login')
   }, [loading, user, router])
 
-  // Populate profile form
+  // Populate profile form — read both the new full address shape and
+  // fall back to the old {address, country} shape for back-compat.
   useEffect(() => {
     if (profile) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const addr = (profile.shipping_address as any) || {}
       setProfileForm({
         fullName: profile.full_name || '',
         phone: profile.phone || '',
-        address: profile.shipping_address?.address || '',
-        country: profile.shipping_address?.country || 'TH',
+        addressLine1: addr.addressLine1 || addr.address || '',
+        addressLine2: addr.addressLine2 || '',
+        city: addr.city || '',
+        province: addr.province || '',
+        postalCode: addr.postalCode || '',
+        country: addr.country || 'TH',
         dateOfBirth: profile.date_of_birth || '',
       })
     }
@@ -412,11 +429,22 @@ export default function AccountPage() {
   const handleSaveProfile = async () => {
     if (!user) return
     setSavingProfile(true)
+    // Store the rich shipping_address shape but keep the legacy 'address'
+    // key populated so any old reader still works.
+    const shippingJson = {
+      address: profileForm.addressLine1,
+      addressLine1: profileForm.addressLine1,
+      addressLine2: profileForm.addressLine2,
+      city: profileForm.city,
+      province: profileForm.province,
+      postalCode: profileForm.postalCode,
+      country: profileForm.country,
+    }
     await supabase.from('profiles').upsert({
       id: user.id,
       full_name: profileForm.fullName,
       phone: profileForm.phone,
-      shipping_address: { address: profileForm.address, country: profileForm.country },
+      shipping_address: shippingJson,
       date_of_birth: profileForm.dateOfBirth || null,
     })
     await refreshProfile()
@@ -589,8 +617,51 @@ export default function AccountPage() {
             </div>
             <div className="mb-5">
               <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Shipping Address</label>
-              <textarea value={profileForm.address} onChange={e => setProfileForm({ ...profileForm, address: e.target.value })}
-                rows={3} className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss resize-y" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <input
+                    value={profileForm.addressLine1}
+                    onChange={e => setProfileForm({ ...profileForm, addressLine1: e.target.value })}
+                    placeholder="Address line 1 (house no., street)"
+                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <input
+                    value={profileForm.addressLine2}
+                    onChange={e => setProfileForm({ ...profileForm, addressLine2: e.target.value })}
+                    placeholder="Address line 2 (optional)"
+                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss"
+                  />
+                </div>
+                <div>
+                  <input
+                    value={profileForm.city}
+                    onChange={e => setProfileForm({ ...profileForm, city: e.target.value })}
+                    placeholder="District / City"
+                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss"
+                  />
+                </div>
+                <div>
+                  <input
+                    value={profileForm.province}
+                    onChange={e => setProfileForm({ ...profileForm, province: e.target.value })}
+                    placeholder="Province"
+                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss"
+                  />
+                </div>
+                <div>
+                  <input
+                    value={profileForm.postalCode}
+                    onChange={e => setProfileForm({ ...profileForm, postalCode: e.target.value })}
+                    placeholder="Postal code"
+                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss"
+                  />
+                </div>
+              </div>
+              <p className="font-jost text-[11px] text-ink-muted italic mt-2">
+                Saved here, auto-filled next time you check out.
+              </p>
             </div>
             <div className="flex items-center gap-4">
               <button onClick={handleSaveProfile} disabled={savingProfile}

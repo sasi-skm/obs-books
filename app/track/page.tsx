@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useLang } from '@/components/layout/LanguageContext'
 import { COURIERS, getCourierName } from '@/lib/tracking'
+import { getRecentOrders, removeRecentOrder, RecentOrder } from '@/lib/recent-orders'
 import { Order } from '@/types'
 
 interface TrackingEvent {
@@ -34,7 +35,32 @@ function TrackPageInner() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [trackEvents, setTrackEvents] = useState<TrackingEvent[]>([])
+  const [recent, setRecent] = useState<RecentOrder[]>([])
   const autoSearched = useRef(false)
+
+  // Load recent orders from localStorage — client-only.
+  useEffect(() => {
+    setRecent(getRecentOrders())
+  }, [])
+
+  const handleSelectRecent = (orderNumber: string) => {
+    setOrderNum(orderNumber)
+    // Trigger the search directly instead of waiting for the form submit.
+    setLoading(true)
+    setError('')
+    setOrder(null)
+    fetch(`/api/orders?order_number=${encodeURIComponent(orderNumber)}`)
+      .then(r => { if (!r.ok) throw new Error(); return r.json() })
+      .then(data => setOrder(data))
+      .catch(() => setError(t('orderNotFound')))
+      .finally(() => setLoading(false))
+  }
+
+  const handleRemoveRecent = (orderNumber: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    removeRecentOrder(orderNumber)
+    setRecent(getRecentOrders())
+  }
 
   // Auto-fill and search if order number is in URL
   useEffect(() => {
@@ -99,7 +125,7 @@ function TrackPageInner() {
           <p className="text-sm text-ink-muted italic mt-2">{t('trackSub')}</p>
         </div>
 
-        <form onSubmit={handleTrack} className="flex gap-2 mb-8">
+        <form onSubmit={handleTrack} className="flex gap-2 mb-4">
           <input
             type="text"
             placeholder={t('trackPlaceholder')}
@@ -115,6 +141,51 @@ function TrackPageInner() {
             {loading ? '...' : t('trackBtn')}
           </button>
         </form>
+
+        {/* Your Recent Orders — pulled from localStorage. Works for guests
+            and logged-in users alike so anyone who checked out on this
+            device can find their order without remembering the number. */}
+        {recent.length > 0 && (
+          <div className="mb-8 border border-line bg-parchment p-4">
+            <p className="text-[11px] uppercase tracking-widest text-ink-muted mb-3">
+              {lang === 'th' ? 'คำสั่งซื้อล่าสุดของคุณ' : 'Your Recent Orders'}
+            </p>
+            <div className="space-y-1.5">
+              {recent.map(r => (
+                <button
+                  key={r.orderNumber}
+                  type="button"
+                  onClick={() => handleSelectRecent(r.orderNumber)}
+                  className="w-full flex items-center gap-3 px-3 py-2 bg-offwhite border border-line hover:border-sage transition-colors text-left group"
+                >
+                  <span className="font-heading text-sm text-sage group-hover:text-sage-light">
+                    {r.orderNumber}
+                  </span>
+                  <span className="text-xs text-ink-muted">
+                    {r.currency === 'USD' ? '$' : '฿'}{r.totalAmount.toLocaleString()}
+                  </span>
+                  <span className="text-xs text-ink-muted ml-auto hidden sm:inline">
+                    {new Date(r.placedAt).toLocaleDateString(lang === 'th' ? 'th-TH' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                  <span
+                    role="button"
+                    tabIndex={-1}
+                    aria-label="Remove"
+                    onClick={(e) => handleRemoveRecent(r.orderNumber, e)}
+                    className="text-ink-muted hover:text-rose text-sm ml-2 cursor-pointer"
+                  >
+                    ×
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-ink-muted italic mt-3">
+              {lang === 'th'
+                ? 'บันทึกในเบราว์เซอร์นี้เท่านั้น ไม่ได้อยู่บนเซิร์ฟเวอร์ของเรา'
+                : 'Saved only on this browser — not on our servers.'}
+            </p>
+          </div>
+        )}
 
         {error && (
           <div className="text-center py-8">

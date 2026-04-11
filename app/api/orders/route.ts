@@ -161,6 +161,18 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/**
+ * Public order lookup for the /track page.
+ *
+ * Anyone with an order number can call this — no auth. That's by design
+ * so guest customers can check status without an account. BUT we must
+ * NOT leak customer PII (name, phone, email, address) because order
+ * numbers are mildly predictable (OBS- + base36 timestamp) and someone
+ * could enumerate them. We return ONLY the fields /track renders.
+ *
+ * If you need the full order (for admin or for the authenticated
+ * customer viewing their own order), use a different, auth-gated path.
+ */
 export async function GET(req: NextRequest) {
   const orderNumber = req.nextUrl.searchParams.get('order_number')
   if (!orderNumber) {
@@ -173,7 +185,20 @@ export async function GET(req: NextRequest) {
       const { supabaseAdmin } = await import('@/lib/supabase-server')
       const { data: order, error } = await supabaseAdmin
         .from('orders')
-        .select('*, items:order_items(*)')
+        .select(`
+          order_number,
+          order_status,
+          payment_status,
+          payment_method,
+          total_amount,
+          currency,
+          destination_country,
+          tracking_number,
+          courier,
+          created_at,
+          cancelled_items,
+          items:order_items(id, title, price, image_url, condition, quantity)
+        `)
         .eq('order_number', orderNumber)
         .single()
 
@@ -181,8 +206,25 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Order not found' }, { status: 404 })
       }
 
-      return NextResponse.json(order)
-    } catch {}
+      // Explicit pick of safe fields — defense in depth in case the select
+      // above is ever loosened by accident.
+      return NextResponse.json({
+        order_number: order.order_number,
+        order_status: order.order_status,
+        payment_status: order.payment_status,
+        payment_method: order.payment_method,
+        total_amount: order.total_amount,
+        currency: order.currency,
+        destination_country: order.destination_country,
+        tracking_number: order.tracking_number,
+        courier: order.courier,
+        created_at: order.created_at,
+        cancelled_items: order.cancelled_items,
+        items: order.items,
+      })
+    } catch (err) {
+      console.error('[api/orders GET] failed:', err)
+    }
   }
 
   return NextResponse.json({ error: 'Order not found' }, { status: 404 })

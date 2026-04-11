@@ -9,6 +9,13 @@ import { useLang } from '@/components/layout/LanguageContext'
 import { useAuth } from '@/lib/AuthContext'
 // promptpay-qr replaced with static QR image
 import { getShippingRate, thbToUsd, SUPPORTED_COUNTRIES, DEFAULT_BOOK_WEIGHT } from '@/lib/shipping'
+import {
+  getSavedAddress,
+  saveAddress,
+  shippingJsonToSaved,
+  savedToShippingJson,
+} from '@/lib/saved-address'
+import { addRecentOrder } from '@/lib/recent-orders'
 import type { CartItem } from '@/types'
 
 type Step = 'details' | 'payment' | 'done'
@@ -66,6 +73,22 @@ export default function CheckoutPage() {
   const [snapshotPayMethod, setSnapshotPayMethod] = useState<'promptpay' | 'transfer'>('promptpay')
   const [snapshotTotal, setSnapshotTotal] = useState(0)
   const [slipUploadWarning, setSlipUploadWarning] = useState<string>('')
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyOrderNumber = async () => {
+    if (!orderNumber) return
+    try {
+      await navigator.clipboard.writeText(orderNumber)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // clipboard not available (old browser / insecure context)
+    }
+  }
+
+  const handlePrint = () => {
+    if (typeof window !== 'undefined') window.print()
+  }
 
   const isInternational = form.country !== 'TH'
   const totalWeightGrams = items.reduce((sum, i) => sum + (i.weight_grams || DEFAULT_BOOK_WEIGHT) * (i.quantity || 1), 0)
@@ -96,24 +119,37 @@ export default function CheckoutPage() {
     })
   }, [user])
 
-  // Auto-fill from saved profile
+  // Auto-fill from whatever source we have. Priority:
+  //   1. What the user has already typed in this session (never overwrite)
+  //   2. The logged-in profile (if authenticated) — full shipping address
+  //   3. localStorage (works for guests and as a device-local cache for
+  //      logged-in users on a new device before profile loads)
+  // We ONLY fill empty fields, never overwrite the user's current input.
   useEffect(() => {
-    if (profile) {
-      const nameParts = (profile.full_name || '').trim().split(' ')
-      const firstName = nameParts[0] || ''
-      const lastName = nameParts.slice(1).join(' ') || ''
-      setForm(prev => ({
-        ...prev,
-        firstName: prev.firstName || firstName,
-        lastName: prev.lastName || lastName,
-        phone: prev.phone || profile.phone || '',
-        email: prev.email || user?.email || '',
-        addressLine1: prev.addressLine1 || profile.shipping_address?.address || '',
-        country: prev.country !== 'TH' ? prev.country : (profile.shipping_address?.country || 'TH'),
-      }))
-    } else if (user?.email) {
-      setForm(prev => ({ ...prev, email: prev.email || user.email || '' }))
-    }
+    const guestSaved = getSavedAddress() || {}
+    const profileSaved = profile ? shippingJsonToSaved(profile.shipping_address) : {}
+
+    // For name/phone/email on logged-in users, pull from profile row + auth user
+    const nameParts = (profile?.full_name || '').trim().split(' ')
+    const profileFirstName = nameParts[0] || ''
+    const profileLastName = nameParts.slice(1).join(' ') || ''
+
+    setForm(prev => ({
+      ...prev,
+      firstName: prev.firstName || profileFirstName || guestSaved.firstName || '',
+      lastName: prev.lastName || profileLastName || guestSaved.lastName || '',
+      phone: prev.phone || profile?.phone || guestSaved.phone || '',
+      email: prev.email || user?.email || guestSaved.email || '',
+      addressLine1: prev.addressLine1 || profileSaved.addressLine1 || guestSaved.addressLine1 || '',
+      addressLine2: prev.addressLine2 || profileSaved.addressLine2 || guestSaved.addressLine2 || '',
+      city: prev.city || profileSaved.city || guestSaved.city || '',
+      province: prev.province || profileSaved.province || guestSaved.province || '',
+      postalCode: prev.postalCode || profileSaved.postalCode || guestSaved.postalCode || '',
+      // Country: respect a non-default user choice, otherwise use saved.
+      country: prev.country !== 'TH'
+        ? prev.country
+        : (profileSaved.country || guestSaved.country || 'TH'),
+    }))
   }, [profile, user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -240,6 +276,43 @@ export default function CheckoutPage() {
         }
       }
 
+      // 3. Save shipping/contact details so next checkout on this device
+      //    (logged-in or guest) is one click away.
+      const addressPayload = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        phone: form.phone,
+        email: form.email,
+        addressLine1: form.addressLine1,
+        addressLine2: form.addressLine2,
+        city: form.city,
+        province: form.province,
+        postalCode: form.postalCode,
+        country: form.country,
+      }
+      saveAddress(addressPayload)
+      // For logged-in customers, also push the address to their profile
+      // so it persists across devices. Non-blocking.
+      if (user) {
+        try {
+          const { supabase } = await import('@/lib/supabase')
+          await supabase.from('profiles').update({
+            shipping_address: savedToShippingJson(addressPayload),
+          }).eq('id', user.id)
+        } catch (profileErr) {
+          console.error('[checkout] profile shipping_address update failed:', profileErr)
+        }
+      }
+
+      // 4. Remember the order locally so the customer can find it again
+      //    via /track even if they didn't give an email.
+      addRecentOrder({
+        orderNumber: createdOrderNumber,
+        totalAmount: effectiveTotal,
+        currency: isInternational ? 'USD' : 'THB',
+        placedAt: Date.now(),
+      })
+
       setOrderNumber(createdOrderNumber)
       setSnapshotItems([...items])
       setSnapshotPayMethod(payMethod)
@@ -281,6 +354,27 @@ export default function CheckoutPage() {
             <h1 className="font-heading text-2xl font-normal text-sage mb-2">{t('orderDone')}</h1>
             <p className="text-sm text-ink-light mb-1">{t('orderRef')}</p>
             <p className="font-heading text-2xl font-bold text-sage my-2">{orderNumber}</p>
+            <div className="flex items-center justify-center gap-2 mb-2 no-print">
+              <button
+                type="button"
+                onClick={handleCopyOrderNumber}
+                className="text-[11px] px-3 py-1 border border-sage/40 text-sage hover:bg-sage/10 transition-colors font-heading"
+              >
+                {copied ? '✓ Copied' : (lang === 'th' ? 'คัดลอกหมายเลข' : 'Copy order number')}
+              </button>
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="text-[11px] px-3 py-1 border border-sage/40 text-sage hover:bg-sage/10 transition-colors font-heading"
+              >
+                {lang === 'th' ? '🖨 พิมพ์' : '🖨 Print'}
+              </button>
+            </div>
+            <p className="text-[11px] text-ink-muted italic mb-2 max-w-sm mx-auto">
+              {lang === 'th'
+                ? 'บันทึกหมายเลขคำสั่งซื้อไว้ คุณจะต้องใช้เพื่อตรวจสอบสถานะหรืออัปโหลดสลิปในภายหลัง'
+                : 'Save this reference — you will need it to check status or upload your slip later.'}
+            </p>
             <p className="text-sm text-ink-light leading-relaxed max-w-sm mx-auto">{t('orderConfirmed')}</p>
           </div>
 
@@ -649,12 +743,28 @@ export default function CheckoutPage() {
               />
             </div>
             <div className="mb-4">
-              <label className="block font-heading text-sm mb-1">{t('email')}</label>
+              <label className="block font-heading text-sm mb-1">
+                {t('email')}{' '}
+                <span className="text-[11px] text-sage font-normal normal-case">
+                  ({lang === 'th' ? 'แนะนำ' : 'recommended'})
+                </span>
+              </label>
               <input
+                type="email"
                 className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                placeholder="you@example.com"
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
               />
+              <p className="text-[11px] text-ink-muted italic mt-1 leading-snug">
+                {form.email
+                  ? (lang === 'th'
+                      ? 'เราจะส่งอีเมลยืนยันคำสั่งซื้อและลิงก์สำหรับอัปโหลดสลิปให้คุณ'
+                      : 'We will email you a confirmation and a direct link to upload your payment slip.')
+                  : (lang === 'th'
+                      ? '⚠ หากไม่มีอีเมล คุณจะต้องจดจำหมายเลขคำสั่งซื้อของคุณเพื่อตรวจสอบสถานะในภายหลัง'
+                      : '⚠ Without an email, you will need to remember your order number to check status later.')}
+              </p>
             </div>
             <div className="mb-4">
               <label className="block font-heading text-sm mb-1">{t('note')}</label>
