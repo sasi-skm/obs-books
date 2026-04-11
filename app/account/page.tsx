@@ -88,21 +88,23 @@ function SlipUploader({ orderId, onUploaded }: { orderId: string; onUploaded: ()
 
     setUploading(true)
     try {
+      // Use the public /api/upload-slip route — same endpoint guests use
+      // via the confirmation email link. It uploads to payment-slips and
+      // updates the order in one server-side call, so we don't need a
+      // second PATCH here.
       const fd = new FormData()
       fd.append('file', file)
-      fd.append('bucket', 'payment-slips')
-      const uploadRes = await fetch('/api/upload', { method: 'POST', body: fd })
-      if (!uploadRes.ok) throw new Error('Upload failed')
-      const { url } = await uploadRes.json()
-
-      await fetch(`/api/orders/${orderId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'upload_slip', slip_url: url }),
-      })
+      fd.append('order_id', orderId)
+      const uploadRes = await fetch('/api/upload-slip', { method: 'POST', body: fd })
+      if (!uploadRes.ok) {
+        const errJson = await uploadRes.json().catch(() => ({}))
+        console.error('[account/SlipUploader] upload failed:', errJson)
+        throw new Error(errJson.error || 'Upload failed')
+      }
       setDone(true)
       onUploaded()
-    } catch {
+    } catch (err) {
+      console.error('[account/SlipUploader] threw:', err)
       setPreview(null)
     }
     setUploading(false)

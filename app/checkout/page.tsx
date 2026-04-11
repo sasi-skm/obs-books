@@ -65,6 +65,7 @@ export default function CheckoutPage() {
   const [snapshotItems, setSnapshotItems] = useState<CartItem[]>([])
   const [snapshotPayMethod, setSnapshotPayMethod] = useState<'promptpay' | 'transfer'>('promptpay')
   const [snapshotTotal, setSnapshotTotal] = useState(0)
+  const [slipUploadWarning, setSlipUploadWarning] = useState<string>('')
 
   const isInternational = form.country !== 'TH'
   const totalWeightGrams = items.reduce((sum, i) => sum + (i.weight_grams || DEFAULT_BOOK_WEIGHT) * (i.quantity || 1), 0)
@@ -172,21 +173,10 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     setSubmitting(true)
     try {
-      // Upload payment slip if provided
-      let slipUrl = ''
-      if (slipFile) {
-        const fd = new FormData()
-        fd.append('file', slipFile)
-        fd.append('bucket', 'payment-slips')
-        try {
-          const uploadRes = await fetch('/api/upload', { method: 'POST', body: fd })
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json()
-            slipUrl = uploadData.url || ''
-          }
-        } catch {}
-      }
-
+      // 1. Create the order first. The slip (if any) is uploaded AFTER we
+      //    have a confirmed order_id, so an upload failure can't orphan
+      //    a file in storage, and a guest customer can still place the
+      //    order even if the slip upload step fails.
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -197,7 +187,7 @@ export default function CheckoutPage() {
           shipping_address: buildShippingAddress(),
           payment_method: payMethod,
           note: form.note,
-          slip_url: slipUrl || null,
+          slip_url: null,
           destination_country: form.country,
           currency: isInternational ? 'USD' : 'THB',
           user_id: user?.id || null,
@@ -219,13 +209,45 @@ export default function CheckoutPage() {
         }),
       })
       const data = await res.json()
-      setOrderNumber(data.order_number || 'OBS-' + Date.now().toString(36).toUpperCase())
+      const createdOrderNumber = data.order_number || 'OBS-' + Date.now().toString(36).toUpperCase()
+      const createdOrderId = data.id as string | undefined
+
+      // 2. Upload the slip to the public /api/upload-slip route if the
+      //    customer attached one. Works for guests and logged-in users
+      //    alike because the endpoint is intentionally unauthenticated
+      //    (it verifies the order_id before accepting the file).
+      if (slipFile && createdOrderId) {
+        try {
+          const fd = new FormData()
+          fd.append('file', slipFile)
+          fd.append('order_id', createdOrderId)
+          const uploadRes = await fetch('/api/upload-slip', { method: 'POST', body: fd })
+          if (!uploadRes.ok) {
+            const errJson = await uploadRes.json().catch(() => ({}))
+            console.error('[checkout] slip upload failed:', errJson)
+            // We don't block the "done" screen — the customer can always
+            // re-upload via /slip-upload/<orderNumber>. But we surface a
+            // soft warning so they know to try again if it's important.
+            setSlipUploadWarning(
+              errJson.error
+                ? `We couldn't save your slip: ${errJson.error}. You can re-upload it from the confirmation screen.`
+                : 'We could not save your slip. You can re-upload it from the confirmation screen.',
+            )
+          }
+        } catch (err) {
+          console.error('[checkout] slip upload threw:', err)
+          setSlipUploadWarning('We could not save your slip. You can re-upload it from the confirmation screen.')
+        }
+      }
+
+      setOrderNumber(createdOrderNumber)
       setSnapshotItems([...items])
       setSnapshotPayMethod(payMethod)
       setSnapshotTotal(effectiveTotal)
       clearCart()
       setStep('done')
-    } catch {
+    } catch (err) {
+      console.error('[checkout] handlePlaceOrder failed:', err)
       setOrderNumber('OBS-' + Date.now().toString(36).toUpperCase())
       setSnapshotItems([...items])
       setSnapshotPayMethod(payMethod)
@@ -344,7 +366,33 @@ export default function CheckoutPage() {
             </div>
           )}
 
-          <div className="mt-4 mb-5 px-4 py-3 bg-parchment border border-sand text-xs text-ink-muted font-jost text-center leading-relaxed">
+          {/* If the slip upload failed mid-checkout (or if the customer skipped it),
+              always show a clear link to the public slip upload page so they can
+              send it at any time without needing an account. */}
+          {slipUploadWarning && (
+            <div className="mt-4 px-4 py-3 bg-rose/10 border border-rose/20 text-xs text-rose font-jost text-center leading-relaxed">
+              ⚠ {slipUploadWarning}
+            </div>
+          )}
+
+          <div className="mt-4 mb-3 px-4 py-4 bg-sage/5 border border-sage/20 text-center">
+            <p className="font-heading text-sm text-ink mb-1">
+              {slipFile && !slipUploadWarning ? 'Slip received ✓' : 'Send your payment slip'}
+            </p>
+            <p className="text-xs text-ink-muted italic mb-3">
+              {slipFile && !slipUploadWarning
+                ? 'We have your slip. You can also re-upload it anytime from the link below.'
+                : 'After paying, upload a screenshot so we can confirm your order.'}
+            </p>
+            <Link
+              href={`/slip-upload/${orderNumber}`}
+              className="inline-block font-heading text-xs px-5 py-2 bg-sage text-offwhite hover:bg-sage-light transition-colors"
+            >
+              {slipFile && !slipUploadWarning ? 'Re-upload slip' : 'Upload slip'}
+            </Link>
+          </div>
+
+          <div className="mt-3 mb-5 px-4 py-3 bg-parchment border border-sand text-xs text-ink-muted font-jost text-center leading-relaxed">
             📦 {t('shippingNote')}
           </div>
 

@@ -224,8 +224,12 @@ export async function sendOrderConfirmationEmail({
     </table>
     ${paymentInstructions}
     ${p(`<strong>Shipping to:</strong> ${shippingAddress.replace(/\n/g, ', ')}`)}
+    ${p(`After paying, please upload your payment slip so we can confirm your order:`)}
+    ${ctaButton('Upload Payment Slip', `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.obsbooks.com'}/slip-upload/${orderNumber}`)}
+    <p style="margin:14px 0 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#8a7d65;text-align:center;">
+      No account required — this link is unique to your order.
+    </p>
     ${p(`Once we receive your payment, we will confirm your order and begin packing your books with care.`)}
-    ${ctaButton('View My Orders', `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.obsbooks.com'}/account`)}
     <p style="margin:24px 0 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#8a7d65;font-style:italic;">With love from Bangkok — Sasi at OBS Books 🌿</p>
   `
   await resend.emails.send({
