@@ -31,10 +31,15 @@ export default function ShopClient({
 
   const filtered = books.filter(b => {
     if (selectedCategory && b.category !== selectedCategory) return false
-    if (authorFilter && b.author.toLowerCase() !== authorFilter.toLowerCase()) return false
+    // Null-safe string access — any of these fields might legitimately
+    // be empty/null on a product (e.g. textiles have no author), and a
+    // missing value should never crash the whole shop page.
+    const author = (b.author || '').toLowerCase()
+    const title = (b.title || '').toLowerCase()
+    if (authorFilter && author !== authorFilter.toLowerCase()) return false
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
-      return b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)
+      return title.includes(q) || author.includes(q)
     }
     return true
   })

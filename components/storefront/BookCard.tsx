@@ -41,7 +41,15 @@ export default function BookCard({ book, priority = false }: { book: Book; prior
   const { t } = useLang()
 
   const isSold = book.status === 'sold' || book.copies <= 0
-  const coverImage = (book.images && book.images.length > 0) ? book.images[0] : book.image_url
+  // Fallback chain — guards against books where images[] is empty AND
+  // image_url is missing/null so Next/Image never receives an empty src
+  // (which crashes the whole page tree).
+  const FALLBACK_COVER = '/images/hero-botanical.jpeg'
+  const coverImage =
+    (book.images && book.images.length > 0 && book.images[0])
+      ? book.images[0]
+      : (book.image_url || FALLBACK_COVER)
+  const safeAuthor = book.author || ''
 
   const inCart = items.some(i => i.id.startsWith(book.id + '-') || i.id === book.id)
 
@@ -68,7 +76,7 @@ export default function BookCard({ book, priority = false }: { book: Book; prior
         id: book.id + '-' + defaultCondition,
         bookId: book.id,
         title: book.title,
-        author: book.author,
+        author: safeAuthor,
         price,
         image_url: coverImage,
         category: book.category,
@@ -116,17 +124,21 @@ export default function BookCard({ book, priority = false }: { book: Book; prior
               {rating.avg.toFixed(1)} ★ ({rating.count})
             </p>
           )}
-          {/* Feature 6: Author as clickable link */}
-          <div
-            className="text-xs italic mb-1 font-jost"
-            onClick={e => {
-              e.preventDefault()
-              window.location.href = `/shop?author=${encodeURIComponent(book.author)}`
-            }}
-            style={{ color: '#4a6741', textDecoration: 'underline', textDecorationColor: '#4a6741', cursor: 'pointer' }}
-          >
-            {book.author}
-          </div>
+          {/* Feature 6: Author as clickable link — only render when we
+              actually have an author (textile products, for example, have
+              no author and we shouldn't render a broken filter link). */}
+          {safeAuthor && (
+            <div
+              className="text-xs italic mb-1 font-jost"
+              onClick={e => {
+                e.preventDefault()
+                window.location.href = `/shop?author=${encodeURIComponent(safeAuthor)}`
+              }}
+              style={{ color: '#4a6741', textDecoration: 'underline', textDecorationColor: '#4a6741', cursor: 'pointer' }}
+            >
+              {safeAuthor}
+            </div>
+          )}
           <div
             className="font-jost tracking-wide uppercase mb-2"
             style={{ fontSize: 10, color: '#8a7d65' }}
