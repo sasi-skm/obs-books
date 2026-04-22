@@ -2,6 +2,15 @@
 const nextConfig = {
   staticPageGenerationTimeout: 120,
   images: {
+    // unoptimized: true bypasses Vercel's Image Optimization service.
+    // On the Hobby plan, the monthly quota of optimized image transforms
+    // is limited; once exceeded, every optimizer request returns HTTP 402
+    // (OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED) and product photos break
+    // site-wide. Serving the originals straight from Supabase storage is
+    // slightly heavier on bandwidth but always works and costs nothing.
+    // Supabase already resizes uploads to 1600px max so originals are a
+    // reasonable size (~150-400 KB each).
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
