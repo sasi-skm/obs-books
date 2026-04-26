@@ -245,6 +245,95 @@ export async function sendOrderConfirmationEmail({
   })
 }
 
+// ── Stripe order confirmation email (to customer, after payment) ──────────
+//
+// Fired from the checkout.session.completed webhook for international
+// orders paid via Stripe. Replaces the temporary
+// sendOrderStatusEmail({status:'paid'}) shim used in Phase 4.
+//
+// All amounts are in USD because Stripe orders are international-only;
+// items have been pre-converted from THB by the caller so the synthetic
+// "International shipping (DHL Express)" line reconciles exactly with
+// the Stripe-charged total.
+export async function sendStripeOrderConfirmationEmail({
+  to, customerName, orderNumber, shippingAddress, items, shippingUsd, totalUsd,
+}: {
+  to: string
+  customerName: string
+  orderNumber: string
+  shippingAddress: string
+  items: { title: string; condition?: string; quantity: number; usdSubtotal: number }[]
+  shippingUsd: number
+  totalUsd: number
+}) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.obsbooks.com'
+  const firstName = customerName.split(' ')[0] || 'friend'
+
+  const itemRows = items.map(item =>
+    `<tr>
+      <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;">
+        ${item.title}${item.quantity > 1 ? ` &times;${item.quantity}` : ''}
+        ${item.condition ? `<br/><span style="color:#4a6741;font-size:11px;">${item.condition}</span>` : ''}
+      </td>
+      <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;text-align:right;vertical-align:top;">$${item.usdSubtotal.toFixed(2)}</td>
+    </tr>`
+  ).join('')
+
+  const shippingRow = `<tr>
+    <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;">
+      International shipping<br/><span style="color:#8a7d65;font-size:11px;">DHL Express</span>
+    </td>
+    <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;text-align:right;vertical-align:top;">$${shippingUsd.toFixed(2)}</td>
+  </tr>`
+
+  const formattedAddress = shippingAddress
+    ? shippingAddress.replace(/\n/g, '<br/>')
+    : ''
+
+  const content = `
+    ${h1(`Thank you for your order, ${firstName} 🌿`)}
+    ${divider()}
+    ${p(`We've received your payment of <strong>$${totalUsd.toFixed(2)} USD</strong> and your order is confirmed. We're so glad to be sending these treasures your way.`)}
+
+    <p style="margin:0 0 6px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;letter-spacing:2px;color:#8a7d65;text-transform:uppercase;">Order Reference</p>
+    <p style="margin:0 0 24px;font-family:'Georgia',serif;font-size:22px;color:#4a6741;font-weight:400;">${orderNumber}</p>
+
+    <p style="margin:0 0 6px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;letter-spacing:2px;color:#8a7d65;text-transform:uppercase;">Your Order</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;padding:14px 16px;background:#fdf8f2;border:1px solid #d6cdb8;">
+      ${itemRows}
+      ${shippingRow}
+      <tr><td colspan="2" style="padding-top:10px;border-top:1px solid #d6cdb8;"></td></tr>
+      <tr>
+        <td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;">Total</td>
+        <td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;text-align:right;">$${totalUsd.toFixed(2)} USD</td>
+      </tr>
+    </table>
+
+    ${formattedAddress ? `
+    <p style="margin:0 0 6px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;letter-spacing:2px;color:#8a7d65;text-transform:uppercase;">Shipping To</p>
+    <p style="margin:0 0 24px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;line-height:1.7;color:#4a3f32;">${formattedAddress}</p>
+    ` : ''}
+
+    <p style="margin:0 0 6px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;letter-spacing:2px;color:#8a7d65;text-transform:uppercase;">What Happens Next</p>
+    <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;">
+      <tr><td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;line-height:1.6;">📦 We carefully pack books every Monday from Bangkok.</td></tr>
+      <tr><td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;line-height:1.6;">✈ You'll get a tracking number by email once DHL Express picks up your parcel.</td></tr>
+      <tr><td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;line-height:1.6;">🌍 International delivery typically takes 7-14 business days from dispatch.</td></tr>
+    </table>
+
+    ${ctaButton('Track Order', `${siteUrl}/track?order=${orderNumber}`)}
+
+    <p style="margin:24px 0 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;line-height:1.7;">If you have any questions, just reply to this email and Sasi will get back to you personally.</p>
+    <p style="margin:24px 0 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#8a7d65;font-style:italic;">With warm wishes from Bangkok,<br/>Sasi at OBS Books 🌿</p>
+  `
+  await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: `Your OBS Books order is confirmed - ${orderNumber} 🌿`,
+    html: baseTemplate(content),
+  })
+}
+
 // ── Admin notification: new order ─────────────────────────────────────────────
 export async function sendAdminNewOrderEmail({
   orderNumber, customerName, customerPhone, customerEmail, totalAmount, items, paymentMethod,

@@ -105,7 +105,7 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
     })
     .eq('id', orderId)
     .eq('order_status', 'new')
-    .select('id, order_number, customer_name, customer_phone, customer_email, total_amount, currency')
+    .select('id, order_number, customer_name, customer_phone, customer_email, shipping_address, total_amount, currency')
 
   if (updateErr) {
     console.error('[stripe webhook] order update failed:', updateErr)
@@ -148,17 +148,46 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
     ? Math.round(order.total_amount) / 100
     : order.total_amount
 
-  // 1. Customer confirmation email.
+  // Fetch order items once — the customer confirmation email needs them
+  // (with USD-converted prices for an all-USD line breakdown) and the
+  // admin email needs them (with original THB prices, since Sasi does
+  // inventory in THB).
+  const { data: orderItemsRaw, error: itemsErr } = await supabaseAdmin
+    .from('order_items')
+    .select('title, price, quantity, condition')
+    .eq('order_id', order.id)
+  if (itemsErr) {
+    console.error('[stripe webhook] order_items fetch failed:', itemsErr)
+  }
+  const orderItems = orderItemsRaw || []
+
+  // 1. Customer confirmation email — Stripe-flavoured template (Phase 7).
   if (resolvedEmail) {
     try {
-      const { sendOrderStatusEmail } = await import('@/lib/email')
-      await sendOrderStatusEmail({
+      const { sendStripeOrderConfirmationEmail } = await import('@/lib/email')
+      const { thbToUsd } = await import('@/lib/shipping')
+
+      const customerItems = orderItems.map(it => ({
+        title: it.title,
+        condition: it.condition || undefined,
+        quantity: Number(it.quantity) || 1,
+        usdSubtotal: thbToUsd((Number(it.price) || 0) * (Number(it.quantity) || 1)),
+      }))
+      // Synthetic shipping line = total - sum(items_in_usd). Reconciles
+      // exactly because thbToUsd uses the same flat rate Phase 3 used to
+      // build the Stripe line items, and shipping was a separate Stripe
+      // line so it's already part of total_amount.
+      const itemsSubtotalUsd = customerItems.reduce((s, i) => s + i.usdSubtotal, 0)
+      const shippingUsd = Math.max(0, totalDollars - itemsSubtotalUsd)
+
+      await sendStripeOrderConfirmationEmail({
         to: resolvedEmail,
         customerName: order.customer_name || '',
         orderNumber: order.order_number,
-        status: 'paid',
-        totalAmount: totalDollars,
-        currency: (order.currency as 'THB' | 'USD') || 'USD',
+        shippingAddress: order.shipping_address || '',
+        items: customerItems,
+        shippingUsd,
+        totalUsd: totalDollars,
       })
     } catch (emailErr) {
       // Don't fail the webhook over a transient email error — the order
@@ -173,12 +202,6 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
   // the admin notification fires here in the webhook rather than when
   // /api/checkout/stripe inserted the placeholder row.
   try {
-    const { data: orderItems, error: itemsErr } = await supabaseAdmin
-      .from('order_items')
-      .select('title, price, quantity, condition')
-      .eq('order_id', order.id)
-    if (itemsErr) throw itemsErr
-
     const { sendAdminNewOrderEmail } = await import('@/lib/email')
     await sendAdminNewOrderEmail({
       orderNumber: order.order_number,
@@ -188,7 +211,7 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
       totalAmount: totalDollars,
       currency: (order.currency as 'THB' | 'USD') || 'USD',
       paymentMethod: 'stripe',
-      items: (orderItems || []).map(it => ({
+      items: orderItems.map(it => ({
         title: it.title,
         price: Number(it.price) || 0,
         quantity: Number(it.quantity) || 1,
