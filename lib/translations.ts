@@ -150,6 +150,50 @@ export const TX: Record<string, Record<Lang, string>> = {
   stripeError: { en: 'Could not start payment. Please try again.', th: 'ไม่สามารถเริ่มการชำระเงินได้ กรุณาลองอีกครั้ง' },
   poweredByStripe: { en: 'Powered by Stripe', th: 'ขับเคลื่อนโดย Stripe' },
 
+  // Stripe success / cancelled landing pages
+  successHeading: { en: 'Payment received', th: 'ได้รับการชำระเงินแล้ว' },
+  successThanks: { en: 'Thank you, {name}.', th: 'ขอบคุณ {name}' },
+  successBody: {
+    en: "We've received your payment and your order is confirmed.",
+    th: 'เราได้รับการชำระเงินของคุณแล้ว คำสั่งซื้อของคุณได้รับการยืนยันเรียบร้อย',
+  },
+  orderReference: { en: 'Order Reference', th: 'หมายเลขคำสั่งซื้อ' },
+  orderRefHint: {
+    en: 'Save this — you can use it on /track to follow your shipment.',
+    th: 'บันทึกหมายเลขนี้ไว้ คุณสามารถใช้ที่ /track เพื่อติดตามพัสดุได้',
+  },
+  yourOrder: { en: 'Your order', th: 'คำสั่งซื้อของคุณ' },
+  confirmationSentTo: { en: 'Confirmation sent to', th: 'ส่งอีเมลยืนยันไปที่' },
+  whatsNext: { en: 'What happens next:', th: 'ขั้นตอนถัดไป:' },
+  nextStepPack: {
+    en: "We'll carefully pack your books on the next shipping day (Mondays from Bangkok).",
+    th: 'เราจะแพ็คหนังสือของคุณอย่างพิถีพิถันในวันจัดส่งครั้งถัดไป (ทุกวันจันทร์จากกรุงเทพฯ)',
+  },
+  nextStepShip: {
+    en: "You'll get a tracking number by email once your parcel ships.",
+    th: 'คุณจะได้รับหมายเลขพัสดุทางอีเมลเมื่อพัสดุถูกจัดส่ง',
+  },
+  processingOrder: { en: 'Processing your order', th: 'กำลังดำเนินการคำสั่งซื้อ' },
+  processingBody: {
+    en: "Your payment is being verified. We'll send a confirmation email to {email} as soon as it's confirmed — usually within a minute.",
+    th: 'เรากำลังตรวจสอบการชำระเงินของคุณ จะส่งอีเมลยืนยันไปที่ {email} ทันทีที่ตรวจสอบเสร็จ - โดยปกติภายในไม่กี่นาที',
+  },
+  closeSafely: {
+    en: 'You can close this page; your order is safe.',
+    th: 'คุณสามารถปิดหน้านี้ได้ คำสั่งซื้อของคุณปลอดภัย',
+  },
+  successNotFoundHeading: { en: "Hmm, we can't find that order", th: 'ไม่พบคำสั่งซื้อนี้' },
+  successNotFoundBody: {
+    en: "The link you followed may have expired. If you completed payment, you'll receive a confirmation email shortly. If something looks wrong, please reply to that email and we'll sort it out.",
+    th: 'ลิงก์ที่คุณเปิดอาจหมดอายุแล้ว หากคุณชำระเงินสำเร็จ คุณจะได้รับอีเมลยืนยันในอีกสักครู่ หากมีอะไรไม่ถูกต้อง กรุณาตอบกลับอีเมลนั้นแล้วเราจะช่วยแก้ไขให้',
+  },
+  cancelledHeading: { en: 'Payment cancelled', th: 'การชำระเงินถูกยกเลิก' },
+  cancelledBody: {
+    en: "No worries — your cart is still saved. Whenever you're ready, your books are waiting for you.",
+    th: 'ไม่ต้องกังวล - ตะกร้าของคุณยังถูกเก็บไว้ เมื่อคุณพร้อม หนังสือของคุณรออยู่',
+  },
+  tryAgain: { en: 'Try Again', th: 'ลองใหม่อีกครั้ง' },
+
   // Shipping
   destinationCountry: { en: 'Destination Country', th: 'ประเทศปลายทาง' },
   shippingEstimate: { en: 'Estimated Shipping (DHL)', th: 'ค่าจัดส่งโดยประมาณ (DHL)' },
