@@ -27,6 +27,44 @@ const PAYMENT_COLORS: Record<string, string> = {
   confirmed: 'bg-green-100 text-green-700',
 }
 
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  promptpay: 'PromptPay',
+  transfer: 'Bank Transfer',
+  stripe: 'Card (Stripe)',
+}
+
+const PAYMENT_METHOD_COLORS: Record<string, string> = {
+  promptpay: 'bg-purple-100 text-purple-700',
+  transfer: 'bg-amber-100 text-amber-700',
+  stripe: 'bg-sage/20 text-sage',
+}
+
+const REFUND_REASONS: { value: string; label: string }[] = [
+  { value: 'requested_by_customer', label: 'Requested by customer' },
+  { value: 'duplicate', label: 'Duplicate' },
+  { value: 'fraudulent', label: 'Fraudulent' },
+  { value: 'other', label: 'Other (no reason sent)' },
+]
+
+// Stripe orders store total_amount as USD cents; everything else is THB
+// whole units. Detect by payment_method (not currency) since some legacy
+// international PromptPay rows have currency='USD' but THB-based amounts.
+function formatOrderTotal(order: Order): string {
+  if (order.payment_method === 'stripe') {
+    return `$${(order.total_amount / 100).toFixed(2)} USD`
+  }
+  return `฿${order.total_amount.toLocaleString()}`
+}
+
+// Build a Stripe dashboard URL for a payment intent. Mode is detected
+// from the publishable key prefix (already exposed to the client) so
+// test sandbox links go to /test/payments/... and live to /payments/...
+function stripeDashboardUrl(piId: string): string {
+  const pubKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
+  const mode = pubKey.startsWith('pk_test_') ? 'test/' : ''
+  return `https://dashboard.stripe.com/${mode}payments/${piId}`
+}
+
 type Tab = 'all' | 'new' | 'paid' | 'shipped'
 
 export default function AdminOrdersPage() {
@@ -39,6 +77,13 @@ export default function AdminOrdersPage() {
   const [cancelReasons, setCancelReasons] = useState<Record<string, string>>({})
   const [cancelNote, setCancelNote] = useState('')
   const [cancelLoading, setCancelLoading] = useState(false)
+
+  // Stripe refund modal state
+  const [refundModal, setRefundModal] = useState<Order | null>(null)
+  const [refundAmount, setRefundAmount] = useState('') // dollars as string
+  const [refundReason, setRefundReason] = useState<string>('requested_by_customer')
+  const [refundLoading, setRefundLoading] = useState(false)
+  const [refundError, setRefundError] = useState('')
 
   useEffect(() => {
     loadOrders()
@@ -107,6 +152,58 @@ export default function AdminOrdersPage() {
     setCancelReasons(reasons)
     setCancelNote('')
     setCancelModal(order)
+  }
+
+  const openRefundModal = (order: Order) => {
+    const fullDollars = (order.total_amount / 100).toFixed(2)
+    setRefundAmount(fullDollars)
+    setRefundReason('requested_by_customer')
+    setRefundError('')
+    setRefundModal(order)
+  }
+
+  const handleRefundSubmit = async () => {
+    if (!refundModal) return
+    const dollars = parseFloat(refundAmount)
+    if (!Number.isFinite(dollars) || dollars <= 0) {
+      setRefundError('Enter a valid refund amount')
+      return
+    }
+    const cents = Math.round(dollars * 100)
+    if (cents > refundModal.total_amount) {
+      setRefundError('Refund amount cannot exceed the original charge')
+      return
+    }
+    setRefundLoading(true)
+    setRefundError('')
+    try {
+      const isFull = cents === refundModal.total_amount
+      const res = await fetch('/api/admin/refund-stripe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id: refundModal.id,
+          // Omit amount_cents on full refunds so Stripe defers to its
+          // own "full" semantics (and the webhook treats it as full).
+          ...(isFull ? {} : { amount_cents: cents }),
+          ...(refundReason !== 'other' ? { reason: refundReason } : {}),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setRefundError(data.error || 'Refund failed')
+        setRefundLoading(false)
+        return
+      }
+      setRefundModal(null)
+      setRefundLoading(false)
+      // Webhook (charge.refunded) updates order_status async; reload to
+      // pick up the new state once it lands. May take a second or two.
+      setTimeout(loadOrders, 1500)
+    } catch {
+      setRefundError('Network error')
+      setRefundLoading(false)
+    }
   }
 
   const handleCancelSubmit = async () => {
@@ -201,7 +298,7 @@ export default function AdminOrdersPage() {
                       <p className="text-xs text-ink-muted mt-1 max-w-[220px] leading-relaxed">📍 {order.shipping_address}</p>
                     )}
                   </div>
-                  <p className="font-heading text-bark font-semibold">฿{order.total_amount.toLocaleString()}</p>
+                  <p className="font-heading text-bark font-semibold whitespace-nowrap">{formatOrderTotal(order)}</p>
                 </div>
 
                 {/* Book list */}
@@ -234,6 +331,9 @@ export default function AdminOrdersPage() {
                 )}
 
                 <div className="flex gap-2 mb-3 flex-wrap">
+                  <span className={`text-xs px-2 py-0.5 ${PAYMENT_METHOD_COLORS[order.payment_method] || 'bg-gray-100 text-gray-700'}`}>
+                    {PAYMENT_METHOD_LABELS[order.payment_method] || order.payment_method}
+                  </span>
                   <span className={`text-xs px-2 py-0.5 ${PAYMENT_COLORS[order.payment_status] || ''}`}>
                     {order.payment_status}
                   </span>
@@ -250,7 +350,18 @@ export default function AdminOrdersPage() {
                       View Slip
                     </a>
                   )}
-                  {order.payment_status !== 'confirmed' && order.order_status === 'new' && (
+                  {order.payment_method === 'stripe' && order.stripe_payment_intent_id && (
+                    <a
+                      href={stripeDashboardUrl(order.stripe_payment_intent_id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs px-2 py-1.5 border border-sage/40 text-sage hover:bg-sage/5 transition-colors"
+                      title={order.stripe_payment_intent_id}
+                    >
+                      ↗ Stripe
+                    </a>
+                  )}
+                  {order.payment_status !== 'confirmed' && order.order_status === 'new' && order.payment_method !== 'stripe' && (
                     <button onClick={() => handleConfirmPayment(order.id)} className="text-xs px-3 py-1.5 bg-sage text-white hover:bg-sage-light">
                       Confirm Payment
                     </button>
@@ -296,11 +407,18 @@ export default function AdminOrdersPage() {
                       Delivered
                     </button>
                   )}
-                  {order.order_status !== 'cancelled' && order.order_status !== 'partially_cancelled' && (
-                    <button onClick={() => openCancelModal(order)} className="text-xs px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
-                      Cancel
-                    </button>
-                  )}
+                  {order.payment_method === 'stripe'
+                    ? order.order_status !== 'cancelled' && order.order_status !== 'partially_cancelled' && order.order_status !== 'refunded' && order.stripe_payment_intent_id && (
+                        <button onClick={() => openRefundModal(order)} className="text-xs px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                          Refund via Stripe
+                        </button>
+                      )
+                    : order.order_status !== 'cancelled' && order.order_status !== 'partially_cancelled' && (
+                        <button onClick={() => openCancelModal(order)} className="text-xs px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                          Cancel
+                        </button>
+                      )
+                  }
                   {order.tracking_number && (
                     <span className="text-xs text-ink-muted font-mono break-all">{order.tracking_number}</span>
                   )}
@@ -346,11 +464,16 @@ export default function AdminOrdersPage() {
                         </div>
                       )}
                     </td>
-                    <td className="p-3 font-heading text-bark">฿{order.total_amount.toLocaleString()}</td>
+                    <td className="p-3 font-heading text-bark whitespace-nowrap">{formatOrderTotal(order)}</td>
                     <td className="p-3">
-                      <span className={`text-xs px-2 py-0.5 inline-block ${PAYMENT_COLORS[order.payment_status] || ''}`}>
-                        {order.payment_status}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className={`text-xs px-2 py-0.5 inline-block ${PAYMENT_METHOD_COLORS[order.payment_method] || 'bg-gray-100 text-gray-700'}`}>
+                          {PAYMENT_METHOD_LABELS[order.payment_method] || order.payment_method}
+                        </span>
+                        <span className={`text-xs px-2 py-0.5 inline-block ${PAYMENT_COLORS[order.payment_status] || ''}`}>
+                          {order.payment_status}
+                        </span>
+                      </div>
                     </td>
                     <td className="p-3">
                       <span className="text-xs text-ink-muted">
@@ -369,7 +492,18 @@ export default function AdminOrdersPage() {
                             View Slip
                           </a>
                         )}
-                        {order.payment_status !== 'confirmed' && order.order_status === 'new' && (
+                        {order.payment_method === 'stripe' && order.stripe_payment_intent_id && (
+                          <a
+                            href={stripeDashboardUrl(order.stripe_payment_intent_id)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs px-2 py-1 border border-sage/40 text-sage hover:bg-sage/5 transition-colors"
+                            title={order.stripe_payment_intent_id}
+                          >
+                            ↗ Stripe
+                          </a>
+                        )}
+                        {order.payment_status !== 'confirmed' && order.order_status === 'new' && order.payment_method !== 'stripe' && (
                           <button onClick={() => handleConfirmPayment(order.id)} className="text-xs px-2 py-1 bg-sage text-white hover:bg-sage-light">
                             Confirm
                           </button>
@@ -415,11 +549,18 @@ export default function AdminOrdersPage() {
                             Delivered
                           </button>
                         )}
-                        {order.order_status !== 'cancelled' && order.order_status !== 'partially_cancelled' && (
-                          <button onClick={() => openCancelModal(order)} className="text-xs px-2 py-1 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
-                            Cancel
-                          </button>
-                        )}
+                        {order.payment_method === 'stripe'
+                          ? order.order_status !== 'cancelled' && order.order_status !== 'partially_cancelled' && order.order_status !== 'refunded' && order.stripe_payment_intent_id && (
+                              <button onClick={() => openRefundModal(order)} className="text-xs px-2 py-1 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                                Refund via Stripe
+                              </button>
+                            )
+                          : order.order_status !== 'cancelled' && order.order_status !== 'partially_cancelled' && (
+                              <button onClick={() => openCancelModal(order)} className="text-xs px-2 py-1 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
+                                Cancel
+                              </button>
+                            )
+                        }
                         {order.tracking_number && (
                           <span className="text-xs text-ink-muted font-mono">{order.tracking_number}</span>
                         )}
@@ -570,6 +711,113 @@ export default function AdminOrdersPage() {
               <button
                 onClick={() => setCancelModal(null)}
                 disabled={cancelLoading}
+                className="px-4 py-2.5 border border-line text-ink-muted text-sm font-heading hover:border-sage transition-colors disabled:opacity-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stripe Refund Modal */}
+      {refundModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => !refundLoading && setRefundModal(null)}
+        >
+          <div
+            className="bg-white border border-line max-w-lg w-full p-6 shadow-xl max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-heading text-lg font-medium text-ink">
+                Refund order {refundModal.order_number}
+              </h2>
+              <button
+                onClick={() => !refundLoading && setRefundModal(null)}
+                className="text-ink-muted hover:text-ink text-xl leading-none"
+              >
+                x
+              </button>
+            </div>
+
+            <p className="text-sm text-ink-muted mb-4">
+              Charged: <span className="font-heading text-bark">{formatOrderTotal(refundModal)}</span>
+            </p>
+
+            {/* Refund amount */}
+            <div className="mb-4">
+              <label className="block text-xs text-ink-muted mb-1 uppercase tracking-wide">Refund amount</label>
+              <div className="flex">
+                <span className="px-3 py-2 border border-line border-r-0 bg-parchment text-ink-muted font-heading">$</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={refundAmount}
+                  onChange={e => setRefundAmount(e.target.value)}
+                  className="flex-1 text-sm px-3 py-2 border border-line bg-cream outline-none focus:border-sage font-mono"
+                  placeholder="0.00"
+                  disabled={refundLoading}
+                />
+              </div>
+              <p className="text-[11px] text-ink-muted italic mt-1">
+                Leave at full to refund the entire charge.
+              </p>
+            </div>
+
+            {/* Reason */}
+            <div className="mb-4">
+              <label className="block text-xs text-ink-muted mb-1 uppercase tracking-wide">Reason</label>
+              <select
+                value={refundReason}
+                onChange={e => setRefundReason(e.target.value)}
+                disabled={refundLoading}
+                className="w-full text-sm px-3 py-2 border border-line bg-cream outline-none focus:border-sage"
+              >
+                {REFUND_REASONS.map(r => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Info box: full vs partial semantics */}
+            <div className="mb-4 px-4 py-3 bg-parchment border border-sand text-xs text-ink leading-relaxed">
+              <p className="font-heading mb-1.5">Full refund:</p>
+              <ul className="list-disc list-inside space-y-0.5 mb-2 text-ink-muted">
+                <li>Issue refund via Stripe</li>
+                <li>Mark order as refunded</li>
+                <li>Restore books to shop</li>
+                <li>Email customer</li>
+              </ul>
+              <p className="font-heading mb-1.5">Partial refund:</p>
+              <ul className="list-disc list-inside space-y-0.5 text-ink-muted">
+                <li>Issue partial refund via Stripe</li>
+                <li>Order status unchanged</li>
+                <li>Stock NOT restored (handle manually if needed)</li>
+              </ul>
+            </div>
+
+            {refundError && (
+              <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 text-xs text-red-700">
+                {refundError}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleRefundSubmit}
+                disabled={refundLoading}
+                className="flex-1 py-2.5 bg-red-600 text-white text-sm font-heading hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {refundLoading
+                  ? 'Refunding...'
+                  : `Confirm refund $${(parseFloat(refundAmount) || 0).toFixed(2)}`}
+              </button>
+              <button
+                onClick={() => setRefundModal(null)}
+                disabled={refundLoading}
                 className="px-4 py-2.5 border border-line text-ink-muted text-sm font-heading hover:border-sage transition-colors disabled:opacity-50"
               >
                 Close
