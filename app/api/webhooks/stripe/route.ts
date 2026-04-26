@@ -105,7 +105,7 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
     })
     .eq('id', orderId)
     .eq('order_status', 'new')
-    .select('id, order_number, customer_name, customer_email, total_amount, currency')
+    .select('id, order_number, customer_name, customer_phone, customer_email, total_amount, currency')
 
   if (updateErr) {
     console.error('[stripe webhook] order update failed:', updateErr)
@@ -121,29 +121,82 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
 
   const order = updated[0]
 
-  // Send the customer their confirmation email. Stripe orders are
-  // always international + USD, and total_amount is stored in USD cents
-  // (per Phase 3 design), so divide by 100 for display.
-  if (order.customer_email) {
+  // The checkout form's email field is optional, so order.customer_email
+  // may be null. Stripe always collects an email during payment, so use
+  // that as the fallback — and persist it back to the orders row so
+  // /admin and /track lookups have a usable address afterwards.
+  const stripeEmail = session.customer_details?.email || session.customer_email || null
+  const resolvedEmail = order.customer_email || stripeEmail
+
+  if (stripeEmail && !order.customer_email) {
+    try {
+      await supabaseAdmin
+        .from('orders')
+        .update({ customer_email: stripeEmail })
+        .eq('id', order.id)
+    } catch (backfillErr) {
+      // Non-fatal — both emails below can still go out using
+      // resolvedEmail even if the row didn't get updated.
+      console.error('[stripe webhook] customer_email backfill failed:', backfillErr)
+    }
+  }
+
+  // Stripe orders are always international + USD, and total_amount is
+  // stored in USD cents (per Phase 3 design), so divide by 100 for the
+  // human-readable totals below.
+  const totalDollars = order.currency === 'USD'
+    ? Math.round(order.total_amount) / 100
+    : order.total_amount
+
+  // 1. Customer confirmation email.
+  if (resolvedEmail) {
     try {
       const { sendOrderStatusEmail } = await import('@/lib/email')
-      const totalForEmail = order.currency === 'USD'
-        ? Math.round(order.total_amount) / 100
-        : order.total_amount
       await sendOrderStatusEmail({
-        to: order.customer_email,
+        to: resolvedEmail,
         customerName: order.customer_name || '',
         orderNumber: order.order_number,
         status: 'paid',
-        totalAmount: totalForEmail,
+        totalAmount: totalDollars,
         currency: (order.currency as 'THB' | 'USD') || 'USD',
       })
     } catch (emailErr) {
       // Don't fail the webhook over a transient email error — the order
-      // is already paid and the admin email path will fire from the
-      // dashboard view. Stripe shouldn't retry on email failure.
+      // is already paid. Stripe shouldn't retry on email failure.
       console.error('[stripe webhook] confirmation email failed:', emailErr)
     }
+  }
+
+  // 2. Admin notification — parity with the PromptPay path which fires
+  // sendAdminNewOrderEmail at order creation (api/orders/route.ts).
+  // Stripe orders are only "really created" when payment succeeds, so
+  // the admin notification fires here in the webhook rather than when
+  // /api/checkout/stripe inserted the placeholder row.
+  try {
+    const { data: orderItems, error: itemsErr } = await supabaseAdmin
+      .from('order_items')
+      .select('title, price, quantity, condition')
+      .eq('order_id', order.id)
+    if (itemsErr) throw itemsErr
+
+    const { sendAdminNewOrderEmail } = await import('@/lib/email')
+    await sendAdminNewOrderEmail({
+      orderNumber: order.order_number,
+      customerName: order.customer_name || '',
+      customerPhone: order.customer_phone || '',
+      customerEmail: resolvedEmail || undefined,
+      totalAmount: totalDollars,
+      currency: (order.currency as 'THB' | 'USD') || 'USD',
+      paymentMethod: 'stripe',
+      items: (orderItems || []).map(it => ({
+        title: it.title,
+        price: Number(it.price) || 0,
+        quantity: Number(it.quantity) || 1,
+        condition: it.condition || undefined,
+      })),
+    })
+  } catch (adminEmailErr) {
+    console.error('[stripe webhook] admin notification email failed:', adminEmailErr)
   }
 
   // NOTE: Loyalty point award is intentionally NOT done here. The

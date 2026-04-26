@@ -248,6 +248,7 @@ export async function sendOrderConfirmationEmail({
 // ── Admin notification: new order ─────────────────────────────────────────────
 export async function sendAdminNewOrderEmail({
   orderNumber, customerName, customerPhone, customerEmail, totalAmount, items, paymentMethod,
+  currency = 'THB',
 }: {
   orderNumber: string
   customerName: string
@@ -256,9 +257,21 @@ export async function sendAdminNewOrderEmail({
   totalAmount: number
   items: { title: string; price: number; quantity: number; condition?: string }[]
   paymentMethod: string
+  // Optional currency for the TOTAL only (Stripe orders are USD).
+  // Items always render in ฿ since they're stored that way and Sasi
+  // does inventory in THB.
+  currency?: 'THB' | 'USD'
 }) {
   const adminEmail = process.env.ADMIN_EMAIL
   if (!adminEmail) return
+
+  const totalSymbol = currency === 'USD' ? '$' : '฿'
+  const paymentLabels: Record<string, string> = {
+    promptpay: 'PromptPay',
+    transfer: 'Bank Transfer',
+    stripe: 'Card (Stripe)',
+  }
+  const paymentLabel = paymentLabels[paymentMethod] || paymentMethod
 
   const itemList = items.map(i =>
     `<tr><td style="padding:4px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;">${i.title}${i.condition ? ` (${i.condition})` : ''}${i.quantity > 1 ? ` ×${i.quantity}` : ''}</td><td style="padding:4px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;text-align:right;">฿${(i.price * i.quantity).toLocaleString()}</td></tr>`
@@ -269,20 +282,21 @@ export async function sendAdminNewOrderEmail({
     ${divider()}
     <table cellpadding="0" cellspacing="0" style="margin-bottom:20px;padding:16px;background:#fdf8f2;border:1px solid #d6cdb8;width:100%;">
       <tr><td style="padding:4px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;"><strong>Customer:</strong> ${customerName}</td></tr>
-      <tr><td style="padding:4px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;"><strong>Phone:</strong> ${customerPhone}</td></tr>
+      ${customerPhone ? `<tr><td style="padding:4px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;"><strong>Phone:</strong> ${customerPhone}</td></tr>` : ''}
       ${customerEmail ? `<tr><td style="padding:4px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;"><strong>Email:</strong> ${customerEmail}</td></tr>` : ''}
-      <tr><td style="padding:4px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;"><strong>Payment:</strong> ${paymentMethod === 'promptpay' ? 'PromptPay' : 'Bank Transfer'}</td></tr>
+      <tr><td style="padding:4px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;"><strong>Payment:</strong> ${paymentLabel}</td></tr>
     </table>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">${itemList}
       <tr><td colspan="2" style="padding-top:8px;border-top:1px solid #d6cdb8;"></td></tr>
-      <tr><td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;">Total</td><td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;text-align:right;">฿${totalAmount.toLocaleString()}</td></tr>
+      <tr><td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;">Total</td><td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;text-align:right;">${totalSymbol}${totalAmount.toLocaleString()}</td></tr>
     </table>
+    ${currency === 'USD' ? `<p style="margin:14px 0 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#8a7d65;font-style:italic;">Total in USD via Stripe (incl. DHL international shipping). Items shown in shop currency (THB).</p>` : ''}
     ${ctaButton('View in Admin', `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.obsbooks.com'}/admin/orders`)}
   `
   await resend.emails.send({
     from: FROM_EMAIL,
     to: adminEmail,
-    subject: `New order ${orderNumber} — ฿${totalAmount.toLocaleString()} (${paymentMethod === 'promptpay' ? 'PromptPay' : 'Transfer'})`,
+    subject: `New order ${orderNumber} - ${totalSymbol}${totalAmount.toLocaleString()} (${paymentLabel})`,
     html: baseTemplate(content),
   })
 }
