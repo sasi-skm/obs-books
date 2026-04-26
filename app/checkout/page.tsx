@@ -69,6 +69,9 @@ export default function CheckoutPage() {
   const [slipFile, setSlipFile] = useState<File | null>(null)
   const [orderNumber, setOrderNumber] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  // Stripe redirect state — international card-payment path
+  const [stripeLoading, setStripeLoading] = useState(false)
+  const [stripeError, setStripeError] = useState('')
   const [snapshotItems, setSnapshotItems] = useState<CartItem[]>([])
   const [snapshotPayMethod, setSnapshotPayMethod] = useState<'promptpay' | 'transfer'>('promptpay')
   const [snapshotTotal, setSnapshotTotal] = useState(0)
@@ -195,6 +198,79 @@ export default function CheckoutPage() {
     e.preventDefault()
     if (!form.firstName || !form.phone || !form.addressLine1 || !form.city) return
     setStep('payment')
+  }
+
+  // International card payment via Stripe Checkout. Mirrors the data
+  // shape of /api/orders so server-side validation can reuse the same
+  // canonical fields. On success, save the address (parity with
+  // handlePlaceOrder), record the order locally for /track, and redirect
+  // the browser to the Stripe-hosted page. We deliberately do not flip
+  // setStripeLoading off on success — the page is unloading.
+  const handleStripeCheckout = async () => {
+    setStripeError('')
+    setStripeLoading(true)
+    try {
+      const addressPayload = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        phone: form.phone,
+        email: form.email,
+        addressLine1: form.addressLine1,
+        addressLine2: form.addressLine2,
+        city: form.city,
+        province: form.province,
+        postalCode: form.postalCode,
+        country: form.country,
+      }
+      const res = await fetch('/api/checkout/stripe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_name: [form.firstName, form.lastName].filter(Boolean).join(' '),
+          customer_phone: form.phone,
+          customer_email: form.email,
+          shipping_address: buildShippingAddress(),
+          destination_country: form.country,
+          user_id: user?.id || null,
+          note: form.note,
+          items: items.map(i => ({
+            book_id: i.bookId || i.id.split('-')[0],
+            condition: i.condition,
+            quantity: i.quantity || 1,
+          })),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.url) {
+        // Show server's verbatim message if present — already
+        // human-friendly for cart-state errors like "Only N copies left".
+        setStripeError(data.error || t('stripeError'))
+        setStripeLoading(false)
+        return
+      }
+      saveAddress(addressPayload)
+      if (user) {
+        try {
+          const { supabase } = await import('@/lib/supabase')
+          await supabase.from('profiles').update({
+            shipping_address: savedToShippingJson(addressPayload),
+          }).eq('id', user.id)
+        } catch (profileErr) {
+          console.error('[checkout] profile shipping_address update failed:', profileErr)
+        }
+      }
+      addRecentOrder({
+        orderNumber: data.order_number,
+        totalAmount: grandTotalUsd ?? 0,
+        currency: 'USD',
+        placedAt: Date.now(),
+      })
+      window.location.href = data.url
+    } catch (err) {
+      console.error('[checkout] handleStripeCheckout failed:', err)
+      setStripeError(t('stripeError'))
+      setStripeLoading(false)
+    }
   }
 
   const handleSlipUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -830,6 +906,11 @@ export default function CheckoutPage() {
 
         {step === 'payment' && (
           <div>
+            {/* Thai customers: PromptPay + bank transfer flow (existing).
+                International customers: skip everything in this branch
+                and render the Stripe redirect card below. */}
+            {!isInternational && (
+              <>
             {/* 24-hour payment window warning */}
             <div className="mb-4 px-4 py-3 border-l-4 border-rose bg-rose/5">
               <p className="font-heading text-sm text-rose mb-1">⏰ {t('pay24hHeading')}</p>
@@ -950,6 +1031,42 @@ export default function CheckoutPage() {
             <p className="text-xs text-ink-muted text-center mt-3">
               📦 {t('shippedMonday')}
             </p>
+              </>
+            )}
+
+            {/* International customers: single Stripe redirect card.
+                Slip upload, 24h warning, and method-selector are all
+                irrelevant for card payments and stay hidden. */}
+            {isInternational && (
+              <div className="mb-6 p-6 border border-line bg-offwhite">
+                <h3 className="font-heading text-base mb-2">🔒 {t('stripeRedirectHeading')}</h3>
+                <p className="text-sm text-ink-light leading-relaxed mb-5">
+                  {t('stripeRedirectBody')}
+                </p>
+
+                {stripeError && (
+                  <div className="mb-4 px-4 py-3 bg-rose/5 border border-rose/30 text-sm text-rose">
+                    ⚠ {stripeError}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleStripeCheckout}
+                  disabled={stripeLoading || grandTotalUsd === null}
+                  className="w-full py-3 bg-sage text-offwhite font-heading text-sm hover:bg-sage-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {stripeLoading
+                    ? `⟳ ${t('stripeRedirecting')}`
+                    : grandTotalUsd !== null
+                      ? `${t('payWithCard').replace('{amount}', `$${grandTotalUsd.toFixed(2)}`)} →`
+                      : t('payWithCard').replace('{amount}', '').trim()}
+                </button>
+
+                <p className="text-[11px] text-ink-muted text-center mt-3 italic">
+                  {t('poweredByStripe')}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

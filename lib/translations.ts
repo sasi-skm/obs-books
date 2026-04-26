@@ -138,6 +138,18 @@ export const TX: Record<string, Record<Lang, string>> = {
   bankAccount: { en: 'Account Number', th: 'เลขบัญชี' },
   bankHolder: { en: 'Account Name', th: 'ชื่อบัญชี' },
 
+  // Stripe (international card payment) — TH translations included for parity
+  // even though the Thai checkout path never reaches this branch.
+  stripeRedirectHeading: { en: 'Secure checkout', th: 'ชำระเงินอย่างปลอดภัย' },
+  stripeRedirectBody: {
+    en: 'You will be redirected to Stripe to complete payment with your card. Cards, Apple Pay, Google Pay, and Link are supported.',
+    th: 'คุณจะถูกนำไปยังหน้า Stripe เพื่อชำระเงินด้วยบัตร รองรับบัตรเครดิต, Apple Pay, Google Pay และ Link',
+  },
+  payWithCard: { en: 'Pay {amount} with card', th: 'ชำระ {amount} ด้วยบัตร' },
+  stripeRedirecting: { en: 'Redirecting to Stripe...', th: 'กำลังนำไปยัง Stripe...' },
+  stripeError: { en: 'Could not start payment. Please try again.', th: 'ไม่สามารถเริ่มการชำระเงินได้ กรุณาลองอีกครั้ง' },
+  poweredByStripe: { en: 'Powered by Stripe', th: 'ขับเคลื่อนโดย Stripe' },
+
   // Shipping
   destinationCountry: { en: 'Destination Country', th: 'ประเทศปลายทาง' },
   shippingEstimate: { en: 'Estimated Shipping (DHL)', th: 'ค่าจัดส่งโดยประมาณ (DHL)' },
