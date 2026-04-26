@@ -77,9 +77,9 @@ export interface Order {
   customer_phone: string
   customer_email?: string
   shipping_address: string
-  payment_method: 'promptpay' | 'transfer'
+  payment_method: 'promptpay' | 'transfer' | 'stripe'
   payment_status: 'pending' | 'uploaded' | 'confirmed'
-  order_status: 'new' | 'paid' | 'packing' | 'shipped' | 'delivered' | 'cancelled' | 'partially_cancelled'
+  order_status: 'new' | 'paid' | 'packing' | 'shipped' | 'delivered' | 'cancelled' | 'partially_cancelled' | 'refunded'
   slip_url?: string
   total_amount: number
   note?: string
@@ -88,6 +88,8 @@ export interface Order {
   tracking_number?: string
   destination_country?: string
   currency?: 'THB' | 'USD'
+  stripe_session_id?: string
+  stripe_payment_intent_id?: string
   created_at: string
   updated_at: string
   items?: OrderItem[]

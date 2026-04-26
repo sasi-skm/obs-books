@@ -322,18 +322,26 @@ export async function sendAdminSlipUploadedEmail({
 }
 
 // ── Order status update email (to customer) ───────────────────────────────────
+// For status='refunded', `totalAmount` is the REFUND amount (not the
+// original order total). Caller is responsible for converting cents to
+// dollars before passing in.
 export async function sendOrderStatusEmail({
-  to, customerName, orderNumber, status, trackingNumber, courier, totalAmount,
+  to, customerName, orderNumber, status, trackingNumber, courier, totalAmount, currency = 'THB',
 }: {
   to: string
   customerName: string
   orderNumber: string
-  status: 'paid' | 'shipped' | 'delivered'
+  status: 'paid' | 'shipped' | 'delivered' | 'refunded'
   trackingNumber?: string
   courier?: string
   totalAmount: number
+  // Optional currency for international (Stripe) orders — defaults to THB
+  // so existing PromptPay/transfer call sites keep their original output.
+  currency?: 'THB' | 'USD'
 }) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.obsbooks.com'
+  const symbol = currency === 'USD' ? '$' : '฿'
+  const formattedTotal = `${symbol}${totalAmount.toLocaleString()}`
 
   const courierNames: Record<string, string> = {
     'thailand-post': 'Thailand Post',
@@ -347,13 +355,14 @@ export async function sendOrderStatusEmail({
     paid: `Your payment is confirmed — ${orderNumber} 🌿`,
     shipped: `Your order is on its way — ${orderNumber} 📦`,
     delivered: `Your books have arrived — ${orderNumber} 🌸`,
+    refunded: `Refund processed — ${orderNumber}`,
   }
 
   const bodies: Record<string, string> = {
     paid: `
       ${h1(`Payment confirmed, ${customerName} 🌿`)}
       ${divider()}
-      ${p(`Great news — we have received your payment for order <strong>${orderNumber}</strong> (฿${totalAmount.toLocaleString()}). We are now carefully packing your books.`)}
+      ${p(`Great news — we have received your payment for order <strong>${orderNumber}</strong> (${formattedTotal}). We are now carefully packing your books.`)}
       ${p(`We will send you another email as soon as your order is shipped.`)}
       ${ctaButton('View My Order', `${siteUrl}/account`)}
       <p style="margin:24px 0 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#8a7d65;font-style:italic;">With love from Bangkok — Sasi at OBS Books 🌿</p>
@@ -377,6 +386,15 @@ export async function sendOrderStatusEmail({
       ${p(`We hope your books arrived safely and bring you much joy. Thank you so much for supporting OBS Books.`)}
       ${p(`If you enjoyed your purchase, we would love to hear your thoughts — reviews help other book lovers discover these treasures.`)}
       ${ctaButton('Leave a Review', `${siteUrl}/account`)}
+      <p style="margin:24px 0 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#8a7d65;font-style:italic;">With warmth from Bangkok — Sasi at OBS Books 🌿</p>
+    `,
+    refunded: `
+      ${h1(`Refund processed, ${customerName} 🌿`)}
+      ${divider()}
+      ${p(`Your refund of <strong>${formattedTotal}</strong> for order <strong>${orderNumber}</strong> has been processed.`)}
+      ${p(`The amount will appear on your card statement within <strong>5–10 business days</strong>, depending on your bank.`)}
+      ${p(`If you do not see the refund within that window, please reply to this email and we will look into it together.`)}
+      ${p(`Thank you for shopping with OBS Books — we hope to see you again.`)}
       <p style="margin:24px 0 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#8a7d65;font-style:italic;">With warmth from Bangkok — Sasi at OBS Books 🌿</p>
     `,
   }
