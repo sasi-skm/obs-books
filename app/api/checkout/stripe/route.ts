@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { restoreStock } from '@/lib/restore-stock'
@@ -179,7 +180,11 @@ export async function POST(req: NextRequest) {
     // separate line. Stripe's totals must reconcile with our
     // grandTotalUsd; we round each line independently and let Stripe
     // accept the resulting sum.
-    const stripeLineItems: import('stripe').Stripe.Checkout.SessionCreateParams.LineItem[] = linesThb.map(l => {
+    // Indexed-access type instead of `Stripe.Checkout.SessionCreateParams.LineItem`
+    // because the SDK's index.d.ts re-exports SessionCreateParams as a
+    // type alias, which loses nested namespace members.
+    type StripeLineItem = NonNullable<Stripe.Checkout.SessionCreateParams['line_items']>[number]
+    const stripeLineItems: StripeLineItem[] = linesThb.map(l => {
       const unitUsdCents = Math.round(thbToUsd(l.unit_price_thb) * 100)
       return {
         price_data: {
@@ -281,15 +286,18 @@ export async function POST(req: NextRequest) {
 
     // 5. allowed_countries for Stripe Address Element. Excludes TH —
     //    Stripe will reject Thailand selection at the form level.
+    type AllowedCountry = NonNullable<
+      NonNullable<Stripe.Checkout.SessionCreateParams['shipping_address_collection']>['allowed_countries']
+    >[number]
     const allowedCountries = SUPPORTED_COUNTRIES
       .map(c => c.code)
-      .filter(c => c !== 'TH') as import('stripe').Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry[]
+      .filter(c => c !== 'TH') as AllowedCountry[]
 
     // 5. Create the Stripe session. If this throws we are left with an
     //    orphan order row + decremented stock that no customer will
     //    ever pay for — roll both back before surfacing the error so
     //    the next customer can buy the book.
-    let session: import('stripe').Stripe.Checkout.Session
+    let session: Stripe.Checkout.Session
     try {
       session = await stripe.checkout.sessions.create({
         mode: 'payment',
