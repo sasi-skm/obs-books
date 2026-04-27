@@ -47,11 +47,15 @@ const REFUND_REASONS: { value: string; label: string }[] = [
   { value: 'other', label: 'Other (no reason sent)' },
 ]
 
-// Stripe orders store total_amount as USD cents; everything else is THB
-// whole units. Detect by payment_method (not currency) since some legacy
-// international PromptPay rows have currency='USD' but THB-based amounts.
+// Stripe orders store total_amount in the smallest currency unit (cents
+// for USD, satang for THB) and tag the row with currency. Non-Stripe
+// rows are THB whole units. Detect Stripe via payment_method, then
+// branch on currency for the symbol.
 function formatOrderTotal(order: Order): string {
   if (order.payment_method === 'stripe') {
+    if (order.currency === 'THB') {
+      return `฿${Math.round(order.total_amount / 100).toLocaleString()}`
+    }
     return `$${(order.total_amount / 100).toFixed(2)} USD`
   }
   return `฿${order.total_amount.toLocaleString()}`
@@ -156,8 +160,14 @@ export default function AdminOrdersPage() {
   }
 
   const openRefundModal = (order: Order) => {
-    const fullDollars = (order.total_amount / 100).toFixed(2)
-    setRefundAmount(fullDollars)
+    // Pre-fill in the order's currency. Both currencies store the
+    // smallest unit (cents/satang); divide by 100 for the display value.
+    // THB orders show whole baht with no decimals; USD orders show 2.
+    const isThbRefund = order.currency === 'THB'
+    const fullAmount = isThbRefund
+      ? Math.round(order.total_amount / 100).toString()
+      : (order.total_amount / 100).toFixed(2)
+    setRefundAmount(fullAmount)
     setRefundReason('requested_by_customer')
     setRefundError('')
     setRefundModal(order)
@@ -165,20 +175,22 @@ export default function AdminOrdersPage() {
 
   const handleRefundSubmit = async () => {
     if (!refundModal) return
-    const dollars = parseFloat(refundAmount)
-    if (!Number.isFinite(dollars) || dollars <= 0) {
+    const value = parseFloat(refundAmount)
+    if (!Number.isFinite(value) || value <= 0) {
       setRefundError('Enter a valid refund amount')
       return
     }
-    const cents = Math.round(dollars * 100)
-    if (cents > refundModal.total_amount) {
+    // Both THB and USD refunds use ×100 to reach the Stripe smallest
+    // unit (satang or cents respectively).
+    const smallestUnit = Math.round(value * 100)
+    if (smallestUnit > refundModal.total_amount) {
       setRefundError('Refund amount cannot exceed the original charge')
       return
     }
     setRefundLoading(true)
     setRefundError('')
     try {
-      const isFull = cents === refundModal.total_amount
+      const isFull = smallestUnit === refundModal.total_amount
       const res = await adminFetch('/api/admin/refund-stripe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -186,7 +198,9 @@ export default function AdminOrdersPage() {
           order_id: refundModal.id,
           // Omit amount_cents on full refunds so Stripe defers to its
           // own "full" semantics (and the webhook treats it as full).
-          ...(isFull ? {} : { amount_cents: cents }),
+          // Field name is historical; it's actually amount in smallest
+          // currency unit, so it works for both THB satang and USD cents.
+          ...(isFull ? {} : { amount_cents: smallestUnit }),
           ...(refundReason !== 'other' ? { reason: refundReason } : {}),
         }),
       })
@@ -752,14 +766,16 @@ export default function AdminOrdersPage() {
             <div className="mb-4">
               <label className="block text-xs text-ink-muted mb-1 uppercase tracking-wide">Refund amount</label>
               <div className="flex">
-                <span className="px-3 py-2 border border-line border-r-0 bg-parchment text-ink-muted font-heading">$</span>
+                <span className="px-3 py-2 border border-line border-r-0 bg-parchment text-ink-muted font-heading">
+                  {refundModal.currency === 'THB' ? '฿' : '$'}
+                </span>
                 <input
                   type="text"
                   inputMode="decimal"
                   value={refundAmount}
                   onChange={e => setRefundAmount(e.target.value)}
                   className="flex-1 text-sm px-3 py-2 border border-line bg-cream outline-none focus:border-sage font-mono"
-                  placeholder="0.00"
+                  placeholder={refundModal.currency === 'THB' ? '0' : '0.00'}
                   disabled={refundLoading}
                 />
               </div>
@@ -812,9 +828,14 @@ export default function AdminOrdersPage() {
                 disabled={refundLoading}
                 className="flex-1 py-2.5 bg-red-600 text-white text-sm font-heading hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {refundLoading
-                  ? 'Refunding...'
-                  : `Confirm refund $${(parseFloat(refundAmount) || 0).toFixed(2)}`}
+                {(() => {
+                  if (refundLoading) return 'Refunding...'
+                  const value = parseFloat(refundAmount) || 0
+                  if (refundModal.currency === 'THB') {
+                    return `Confirm refund ฿${Math.round(value).toLocaleString()}`
+                  }
+                  return `Confirm refund $${value.toFixed(2)}`
+                })()}
               </button>
               <button
                 onClick={() => setRefundModal(null)}

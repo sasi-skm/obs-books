@@ -138,6 +138,14 @@ export const TX: Record<string, Record<Lang, string>> = {
   bankAccount: { en: 'Account Number', th: 'เลขบัญชี' },
   bankHolder: { en: 'Account Name', th: 'ชื่อบัญชี' },
 
+  // Card (third payment option for TH customers; international customers
+  // see the same Stripe flow but without the radio selector).
+  card: { en: 'Credit/Debit Card', th: 'บัตรเครดิต/เดบิต' },
+  cardNoDiscountNote: {
+    en: 'Discounts apply to PromptPay and Bank Transfer only.',
+    th: 'ส่วนลดใช้ได้กับ PromptPay และโอนเงินผ่านธนาคารเท่านั้น',
+  },
+
   // Stripe (international card payment) — TH translations included for parity
   // even though the Thai checkout path never reaches this branch.
   stripeRedirectHeading: { en: 'Secure checkout', th: 'ชำระเงินอย่างปลอดภัย' },

@@ -54,15 +54,15 @@ export async function POST(req: NextRequest) {
     }
 
     const country = (destination_country || '').toUpperCase()
-    if (!country || country === 'TH') {
-      return NextResponse.json(
-        { error: 'Stripe checkout is only available for international (non-Thailand) orders' },
-        { status: 400 },
-      )
+    if (!country) {
+      return NextResponse.json({ error: 'Missing destination country' }, { status: 400 })
     }
-    if (COUNTRY_ZONES[country] === undefined) {
+    // TH is allowed (domestic Stripe in THB). Other countries must be in
+    // the DHL zone map; everything else is rejected before we hit Stripe.
+    if (country !== 'TH' && COUNTRY_ZONES[country] === undefined) {
       return NextResponse.json({ error: `Unsupported destination country: ${country}` }, { status: 400 })
     }
+    const isThbOrder = country === 'TH'
 
     if (!supabaseAdmin) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 })
@@ -163,33 +163,28 @@ export async function POST(req: NextRequest) {
     // Server-side totals.
     const subtotalThb = linesThb.reduce((s, l) => s + l.unit_price_thb * l.quantity, 0)
     const totalGrams = linesThb.reduce((s, l) => s + l.weight_grams * l.quantity, 0)
-    const shippingUsd = getShippingRate(country, totalGrams)
-    if (shippingUsd === null) {
-      return NextResponse.json({ error: 'No shipping rate for destination' }, { status: 400 })
-    }
-    const subtotalUsd = thbToUsd(subtotalThb)
-    const grandTotalUsd = subtotalUsd + shippingUsd
-    if (grandTotalUsd <= 0) {
-      return NextResponse.json({ error: 'Order total must be positive' }, { status: 400 })
-    }
 
-    const totalAmountCents = Math.round(grandTotalUsd * 100)
+    // Branch on country. TH stays in THB (no DHL line, free domestic
+    // shipping); everything else converts to USD and adds DHL.
+    let totalAmountSmallestUnit: number
+    let orderCurrency: 'THB' | 'USD'
 
-    // Build Stripe line items in USD cents. We send each book at its
-    // per-condition USD price (rounded to cents) and ship as a
-    // separate line. Stripe's totals must reconcile with our
-    // grandTotalUsd; we round each line independently and let Stripe
-    // accept the resulting sum.
-    // Indexed-access type instead of `Stripe.Checkout.SessionCreateParams.LineItem`
-    // because the SDK's index.d.ts re-exports SessionCreateParams as a
-    // type alias, which loses nested namespace members.
     type StripeLineItem = NonNullable<Stripe.Checkout.SessionCreateParams['line_items']>[number]
-    const stripeLineItems: StripeLineItem[] = linesThb.map(l => {
-      const unitUsdCents = Math.round(thbToUsd(l.unit_price_thb) * 100)
-      return {
+    let stripeLineItems: StripeLineItem[]
+
+    if (isThbOrder) {
+      // THB satang. Stripe minimum is 1000 satang (฿10) — guarded by the
+      // positivity check below since OBS books are well above that.
+      if (subtotalThb <= 0) {
+        return NextResponse.json({ error: 'Order total must be positive' }, { status: 400 })
+      }
+      totalAmountSmallestUnit = subtotalThb * 100
+      orderCurrency = 'THB'
+
+      stripeLineItems = linesThb.map(l => ({
         price_data: {
-          currency: 'usd',
-          unit_amount: unitUsdCents,
+          currency: 'thb',
+          unit_amount: l.unit_price_thb * 100, // baht → satang
           product_data: {
             name: l.condition ? `${l.title} (${l.condition})` : l.title,
             description: l.author ? `by ${l.author}` : undefined,
@@ -201,19 +196,53 @@ export async function POST(req: NextRequest) {
           },
         },
         quantity: l.quantity,
+      }))
+      // No shipping line for TH — domestic free shipping convention.
+    } else {
+      // USD with DHL international shipping line.
+      const shippingUsd = getShippingRate(country, totalGrams)
+      if (shippingUsd === null) {
+        return NextResponse.json({ error: 'No shipping rate for destination' }, { status: 400 })
       }
-    })
+      const subtotalUsd = thbToUsd(subtotalThb)
+      const grandTotalUsd = subtotalUsd + shippingUsd
+      if (grandTotalUsd <= 0) {
+        return NextResponse.json({ error: 'Order total must be positive' }, { status: 400 })
+      }
+      totalAmountSmallestUnit = Math.round(grandTotalUsd * 100)
+      orderCurrency = 'USD'
 
-    stripeLineItems.push({
-      price_data: {
-        currency: 'usd',
-        unit_amount: Math.round(shippingUsd * 100),
-        product_data: {
-          name: 'International shipping (DHL Express)',
+      stripeLineItems = linesThb.map(l => {
+        const unitUsdCents = Math.round(thbToUsd(l.unit_price_thb) * 100)
+        return {
+          price_data: {
+            currency: 'usd',
+            unit_amount: unitUsdCents,
+            product_data: {
+              name: l.condition ? `${l.title} (${l.condition})` : l.title,
+              description: l.author ? `by ${l.author}` : undefined,
+              images: l.image_url ? [l.image_url] : undefined,
+              metadata: {
+                book_id: l.book_id,
+                condition: l.condition || '',
+              },
+            },
+          },
+          quantity: l.quantity,
+        }
+      })
+
+      stripeLineItems.push({
+        price_data: {
+          currency: 'usd',
+          unit_amount: Math.round(shippingUsd * 100),
+          product_data: {
+            name: 'International shipping (DHL Express)',
+          },
         },
-      },
-      quantity: 1,
-    })
+        quantity: 1,
+      })
+    }
 
     const orderNumber = 'OBS-' + Date.now().toString(36).toUpperCase()
 
@@ -233,8 +262,8 @@ export async function POST(req: NextRequest) {
         payment_status: 'pending',
         order_status: 'new',
         note: note || null,
-        total_amount: totalAmountCents,
-        currency: 'USD',
+        total_amount: totalAmountSmallestUnit,
+        currency: orderCurrency,
         destination_country: country,
         user_id: user_id || null,
       })
@@ -284,14 +313,17 @@ export async function POST(req: NextRequest) {
       process.env.NEXT_PUBLIC_SITE_URL ||
       'https://www.obsbooks.com'
 
-    // 5. allowed_countries for Stripe Address Element. Excludes TH —
-    //    Stripe will reject Thailand selection at the form level.
+    // 5. allowed_countries for Stripe Address Element. TH orders restrict
+    //    to Thailand only (matches our domestic shipping flow); everything
+    //    else gets the non-TH supported list. Foreign-card-on-Thai-address
+    //    is fine; Thai-card-with-international-shipping uses the
+    //    international branch.
     type AllowedCountry = NonNullable<
       NonNullable<Stripe.Checkout.SessionCreateParams['shipping_address_collection']>['allowed_countries']
     >[number]
-    const allowedCountries = SUPPORTED_COUNTRIES
-      .map(c => c.code)
-      .filter(c => c !== 'TH') as AllowedCountry[]
+    const allowedCountries: AllowedCountry[] = isThbOrder
+      ? (['TH'] as AllowedCountry[])
+      : (SUPPORTED_COUNTRIES.map(c => c.code).filter(c => c !== 'TH') as AllowedCountry[])
 
     // 5. Create the Stripe session. If this throws we are left with an
     //    orphan order row + decremented stock that no customer will

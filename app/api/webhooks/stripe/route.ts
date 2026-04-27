@@ -141,12 +141,12 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
     }
   }
 
-  // Stripe orders are always international + USD, and total_amount is
-  // stored in USD cents (per Phase 3 design), so divide by 100 for the
-  // human-readable totals below.
-  const totalDollars = order.currency === 'USD'
-    ? Math.round(order.total_amount) / 100
-    : order.total_amount
+  // Stripe orders store total_amount in the smallest unit (cents for
+  // USD, satang for THB). Both divide by 100 to get the human-readable
+  // amount. Phase 9 added domestic THB Stripe orders alongside the
+  // international USD ones.
+  const orderCurrency: 'THB' | 'USD' = (order.currency as 'THB' | 'USD') || 'USD'
+  const totalDisplay = Math.round(order.total_amount) / 100
 
   // Fetch order items once — the customer confirmation email needs them
   // (with USD-converted prices for an all-USD line breakdown) and the
@@ -167,18 +167,23 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
       const { sendStripeOrderConfirmationEmail } = await import('@/lib/email')
       const { thbToUsd } = await import('@/lib/shipping')
 
-      const customerItems = orderItems.map(it => ({
-        title: it.title,
-        condition: it.condition || undefined,
-        quantity: Number(it.quantity) || 1,
-        usdSubtotal: thbToUsd((Number(it.price) || 0) * (Number(it.quantity) || 1)),
-      }))
-      // Synthetic shipping line = total - sum(items_in_usd). Reconciles
-      // exactly because thbToUsd uses the same flat rate Phase 3 used to
-      // build the Stripe line items, and shipping was a separate Stripe
-      // line so it's already part of total_amount.
-      const itemsSubtotalUsd = customerItems.reduce((s, i) => s + i.usdSubtotal, 0)
-      const shippingUsd = Math.max(0, totalDollars - itemsSubtotalUsd)
+      const customerItems = orderItems.map(it => {
+        const lineThb = (Number(it.price) || 0) * (Number(it.quantity) || 1)
+        return {
+          title: it.title,
+          condition: it.condition || undefined,
+          quantity: Number(it.quantity) || 1,
+          // THB orders show items in baht (no conversion); USD orders
+          // convert via thbToUsd, matching the per-line math Phase 3
+          // used to build the Stripe line items.
+          subtotal: orderCurrency === 'THB' ? lineThb : thbToUsd(lineThb),
+        }
+      })
+      // Synthetic shipping line = total - sum(items). For TH this should
+      // be 0 (no DHL line on the Stripe session). For USD it reconciles
+      // to the DHL line we sent to Stripe.
+      const itemsSubtotal = customerItems.reduce((s, i) => s + i.subtotal, 0)
+      const shipping = Math.max(0, totalDisplay - itemsSubtotal)
 
       await sendStripeOrderConfirmationEmail({
         to: resolvedEmail,
@@ -186,8 +191,9 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
         orderNumber: order.order_number,
         shippingAddress: order.shipping_address || '',
         items: customerItems,
-        shippingUsd,
-        totalUsd: totalDollars,
+        shipping,
+        total: totalDisplay,
+        currency: orderCurrency,
       })
     } catch (emailErr) {
       // Don't fail the webhook over a transient email error — the order
@@ -208,8 +214,8 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
       customerName: order.customer_name || '',
       customerPhone: order.customer_phone || '',
       customerEmail: resolvedEmail || undefined,
-      totalAmount: totalDollars,
-      currency: (order.currency as 'THB' | 'USD') || 'USD',
+      totalAmount: totalDisplay,
+      currency: orderCurrency,
       paymentMethod: 'stripe',
       items: orderItems.map(it => ({
         title: it.title,

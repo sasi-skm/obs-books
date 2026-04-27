@@ -247,27 +247,37 @@ export async function sendOrderConfirmationEmail({
 
 // ── Stripe order confirmation email (to customer, after payment) ──────────
 //
-// Fired from the checkout.session.completed webhook for international
-// orders paid via Stripe. Replaces the temporary
-// sendOrderStatusEmail({status:'paid'}) shim used in Phase 4.
+// Fired from the checkout.session.completed webhook for orders paid via
+// Stripe. Replaces the temporary sendOrderStatusEmail({status:'paid'})
+// shim used in Phase 4.
 //
-// All amounts are in USD because Stripe orders are international-only;
-// items have been pre-converted from THB by the caller so the synthetic
-// "International shipping (DHL Express)" line reconciles exactly with
-// the Stripe-charged total.
+// Currency-aware: TH domestic orders display in ฿ with no shipping line
+// (free domestic shipping); international orders display in $ with a
+// synthetic "International shipping (DHL Express)" line that reconciles
+// with the Stripe-charged total. Caller is responsible for converting
+// items into the display currency before passing in.
 export async function sendStripeOrderConfirmationEmail({
-  to, customerName, orderNumber, shippingAddress, items, shippingUsd, totalUsd,
+  to, customerName, orderNumber, shippingAddress, items, shipping, total, currency,
 }: {
   to: string
   customerName: string
   orderNumber: string
   shippingAddress: string
-  items: { title: string; condition?: string; quantity: number; usdSubtotal: number }[]
-  shippingUsd: number
-  totalUsd: number
+  items: { title: string; condition?: string; quantity: number; subtotal: number }[]
+  // 0 (or omit) for THB orders to skip the shipping row entirely.
+  shipping: number
+  total: number
+  currency: 'THB' | 'USD'
 }) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.obsbooks.com'
   const firstName = customerName.split(' ')[0] || 'friend'
+  const isThb = currency === 'THB'
+
+  const formatMoney = (n: number) =>
+    isThb
+      ? `฿${Math.round(n).toLocaleString()}`
+      : `$${n.toFixed(2)}`
+  const totalSuffix = isThb ? '' : ' USD'
 
   const itemRows = items.map(item =>
     `<tr>
@@ -275,25 +285,42 @@ export async function sendStripeOrderConfirmationEmail({
         ${item.title}${item.quantity > 1 ? ` &times;${item.quantity}` : ''}
         ${item.condition ? `<br/><span style="color:#4a6741;font-size:11px;">${item.condition}</span>` : ''}
       </td>
-      <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;text-align:right;vertical-align:top;">$${item.usdSubtotal.toFixed(2)}</td>
+      <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;text-align:right;vertical-align:top;">${formatMoney(item.subtotal)}</td>
     </tr>`
   ).join('')
 
-  const shippingRow = `<tr>
+  // No shipping row for TH orders — domestic free shipping convention.
+  const shippingRow = shipping > 0 ? `<tr>
     <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;">
       International shipping<br/><span style="color:#8a7d65;font-size:11px;">DHL Express</span>
     </td>
-    <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;text-align:right;vertical-align:top;">$${shippingUsd.toFixed(2)}</td>
-  </tr>`
+    <td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;text-align:right;vertical-align:top;">${formatMoney(shipping)}</td>
+  </tr>` : ''
 
   const formattedAddress = shippingAddress
     ? shippingAddress.replace(/\n/g, '<br/>')
     : ''
 
+  // Currency-aware "what happens next" — drop the DHL/international
+  // mentions for domestic THB orders.
+  const nextStepsRows = isThb
+    ? [
+        '📦 We carefully pack books every Monday from Bangkok.',
+        '✈ You will get a tracking number by email once your parcel ships.',
+      ]
+    : [
+        '📦 We carefully pack books every Monday from Bangkok.',
+        '✈ You will get a tracking number by email once DHL Express picks up your parcel.',
+        '🌍 International delivery typically takes 7-14 business days from dispatch.',
+      ]
+  const nextStepsHtml = nextStepsRows.map(line =>
+    `<tr><td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;line-height:1.6;">${line}</td></tr>`
+  ).join('')
+
   const content = `
     ${h1(`Thank you for your order, ${firstName} 🌿`)}
     ${divider()}
-    ${p(`We've received your payment of <strong>$${totalUsd.toFixed(2)} USD</strong> and your order is confirmed. We're so glad to be sending these treasures your way.`)}
+    ${p(`We've received your payment of <strong>${formatMoney(total)}${totalSuffix}</strong> and your order is confirmed. We're so glad to be sending these treasures your way.`)}
 
     <p style="margin:0 0 6px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;letter-spacing:2px;color:#8a7d65;text-transform:uppercase;">Order Reference</p>
     <p style="margin:0 0 24px;font-family:'Georgia',serif;font-size:22px;color:#4a6741;font-weight:400;">${orderNumber}</p>
@@ -305,7 +332,7 @@ export async function sendStripeOrderConfirmationEmail({
       <tr><td colspan="2" style="padding-top:10px;border-top:1px solid #d6cdb8;"></td></tr>
       <tr>
         <td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;">Total</td>
-        <td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;text-align:right;">$${totalUsd.toFixed(2)} USD</td>
+        <td style="font-family:'Georgia',serif;font-size:15px;color:#2c2416;font-weight:600;text-align:right;">${formatMoney(total)}${totalSuffix}</td>
       </tr>
     </table>
 
@@ -316,9 +343,7 @@ export async function sendStripeOrderConfirmationEmail({
 
     <p style="margin:0 0 6px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;letter-spacing:2px;color:#8a7d65;text-transform:uppercase;">What Happens Next</p>
     <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;width:100%;">
-      <tr><td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;line-height:1.6;">📦 We carefully pack books every Monday from Bangkok.</td></tr>
-      <tr><td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;line-height:1.6;">✈ You'll get a tracking number by email once DHL Express picks up your parcel.</td></tr>
-      <tr><td style="padding:6px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;line-height:1.6;">🌍 International delivery typically takes 7-14 business days from dispatch.</td></tr>
+      ${nextStepsHtml}
     </table>
 
     ${ctaButton('Track Order', `${siteUrl}/track?order=${orderNumber}`)}

@@ -64,16 +64,16 @@ export default function CheckoutPage() {
     city: '', province: '', postalCode: '',
     note: '', country: 'TH',
   })
-  const [payMethod, setPayMethod] = useState<'promptpay' | 'transfer'>('promptpay')
+  const [payMethod, setPayMethod] = useState<'promptpay' | 'transfer' | 'stripe'>('promptpay')
   const [slipPreview, setSlipPreview] = useState<string>('')
   const [slipFile, setSlipFile] = useState<File | null>(null)
   const [orderNumber, setOrderNumber] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  // Stripe redirect state — international card-payment path
+  // Stripe redirect state — card-payment path (international or TH-domestic)
   const [stripeLoading, setStripeLoading] = useState(false)
   const [stripeError, setStripeError] = useState('')
   const [snapshotItems, setSnapshotItems] = useState<CartItem[]>([])
-  const [snapshotPayMethod, setSnapshotPayMethod] = useState<'promptpay' | 'transfer'>('promptpay')
+  const [snapshotPayMethod, setSnapshotPayMethod] = useState<'promptpay' | 'transfer' | 'stripe'>('promptpay')
   const [snapshotTotal, setSnapshotTotal] = useState(0)
   const [slipUploadWarning, setSlipUploadWarning] = useState<string>('')
   const [copied, setCopied] = useState(false)
@@ -107,6 +107,12 @@ export default function CheckoutPage() {
   const effectiveTotal = Math.max(0, total - pointsDiscount - bestDiscount)
   const booksTotalUsd = isInternational ? thbToUsd(effectiveTotal) : null
   const grandTotalUsd = (booksTotalUsd !== null && shippingUsd !== null) ? booksTotalUsd + shippingUsd : null
+  // TH customers who pick Card go through Stripe, but discounts (voucher,
+  // points, subscriber) currently don't apply to Stripe orders. When
+  // they're on the payment step with Card selected, show full prices in
+  // the summary so the displayed total matches what Stripe will charge.
+  const showDiscountsInSummary = !(step === 'payment' && payMethod === 'stripe' && !isInternational)
+  const hasActiveDiscount = voucherApplied !== null || pointsRedeemed || usingSubscriberDiscount
 
   // Check active subscription
   useEffect(() => {
@@ -261,8 +267,11 @@ export default function CheckoutPage() {
       }
       addRecentOrder({
         orderNumber: data.order_number,
-        totalAmount: grandTotalUsd ?? 0,
-        currency: 'USD',
+        // Discounts don't apply to Stripe yet (Phase 9 deferred them).
+        // For TH the customer pays full subtotal in baht; for international
+        // they pay grandTotalUsd which already includes DHL shipping.
+        totalAmount: isInternational ? (grandTotalUsd ?? 0) : total,
+        currency: isInternational ? 'USD' : 'THB',
         placedAt: Date.now(),
       })
       window.location.href = data.url
@@ -611,19 +620,19 @@ export default function CheckoutPage() {
               <span className="flex-shrink-0">${shippingUsd.toFixed(2)} USD</span>
             </div>
           )}
-          {pointsRedeemed && (
+          {pointsRedeemed && showDiscountsInSummary && (
             <div className="flex justify-between text-sm mb-1 pt-1 border-t border-line/50 mt-1" style={{ color: '#3a5832' }}>
               <span>Points discount (100 pts)</span>
               <span className="flex-shrink-0">-฿50</span>
             </div>
           )}
-          {usingSubscriberDiscount && (
+          {usingSubscriberDiscount && showDiscountsInSummary && (
             <div className="flex justify-between text-sm mb-1 pt-1 border-t border-line/50 mt-1" style={{ color: '#3a5832' }}>
               <span>✦ Subscriber discount (5% off)</span>
               <span className="flex-shrink-0">-฿{subscriberDiscountAmount.toLocaleString()}</span>
             </div>
           )}
-          {voucherApplied && !usingSubscriberDiscount && (
+          {voucherApplied && !usingSubscriberDiscount && showDiscountsInSummary && (
             <div className="flex justify-between text-sm mb-1 pt-1 border-t border-line/50 mt-1" style={{ color: '#3a5832' }}>
               <span>Voucher ({voucherApplied.discount_percent}% off)</span>
               <span className="flex-shrink-0">-฿{voucherApplied.discount_amount.toLocaleString()}</span>
@@ -634,7 +643,7 @@ export default function CheckoutPage() {
             <span>
               {isInternational && grandTotalUsd !== null
                 ? `$${grandTotalUsd.toFixed(2)} USD`
-                : `฿${effectiveTotal.toLocaleString()}`}
+                : `฿${(showDiscountsInSummary ? effectiveTotal : total).toLocaleString()}`}
             </span>
           </div>
           {isInternational && (
@@ -911,17 +920,20 @@ export default function CheckoutPage() {
                 and render the Stripe redirect card below. */}
             {!isInternational && (
               <>
-            {/* 24-hour payment window warning */}
-            <div className="mb-4 px-4 py-3 border-l-4 border-rose bg-rose/5">
-              <p className="font-heading text-sm text-rose mb-1">⏰ {t('pay24hHeading')}</p>
-              <p className="text-xs text-ink-light leading-relaxed">{t('pay24hBody')}</p>
-            </div>
+            {/* 24-hour payment window warning — hidden when Card is selected
+                since Stripe payments are real-time, not slip-upload-based. */}
+            {payMethod !== 'stripe' && (
+              <div className="mb-4 px-4 py-3 border-l-4 border-rose bg-rose/5">
+                <p className="font-heading text-sm text-rose mb-1">⏰ {t('pay24hHeading')}</p>
+                <p className="text-xs text-ink-light leading-relaxed">{t('pay24hBody')}</p>
+              </div>
+            )}
 
-            {/* Payment method selector */}
+            {/* Payment method selector — 3 options for TH customers. */}
             <div className="mb-6">
               <label className="block font-heading text-sm mb-2">{t('payMethod')}</label>
               <div className="flex flex-col gap-2">
-                {(['promptpay', 'transfer'] as const).map(method => (
+                {(['promptpay', 'transfer', 'stripe'] as const).map(method => (
                   <button
                     key={method}
                     onClick={() => setPayMethod(method)}
@@ -934,10 +946,21 @@ export default function CheckoutPage() {
                     }`}>
                       {payMethod === method && <div className="w-[7px] h-[7px] rounded-full bg-sage" />}
                     </div>
-                    <span className="font-heading text-sm">{t(method === 'promptpay' ? 'promptpay' : 'bankTransfer')}</span>
+                    <span className="font-heading text-sm">
+                      {t(method === 'promptpay' ? 'promptpay' : method === 'transfer' ? 'bankTransfer' : 'card')}
+                    </span>
                   </button>
                 ))}
               </div>
+              {/* Discounts (voucher / points / subscriber) currently only
+                  apply to PromptPay + Bank Transfer. Surface this when a
+                  discount is active so TH customers don't pick Card and
+                  silently lose their discount. */}
+              {hasActiveDiscount && (
+                <p className="text-xs text-bark/70 italic mt-2">
+                  {t('cardNoDiscountNote')}
+                </p>
+              )}
             </div>
 
             {/* PromptPay QR */}
@@ -1000,73 +1023,90 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* Slip Upload */}
-            <div className="mb-6">
-              <label className="block font-heading text-sm mb-2">{t('slip')}</label>
-              <label className="block border-2 border-dashed border-line p-6 text-center cursor-pointer hover:border-sage transition-colors">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleSlipUpload}
-                />
-                {slipPreview ? (
-                  <div className="max-w-[200px] mx-auto">
-                    <Image src={slipPreview} alt="Payment slip" width={200} height={300} className="w-full border border-line" />
-                  </div>
-                ) : (
-                  <p className="text-sm text-ink-muted">📎 {t('slipClick')}</p>
-                )}
-              </label>
-              <p className="text-xs text-ink-muted mt-1">{t('slipLater')}</p>
-            </div>
+            {/* Slip Upload — hidden when Card is selected (irrelevant for
+                Stripe payments). */}
+            {payMethod !== 'stripe' && (
+              <div className="mb-6">
+                <label className="block font-heading text-sm mb-2">{t('slip')}</label>
+                <label className="block border-2 border-dashed border-line p-6 text-center cursor-pointer hover:border-sage transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleSlipUpload}
+                  />
+                  {slipPreview ? (
+                    <div className="max-w-[200px] mx-auto">
+                      <Image src={slipPreview} alt="Payment slip" width={200} height={300} className="w-full border border-line" />
+                    </div>
+                  ) : (
+                    <p className="text-sm text-ink-muted">📎 {t('slipClick')}</p>
+                  )}
+                </label>
+                <p className="text-xs text-ink-muted mt-1">{t('slipLater')}</p>
+              </div>
+            )}
 
-            <button
-              onClick={handlePlaceOrder}
-              disabled={submitting}
-              className="w-full py-3 bg-sage text-offwhite font-heading text-sm hover:bg-sage-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? '...' : t('placeOrder')}
-            </button>
-            <p className="text-xs text-ink-muted text-center mt-3">
-              📦 {t('shippedMonday')}
-            </p>
+            {/* Place Order button — only for PromptPay/Bank Transfer. The
+                Stripe card below has its own redirect button. */}
+            {payMethod !== 'stripe' && (
+              <>
+                <button
+                  onClick={handlePlaceOrder}
+                  disabled={submitting}
+                  className="w-full py-3 bg-sage text-offwhite font-heading text-sm hover:bg-sage-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? '...' : t('placeOrder')}
+                </button>
+                <p className="text-xs text-ink-muted text-center mt-3">
+                  📦 {t('shippedMonday')}
+                </p>
+              </>
+            )}
               </>
             )}
 
-            {/* International customers: single Stripe redirect card.
-                Slip upload, 24h warning, and method-selector are all
-                irrelevant for card payments and stay hidden. */}
-            {isInternational && (
-              <div className="mb-6 p-6 border border-line bg-offwhite">
-                <h3 className="font-heading text-base mb-2">🔒 {t('stripeRedirectHeading')}</h3>
-                <p className="text-sm text-ink-light leading-relaxed mb-5">
-                  {t('stripeRedirectBody')}
-                </p>
+            {/* Stripe redirect card — shown for international customers
+                (always) and TH customers who picked Card. Same handler,
+                amount/disabled state varies by currency. */}
+            {(isInternational || payMethod === 'stripe') && (() => {
+              const stripeAmountLabel = isInternational
+                ? (grandTotalUsd !== null ? `$${grandTotalUsd.toFixed(2)}` : '')
+                : `฿${total.toLocaleString()}`
+              const stripeAmountReady = isInternational
+                ? grandTotalUsd !== null
+                : total > 0
+              return (
+                <div className="mb-6 p-6 border border-line bg-offwhite">
+                  <h3 className="font-heading text-base mb-2">🔒 {t('stripeRedirectHeading')}</h3>
+                  <p className="text-sm text-ink-light leading-relaxed mb-5">
+                    {t('stripeRedirectBody')}
+                  </p>
 
-                {stripeError && (
-                  <div className="mb-4 px-4 py-3 bg-rose/5 border border-rose/30 text-sm text-rose">
-                    ⚠ {stripeError}
-                  </div>
-                )}
+                  {stripeError && (
+                    <div className="mb-4 px-4 py-3 bg-rose/5 border border-rose/30 text-sm text-rose">
+                      ⚠ {stripeError}
+                    </div>
+                  )}
 
-                <button
-                  onClick={handleStripeCheckout}
-                  disabled={stripeLoading || grandTotalUsd === null}
-                  className="w-full py-3 bg-sage text-offwhite font-heading text-sm hover:bg-sage-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {stripeLoading
-                    ? `⟳ ${t('stripeRedirecting')}`
-                    : grandTotalUsd !== null
-                      ? `${t('payWithCard').replace('{amount}', `$${grandTotalUsd.toFixed(2)}`)} →`
-                      : t('payWithCard').replace('{amount}', '').trim()}
-                </button>
+                  <button
+                    onClick={handleStripeCheckout}
+                    disabled={stripeLoading || !stripeAmountReady}
+                    className="w-full py-3 bg-sage text-offwhite font-heading text-sm hover:bg-sage-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {stripeLoading
+                      ? `⟳ ${t('stripeRedirecting')}`
+                      : stripeAmountReady
+                        ? `${t('payWithCard').replace('{amount}', stripeAmountLabel)} →`
+                        : t('payWithCard').replace('{amount}', '').trim()}
+                  </button>
 
-                <p className="text-[11px] text-ink-muted text-center mt-3 italic">
-                  {t('poweredByStripe')}
-                </p>
-              </div>
-            )}
+                  <p className="text-[11px] text-ink-muted text-center mt-3 italic">
+                    {t('poweredByStripe')}
+                  </p>
+                </div>
+              )
+            })()}
           </div>
         )}
       </div>

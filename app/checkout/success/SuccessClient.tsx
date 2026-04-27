@@ -8,9 +8,16 @@ import { useLang } from '@/components/layout/LanguageContext'
 import type { SuccessPayload } from './page'
 
 function formatMoney(cents: number, currency: string): string {
-  const symbol = currency === 'USD' ? '$' : currency === 'THB' ? '฿' : ''
-  // Currencies stored in cents on the Stripe side; divide for display.
-  return `${symbol}${(cents / 100).toFixed(2)}`
+  // Stripe always reports amounts in the smallest unit. Divide by 100 to
+  // get baht/dollars. THB renders without decimals (whole baht); USD
+  // renders with two.
+  if (currency === 'THB') {
+    return `฿${Math.round(cents / 100).toLocaleString()}`
+  }
+  if (currency === 'USD') {
+    return `$${(cents / 100).toFixed(2)}`
+  }
+  return `${(cents / 100).toFixed(2)}`
 }
 
 export default function SuccessClient({ payload }: { payload: SuccessPayload }) {
