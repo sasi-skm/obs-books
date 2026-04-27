@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { Order } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { adminFetch } from '@/lib/admin-fetch'
@@ -14,10 +15,12 @@ const STATUS_COLORS: Record<string, string> = {
   delivered: 'bg-green-100 text-green-700',
   cancelled: 'bg-red-100 text-red-700',
   partially_cancelled: 'bg-orange-100 text-orange-700',
+  refunded: 'bg-rose-100 text-rose-700',
 }
 
 const STATUS_LABELS: Record<string, string> = {
   partially_cancelled: 'partially cancelled',
+  refunded: 'refunded',
 }
 
 const CANCEL_REASONS = ['Out of stock', 'Book condition too poor to sell']
@@ -73,6 +76,7 @@ function stripeDashboardUrl(piId: string): string {
 type Tab = 'all' | 'new' | 'paid' | 'shipped'
 
 export default function AdminOrdersPage() {
+  const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('all')
@@ -300,7 +304,11 @@ export default function AdminOrdersPage() {
           {/* Mobile: card layout */}
           <div className="md:hidden space-y-3">
             {filtered.map(order => (
-              <div key={order.id} className="bg-offwhite border border-line p-4">
+              <div
+                key={order.id}
+                onClick={() => router.push(`/admin/orders/${order.order_number}`)}
+                className="bg-offwhite border border-line p-4 cursor-pointer hover:border-sage transition-colors"
+              >
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <p className="font-mono text-xs font-medium text-sage">{order.order_number}</p>
@@ -359,7 +367,10 @@ export default function AdminOrdersPage() {
                     <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600">{order.destination_country}</span>
                   )}
                 </div>
-                <div className="flex gap-2 flex-wrap">
+                <div
+                  className="flex gap-2 flex-wrap"
+                  onClick={e => e.stopPropagation()}
+                >
                   {order.slip_url && (
                     <a href={order.slip_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
                       View Slip
@@ -455,7 +466,7 @@ export default function AdminOrdersPage() {
                   <th className="text-left p-3 font-heading font-medium">Order #</th>
                   <th className="text-left p-3 font-heading font-medium">Customer</th>
                   <th className="text-left p-3 font-heading font-medium">Total</th>
-                  <th className="text-left p-3 font-heading font-medium">Payment</th>
+                  <th className="text-left p-3 font-heading font-medium">Method</th>
                   <th className="text-left p-3 font-heading font-medium">Ship to</th>
                   <th className="text-left p-3 font-heading font-medium">Status</th>
                   <th className="text-left p-3 font-heading font-medium">Actions</th>
@@ -463,7 +474,11 @@ export default function AdminOrdersPage() {
               </thead>
               <tbody>
                 {filtered.map(order => (
-                  <tr key={order.id} className="border-b border-line hover:bg-parchment/50">
+                  <tr
+                    key={order.id}
+                    onClick={() => router.push(`/admin/orders/${order.order_number}`)}
+                    className="border-b border-line hover:bg-parchment/50 cursor-pointer"
+                  >
                     <td className="p-3 font-mono text-xs font-medium text-sage">{order.order_number}</td>
                     <td className="p-3">
                       <div className="font-heading font-medium">{order.customer_name}</div>
@@ -505,7 +520,7 @@ export default function AdminOrdersPage() {
                         {STATUS_LABELS[order.order_status] || order.order_status}
                       </span>
                     </td>
-                    <td className="p-3">
+                    <td className="p-3" onClick={e => e.stopPropagation()}>
                       <div className="flex gap-2 flex-wrap">
                         {order.slip_url && (
                           <a href={order.slip_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
