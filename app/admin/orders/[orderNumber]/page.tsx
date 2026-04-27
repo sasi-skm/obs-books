@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter, useParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { Order } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { adminFetch } from '@/lib/admin-fetch'
@@ -96,7 +96,6 @@ type CancelledItem = {
 }
 
 export default function AdminOrderDetailPage() {
-  const router = useRouter()
   const params = useParams<{ orderNumber: string }>()
   const orderNumber = params?.orderNumber || ''
 
