@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Order } from '@/types'
 import { supabase } from '@/lib/supabase'
+import { adminFetch } from '@/lib/admin-fetch'
 
 const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-100 text-blue-700',
@@ -178,7 +179,7 @@ export default function AdminOrdersPage() {
     setRefundError('')
     try {
       const isFull = cents === refundModal.total_amount
-      const res = await fetch('/api/admin/refund-stripe', {
+      const res = await adminFetch('/api/admin/refund-stripe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
