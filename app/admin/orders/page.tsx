@@ -423,7 +423,12 @@ export default function AdminOrdersPage() {
                     </button>
                   )}
                   {order.payment_method === 'stripe'
-                    ? order.order_status !== 'cancelled' && order.order_status !== 'partially_cancelled' && order.order_status !== 'refunded' && order.stripe_payment_intent_id && (
+                    ? order.order_status !== 'cancelled' && order.order_status !== 'partially_cancelled' && order.order_status !== 'refunded' && (
+                        // Don't gate on stripe_payment_intent_id at the
+                        // UI level — the /api/admin/refund-stripe route
+                        // validates PI presence and returns a clear
+                        // error if it's missing. Hiding the button
+                        // silently leaves admin with no UI clue.
                         <button onClick={() => openRefundModal(order)} className="text-xs px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
                           Refund via Stripe
                         </button>
@@ -565,7 +570,10 @@ export default function AdminOrdersPage() {
                           </button>
                         )}
                         {order.payment_method === 'stripe'
-                          ? order.order_status !== 'cancelled' && order.order_status !== 'partially_cancelled' && order.order_status !== 'refunded' && order.stripe_payment_intent_id && (
+                          ? order.order_status !== 'cancelled' && order.order_status !== 'partially_cancelled' && order.order_status !== 'refunded' && (
+                              // Don't gate on stripe_payment_intent_id
+                              // at the UI level — the API route
+                              // validates and returns a clear error.
                               <button onClick={() => openRefundModal(order)} className="text-xs px-2 py-1 border border-red-300 text-red-600 hover:bg-red-50 transition-colors">
                                 Refund via Stripe
                               </button>
