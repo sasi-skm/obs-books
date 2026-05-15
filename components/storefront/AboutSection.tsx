@@ -33,11 +33,11 @@ export default function AboutSection() {
 
         {/* Text */}
         <div>
-          <p className="font-jost text-[11px] uppercase tracking-widest text-ink-muted mb-2">
+          <p className="font-jost text-[13px] uppercase tracking-widest text-ink-muted mb-2">
             OBS Books
           </p>
           <h2 className="font-cormorant text-3xl font-normal text-ink mb-1">{t('aboutTitle')}</h2>
-          <p className="font-jost text-[11px] text-ink-muted tracking-[0.3em] my-3 select-none">— ✦ —</p>
+          <p className="font-jost text-[13px] text-ink-muted tracking-[0.3em] my-3 select-none">— ✦ —</p>
           <p className="text-sm text-ink-light leading-relaxed mb-3 font-cormorant italic text-base">{t('welcomeText')}</p>
           <div className="my-3 border-t border-sand" />
           {t('aboutStory').split('\n\n').map((para, i) => (

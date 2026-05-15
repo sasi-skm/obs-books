@@ -320,7 +320,7 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
   return (
     <div className="pt-20 pb-16 px-6 min-h-screen bg-cream">
       <div className="max-w-[1100px] mx-auto">
-        <Link href="/shop" className="text-[11px] tracking-widest uppercase text-ink-muted hover:text-moss mb-6 inline-block transition-colors">
+        <Link href="/shop" className="text-[13px] tracking-widest uppercase text-ink-muted hover:text-moss mb-6 inline-block transition-colors">
           {t('backHome')}
         </Link>
 
@@ -523,7 +523,7 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
                   <button
                     onClick={() => setShowConditionGuide(true)}
                     className="font-jost transition-opacity hover:opacity-70"
-                    style={{ fontSize: 11, color: '#4a6741', textDecoration: 'underline', textDecorationColor: '#4a6741' }}
+                    style={{ fontSize: 13, color: '#4a6741', textDecoration: 'underline', textDecorationColor: '#4a6741' }}
                   >
                     Condition guide
                   </button>
@@ -555,7 +555,7 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
                   <button
                     onClick={() => setShowConditionGuide(true)}
                     className="font-jost transition-opacity hover:opacity-70"
-                    style={{ fontSize: 11, color: '#4a6741', textDecoration: 'underline', textDecorationColor: '#4a6741' }}
+                    style={{ fontSize: 13, color: '#4a6741', textDecoration: 'underline', textDecorationColor: '#4a6741' }}
                   >
                     guide
                   </button>
@@ -567,13 +567,13 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
             {!isTextile && CONDITION_KEY_MAP[selectedCondition || book.condition] && (
               <div
                 className="mb-3 pl-3 py-2 pr-3 font-jost leading-relaxed"
-                style={{ background: '#eee8d8', borderLeft: '2px solid #4a6741', fontSize: 12, color: '#6b5e48' }}
+                style={{ background: '#eee8d8', borderLeft: '2px solid #4a6741', fontSize: 14, color: '#6b5e48' }}
               >
                 {t(CONDITION_KEY_MAP[selectedCondition || book.condition])}
               </div>
             )}
 
-            <p className="font-jost mb-3" style={{ fontSize: 11, color: '#8a7d65' }}>
+            <p className="font-jost mb-3" style={{ fontSize: 13, color: '#8a7d65' }}>
               ✦ {isTextile ? t('linenHonest') : 'All books carefully inspected and honestly described'}
             </p>
 
@@ -643,7 +643,7 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
             {/* Estimated delivery */}
             <div
               className="mb-3 px-4 py-3 font-jost text-center"
-              style={{ border: '1px solid #d6cdb8', fontSize: 12, color: '#6b5e48' }}
+              style={{ border: '1px solid #d6cdb8', fontSize: 14, color: '#6b5e48' }}
             >
               📦 Get delivery by <span className="font-semibold">{estimatedDelivery}</span>
             </div>
@@ -687,8 +687,8 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
                           sizes="120px"
                         />
                       </div>
-                      <p className="font-heading text-[11px] text-ink leading-tight truncate">{rb.title}</p>
-                      <p className="font-jost text-[10px] text-bark">฿{rb.price.toLocaleString()}</p>
+                      <p className="font-heading text-[13px] text-ink leading-tight truncate">{rb.title}</p>
+                      <p className="font-jost text-[12px] text-bark">฿{rb.price.toLocaleString()}</p>
                     </Link>
                   ))}
                 </div>

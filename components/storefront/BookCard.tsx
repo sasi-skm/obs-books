@@ -110,7 +110,7 @@ export default function BookCard({ book, priority = false }: { book: Book; prior
             <WishlistHeart bookId={book.id} bookTitle={book.title} />
           </div>
           {book.images && book.images.length > 1 && !isSold && (
-            <div className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-1.5 py-0.5 font-heading">
+            <div className="absolute bottom-2 right-2 bg-black/50 text-white text-[12px] px-1.5 py-0.5 font-heading">
               {book.images.length} photos
             </div>
           )}
@@ -120,7 +120,7 @@ export default function BookCard({ book, priority = false }: { book: Book; prior
             {book.title}
           </h3>
           {rating && rating.count >= 1 && (
-            <p className="font-jost mb-0.5" style={{ fontSize: 12, color: '#8a7d65' }}>
+            <p className="font-jost mb-0.5" style={{ fontSize: 14, color: '#8a7d65' }}>
               {rating.avg.toFixed(1)} ★ ({rating.count})
             </p>
           )}
@@ -141,7 +141,7 @@ export default function BookCard({ book, priority = false }: { book: Book; prior
           )}
           <div
             className="font-jost tracking-wide uppercase mb-2"
-            style={{ fontSize: 10, color: '#8a7d65' }}
+            style={{ fontSize: 12, color: '#8a7d65' }}
           >
             {book.condition}
           </div>

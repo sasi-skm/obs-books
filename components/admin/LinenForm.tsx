@@ -475,7 +475,7 @@ export default function LinenForm({ linen }: { linen?: Book | null }) {
                     placeholder="Width"
                     className="w-full px-3 py-3 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                   />
-                  <p className="text-[10px] text-ink-muted mt-1">Width (cm)</p>
+                  <p className="text-[12px] text-ink-muted mt-1">Width (cm)</p>
                 </div>
                 <span className="font-heading text-ink-muted text-lg">×</span>
                 <div className="flex-1">
@@ -488,7 +488,7 @@ export default function LinenForm({ linen }: { linen?: Book | null }) {
                     placeholder="Length"
                     className="w-full px-3 py-3 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                   />
-                  <p className="text-[10px] text-ink-muted mt-1">Length (cm)</p>
+                  <p className="text-[12px] text-ink-muted mt-1">Length (cm)</p>
                 </div>
               </div>
             </div>
@@ -544,11 +544,11 @@ export default function LinenForm({ linen }: { linen?: Book | null }) {
                   {aiLoading ? 'Analyzing...' : '✨ AI estimate'}
                 </button>
               </div>
-              <p className="text-[11px] text-ink-muted mt-1">
+              <p className="text-[13px] text-ink-muted mt-1">
                 Based on photos - you can edit or leave blank
               </p>
               {eraReasoning && (
-                <p className="text-[11px] text-sage mt-1 italic">AI detected: {eraReasoning}</p>
+                <p className="text-[13px] text-sage mt-1 italic">AI detected: {eraReasoning}</p>
               )}
             </div>
 
@@ -566,7 +566,7 @@ export default function LinenForm({ linen }: { linen?: Book | null }) {
                   required
                 />
               </div>
-              <p className="text-[11px] text-ink-muted mt-1">Minimum ฿490</p>
+              <p className="text-[13px] text-ink-muted mt-1">Minimum ฿490</p>
             </div>
           </div>
 
@@ -614,7 +614,7 @@ export default function LinenForm({ linen }: { linen?: Book | null }) {
                       <>
                         <Image src={slot.preview} alt="" fill className="object-cover" sizes="120px" />
                         {i === 0 && (
-                          <span className="absolute top-1 left-1 bg-sage text-white text-[9px] px-1 py-0.5 font-heading">
+                          <span className="absolute top-1 left-1 bg-sage text-white text-[11px] px-1 py-0.5 font-heading">
                             COVER
                           </span>
                         )}
@@ -633,7 +633,7 @@ export default function LinenForm({ linen }: { linen?: Book | null }) {
                       <div className="flex flex-col items-center gap-0.5">
                         <span className="text-ink-muted text-2xl">{dragOverSlot === i ? '📷' : '+'}</span>
                         {dragOverSlot === i && (
-                          <span className="text-[9px] text-sage font-heading">Drop here</span>
+                          <span className="text-[11px] text-sage font-heading">Drop here</span>
                         )}
                       </div>
                     )}
@@ -695,13 +695,13 @@ export default function LinenForm({ linen }: { linen?: Book | null }) {
               )}
 
               <div className="flex flex-wrap gap-1.5 mt-2">
-                <span className="text-[11px] text-ink-muted font-heading self-center mr-1">Quick fill (EN + TH):</span>
+                <span className="text-[13px] text-ink-muted font-heading self-center mr-1">Quick fill (EN + TH):</span>
                 {QUICK_FILL_NOTES.map(qf => (
                   <button
                     key={qf.label}
                     type="button"
                     onClick={() => applyQuickFill(qf.en, qf.th)}
-                    className="text-[11px] px-2 py-1 border border-sage/40 text-sage font-heading hover:bg-sage/10 transition-colors"
+                    className="text-[13px] px-2 py-1 border border-sage/40 text-sage font-heading hover:bg-sage/10 transition-colors"
                   >
                     {qf.label}
                   </button>

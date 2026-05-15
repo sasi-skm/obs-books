@@ -56,7 +56,7 @@ export default function Nav() {
           {/* Logo */}
           <Link href="/" className="font-jost text-sm font-medium tracking-widest text-ink hover:text-moss transition-colors">
             OBS BOOKS
-            <span className="block font-cormorant italic text-[10px] text-ink-muted -mt-0.5">
+            <span className="block font-cormorant italic text-[12px] text-ink-muted -mt-0.5">
               {t('tagline')}
             </span>
           </Link>
@@ -82,7 +82,7 @@ export default function Nav() {
                   className="font-jost text-xs text-bark tracking-wide hover:text-ink transition-colors flex items-center gap-1"
                 >
                   Hi, {firstName}
-                  <span className="text-[10px] text-ink-muted">▾</span>
+                  <span className="text-[12px] text-ink-muted">▾</span>
                 </button>
                 {accountOpen && (
                   <div className="absolute right-0 top-8 bg-cream border border-sand shadow-soft min-w-[140px] py-1 z-50">

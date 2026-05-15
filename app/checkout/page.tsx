@@ -443,19 +443,19 @@ export default function CheckoutPage() {
               <button
                 type="button"
                 onClick={handleCopyOrderNumber}
-                className="text-[11px] px-3 py-1 border border-sage/40 text-sage hover:bg-sage/10 transition-colors font-heading"
+                className="text-[13px] px-3 py-1 border border-sage/40 text-sage hover:bg-sage/10 transition-colors font-heading"
               >
                 {copied ? '✓ Copied' : (lang === 'th' ? 'คัดลอกหมายเลข' : 'Copy order number')}
               </button>
               <button
                 type="button"
                 onClick={handlePrint}
-                className="text-[11px] px-3 py-1 border border-sage/40 text-sage hover:bg-sage/10 transition-colors font-heading"
+                className="text-[13px] px-3 py-1 border border-sage/40 text-sage hover:bg-sage/10 transition-colors font-heading"
               >
                 {lang === 'th' ? '🖨 พิมพ์' : '🖨 Print'}
               </button>
             </div>
-            <p className="text-[11px] text-ink-muted italic mb-2 max-w-sm mx-auto">
+            <p className="text-[13px] text-ink-muted italic mb-2 max-w-sm mx-auto">
               {lang === 'th'
                 ? 'บันทึกหมายเลขคำสั่งซื้อไว้ คุณจะต้องใช้เพื่อตรวจสอบสถานะหรืออัปโหลดสลิปในภายหลัง'
                 : 'Save this reference — you will need it to check status or upload your slip later.'}
@@ -477,13 +477,13 @@ export default function CheckoutPage() {
                       <p className="font-heading text-sm font-semibold truncate">{item.title}</p>
                       <p className="font-jost text-xs text-ink-muted italic">{item.author}</p>
                       {item.condition && (
-                        <p className="font-jost text-[10px] text-sage uppercase tracking-wider">{item.condition}</p>
+                        <p className="font-jost text-[12px] text-sage uppercase tracking-wider">{item.condition}</p>
                       )}
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="font-heading text-sm font-semibold text-bark">฿{(item.price * item.quantity).toLocaleString()}</p>
                       {item.quantity > 1 && (
-                        <p className="font-jost text-[10px] text-ink-muted">x{item.quantity}</p>
+                        <p className="font-jost text-[12px] text-ink-muted">x{item.quantity}</p>
                       )}
                     </div>
                   </div>
@@ -717,7 +717,7 @@ export default function CheckoutPage() {
             <div className="mb-4">
               <label className="block font-heading text-sm mb-1">{t('destinationCountry')} *</label>
               <select
-                className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                className="w-full px-3 py-2.5 border border-line bg-cream font-body text-base sm:text-sm outline-none focus:border-sage"
                 value={form.country}
                 onChange={e => setForm({ ...form, country: e.target.value, province: '' })}
               >
@@ -740,7 +740,7 @@ export default function CheckoutPage() {
               <div>
                 <label className="block font-heading text-sm mb-1">First Name *</label>
                 <input
-                  className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                  className="w-full px-3 py-2.5 border border-line bg-cream font-body text-base sm:text-sm outline-none focus:border-sage"
                   placeholder="First name"
                   value={form.firstName}
                   onChange={e => setForm({ ...form, firstName: e.target.value })}
@@ -750,7 +750,7 @@ export default function CheckoutPage() {
               <div>
                 <label className="block font-heading text-sm mb-1">Last Name</label>
                 <input
-                  className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                  className="w-full px-3 py-2.5 border border-line bg-cream font-body text-base sm:text-sm outline-none focus:border-sage"
                   placeholder="Last name"
                   value={form.lastName}
                   onChange={e => setForm({ ...form, lastName: e.target.value })}
@@ -762,7 +762,7 @@ export default function CheckoutPage() {
             <div className="mb-4">
               <label className="block font-heading text-sm mb-1">{t('address')} *</label>
               <input
-                className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                className="w-full px-3 py-2.5 border border-line bg-cream font-body text-base sm:text-sm outline-none focus:border-sage"
                 placeholder="House no., street, soi"
                 value={form.addressLine1}
                 onChange={e => setForm({ ...form, addressLine1: e.target.value })}
@@ -771,7 +771,7 @@ export default function CheckoutPage() {
             </div>
             <div className="mb-4">
               <input
-                className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                className="w-full px-3 py-2.5 border border-line bg-cream font-body text-base sm:text-sm outline-none focus:border-sage"
                 placeholder="Apartment, suite, building (optional)"
                 value={form.addressLine2}
                 onChange={e => setForm({ ...form, addressLine2: e.target.value })}
@@ -783,7 +783,7 @@ export default function CheckoutPage() {
               <div>
                 <label className="block font-heading text-sm mb-1">City *</label>
                 <input
-                  className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                  className="w-full px-3 py-2.5 border border-line bg-cream font-body text-base sm:text-sm outline-none focus:border-sage"
                   placeholder="City"
                   value={form.city}
                   onChange={e => setForm({ ...form, city: e.target.value })}
@@ -794,7 +794,7 @@ export default function CheckoutPage() {
                 <label className="block font-heading text-sm mb-1">Province</label>
                 {!isInternational ? (
                   <select
-                    className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                    className="w-full px-3 py-2.5 border border-line bg-cream font-body text-base sm:text-sm outline-none focus:border-sage"
                     value={form.province}
                     onChange={e => setForm({ ...form, province: e.target.value })}
                   >
@@ -805,7 +805,7 @@ export default function CheckoutPage() {
                   </select>
                 ) : (
                   <input
-                    className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                    className="w-full px-3 py-2.5 border border-line bg-cream font-body text-base sm:text-sm outline-none focus:border-sage"
                     placeholder="State / Region"
                     value={form.province}
                     onChange={e => setForm({ ...form, province: e.target.value })}
@@ -815,7 +815,7 @@ export default function CheckoutPage() {
               <div>
                 <label className="block font-heading text-sm mb-1">Postal Code</label>
                 <input
-                  className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                  className="w-full px-3 py-2.5 border border-line bg-cream font-body text-base sm:text-sm outline-none focus:border-sage"
                   placeholder="10xxx"
                   value={form.postalCode}
                   onChange={e => setForm({ ...form, postalCode: e.target.value })}
@@ -827,7 +827,7 @@ export default function CheckoutPage() {
             <div className="mb-4">
               <label className="block font-heading text-sm mb-1">{t('phone')} *</label>
               <input
-                className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                className="w-full px-3 py-2.5 border border-line bg-cream font-body text-base sm:text-sm outline-none focus:border-sage"
                 placeholder="08x-xxx-xxxx"
                 value={form.phone}
                 onChange={e => setForm({ ...form, phone: e.target.value })}
@@ -837,18 +837,18 @@ export default function CheckoutPage() {
             <div className="mb-4">
               <label className="block font-heading text-sm mb-1">
                 {t('email')}{' '}
-                <span className="text-[11px] text-sage font-normal normal-case">
+                <span className="text-[13px] text-sage font-normal normal-case">
                   ({lang === 'th' ? 'แนะนำ' : 'recommended'})
                 </span>
               </label>
               <input
                 type="email"
-                className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                className="w-full px-3 py-2.5 border border-line bg-cream font-body text-base sm:text-sm outline-none focus:border-sage"
                 placeholder="you@example.com"
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
               />
-              <p className="text-[11px] text-ink-muted italic mt-1 leading-snug">
+              <p className="text-[13px] text-ink-muted italic mt-1 leading-snug">
                 {form.email
                   ? (lang === 'th'
                       ? 'เราจะส่งอีเมลยืนยันคำสั่งซื้อและลิงก์สำหรับอัปโหลดสลิปให้คุณ'
@@ -861,7 +861,7 @@ export default function CheckoutPage() {
             <div className="mb-4">
               <label className="block font-heading text-sm mb-1">{t('note')}</label>
               <input
-                className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+                className="w-full px-3 py-2.5 border border-line bg-cream font-body text-base sm:text-sm outline-none focus:border-sage"
                 value={form.note}
                 onChange={e => setForm({ ...form, note: e.target.value })}
               />
@@ -1101,7 +1101,7 @@ export default function CheckoutPage() {
                         : t('payWithCard').replace('{amount}', '').trim()}
                   </button>
 
-                  <p className="text-[11px] text-ink-muted text-center mt-3 italic">
+                  <p className="text-[13px] text-ink-muted text-center mt-3 italic">
                     {t('poweredByStripe')}
                   </p>
                 </div>

@@ -15,7 +15,7 @@ export default function CategoryCard({ category, bookCount }: { category: Catego
     >
       <span className="block text-3xl mb-2">{category.icon}</span>
       <h3 className="font-jost text-sm font-medium text-ink">{getCategoryName(category, lang)}</h3>
-      <div className="font-jost text-[11px] text-ink-muted mt-1">
+      <div className="font-jost text-[13px] text-ink-muted mt-1">
         {bookCount} {t('books')}
       </div>
     </Link>

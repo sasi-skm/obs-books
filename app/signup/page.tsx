@@ -62,8 +62,8 @@ export default function SignupPage() {
     <div className="min-h-screen bg-cream flex items-center justify-center px-4 pt-20 pb-16">
       <div className="w-full max-w-[420px]">
         <div className="text-center mb-8">
-          <h1 className="font-cormorant text-[32px] font-normal text-ink mb-1">Create Your Account</h1>
-          <p className="font-jost text-[11px] text-ink-muted tracking-[0.3em]">— ✦ —</p>
+          <h1 className="font-cormorant text-[38px] font-normal text-ink mb-1">Create Your Account</h1>
+          <p className="font-jost text-[13px] text-ink-muted tracking-[0.3em]">— ✦ —</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-cream border border-sand p-8">
@@ -74,7 +74,7 @@ export default function SignupPage() {
               value={form.fullName}
               onChange={e => setForm({ ...form, fullName: e.target.value })}
               required
-              className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss transition-colors"
+              className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss transition-colors"
             />
           </div>
           <div className="mb-4">
@@ -86,7 +86,7 @@ export default function SignupPage() {
               value={form.dateOfBirth}
               onChange={e => setForm({ ...form, dateOfBirth: e.target.value })}
               max={new Date().toISOString().split('T')[0]}
-              className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss transition-colors"
+              className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss transition-colors"
             />
           </div>
           <div className="mb-4">
@@ -96,7 +96,7 @@ export default function SignupPage() {
               value={form.email}
               onChange={e => setForm({ ...form, email: e.target.value })}
               required
-              className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss transition-colors"
+              className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss transition-colors"
             />
           </div>
           <div className="mb-4">
@@ -106,7 +106,7 @@ export default function SignupPage() {
               value={form.password}
               onChange={e => setForm({ ...form, password: e.target.value })}
               required
-              className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss transition-colors"
+              className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss transition-colors"
             />
           </div>
           <div className="mb-5">
@@ -116,7 +116,7 @@ export default function SignupPage() {
               value={form.confirm}
               onChange={e => setForm({ ...form, confirm: e.target.value })}
               required
-              className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss transition-colors"
+              className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss transition-colors"
             />
           </div>
 

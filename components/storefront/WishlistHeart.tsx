@@ -49,7 +49,7 @@ export default function WishlistHeart({ bookId, bookTitle }: Props) {
       {showTooltip && (
         <div
           className="absolute right-0 top-10 bg-ink text-cream font-jost rounded shadow-lg z-20 whitespace-nowrap"
-          style={{ fontSize: 11, padding: '6px 10px' }}
+          style={{ fontSize: 13, padding: '6px 10px' }}
           onClick={e => e.stopPropagation()}
         >
           <Link href="/login" className="underline text-parchment hover:text-cream">Sign in</Link>

@@ -133,7 +133,7 @@ function TrackPageInner() {
             placeholder={t('trackPlaceholder')}
             value={orderNum}
             onChange={e => setOrderNum(e.target.value)}
-            className="flex-1 px-4 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
+            className="flex-1 px-4 py-2.5 border border-line bg-cream font-body text-base sm:text-sm outline-none focus:border-sage"
           />
           <button
             type="submit"
@@ -149,7 +149,7 @@ function TrackPageInner() {
             device can find their order without remembering the number. */}
         {recent.length > 0 && (
           <div className="mb-8 border border-line bg-parchment p-4">
-            <p className="text-[11px] uppercase tracking-widest text-ink-muted mb-3">
+            <p className="text-[13px] uppercase tracking-widest text-ink-muted mb-3">
               {lang === 'th' ? 'คำสั่งซื้อล่าสุดของคุณ' : 'Your Recent Orders'}
             </p>
             <div className="space-y-1.5">
@@ -181,7 +181,7 @@ function TrackPageInner() {
                 </button>
               ))}
             </div>
-            <p className="text-[10px] text-ink-muted italic mt-3">
+            <p className="text-[12px] text-ink-muted italic mt-3">
               {lang === 'th'
                 ? 'บันทึกในเบราว์เซอร์นี้เท่านั้น ไม่ได้อยู่บนเซิร์ฟเวอร์ของเรา'
                 : 'Saved only on this browser — not on our servers.'}
@@ -253,7 +253,7 @@ function TrackPageInner() {
                     </p>
                     <Link
                       href={`/slip-upload/${order.order_number}`}
-                      className="inline-block mt-3 text-[11px] px-4 py-1.5 border border-sage text-sage hover:bg-sage hover:text-offwhite transition-colors font-heading"
+                      className="inline-block mt-3 text-[13px] px-4 py-1.5 border border-sage text-sage hover:bg-sage hover:text-offwhite transition-colors font-heading"
                     >
                       {lang === 'th' ? 'อัปโหลดสลิปใหม่' : 'Re-upload slip'}
                     </Link>
@@ -268,7 +268,7 @@ function TrackPageInner() {
                         <PaymentCountdown createdAt={order.created_at} />
                       </div>
                     )}
-                    <p className="text-[11px] text-ink-muted italic mb-3 leading-snug text-center">
+                    <p className="text-[13px] text-ink-muted italic mb-3 leading-snug text-center">
                       {t('pay24hBody')}
                     </p>
                     {order.payment_method === 'promptpay' ? (
@@ -287,7 +287,7 @@ function TrackPageInner() {
                           height={220}
                           className="mx-auto mb-2"
                         />
-                        <p className="text-[11px] text-ink-muted italic">{t('promptpayInstructions')}</p>
+                        <p className="text-[13px] text-ink-muted italic">{t('promptpayInstructions')}</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -325,7 +325,7 @@ function TrackPageInner() {
                       >
                         📎 {lang === 'th' ? 'อัปโหลดสลิปการชำระเงิน' : 'Upload Payment Slip'}
                       </Link>
-                      <p className="text-[11px] text-ink-muted italic mt-2">
+                      <p className="text-[13px] text-ink-muted italic mt-2">
                         {lang === 'th'
                           ? 'หลังจากชำระเงินแล้ว อัปโหลดภาพสลิปเพื่อให้เรายืนยันคำสั่งซื้อของคุณ'
                           : 'After paying, upload your slip so we can confirm your order.'}

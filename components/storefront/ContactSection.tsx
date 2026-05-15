@@ -59,9 +59,9 @@ export default function ContactSection() {
   return (
     <section className="py-16 px-6 bg-parchment text-center" id="contact">
       <div className="text-center mb-10">
-        <p className="font-jost text-[11px] uppercase tracking-widest text-ink-muted mb-2">Bangkok, Thailand</p>
+        <p className="font-jost text-[13px] uppercase tracking-widest text-ink-muted mb-2">Bangkok, Thailand</p>
         <h2 className="font-cormorant text-[clamp(1.6rem,3vw,2.3rem)] font-normal text-ink">{t('findUsTitle')}</h2>
-        <p className="font-jost text-[11px] text-ink-muted tracking-[0.3em] my-3 select-none">— ✦ —</p>
+        <p className="font-jost text-[13px] text-ink-muted tracking-[0.3em] my-3 select-none">— ✦ —</p>
         <p className="font-jost text-sm text-ink-muted max-w-[480px] mx-auto mt-2">{t('findUsSub')}</p>
       </div>
 
@@ -89,7 +89,7 @@ export default function ContactSection() {
           <div className="flex justify-center mb-2"><EmailIcon /></div>
           <h3 className="font-heading text-base font-medium mb-0.5 text-ink">{t('emailSupport')}</h3>
           <p className="font-jost text-xs text-ink-muted">obsbooksstore@gmail.com</p>
-          <p className="font-jost text-[10px] text-moss mt-1">{t('emailSupportSub')}</p>
+          <p className="font-jost text-[12px] text-moss mt-1">{t('emailSupportSub')}</p>
         </a>
       </div>
 

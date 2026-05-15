@@ -23,7 +23,7 @@ function StatusBadge({ status }: { status: string }) {
   const isGood = status === 'shipped' || status === 'delivered' || status === 'confirmed' || status === 'paid'
   return (
     <span
-      className="font-jost text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-sm"
+      className="font-jost text-[12px] uppercase tracking-wide px-2 py-0.5 rounded-sm"
       style={isGood ? { background: '#eef3ec', color: '#3a5832' } : { background: '#fdf0eb', color: '#9b4a2a' }}
     >
       {status}
@@ -32,14 +32,14 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function ReviewStatusBadge({ status }: { status: string }) {
-  if (status === 'approved') return <span className="font-jost text-[11px] px-1.5 py-0.5 rounded-sm" style={{ background: '#eef3ec', color: '#3a5832' }}>Published</span>
-  if (status === 'hidden') return <span className="font-jost text-[11px] px-1.5 py-0.5 rounded-sm" style={{ background: '#f1efe8', color: '#8a7d65' }}>Not published</span>
-  return <span className="font-jost text-[11px] px-1.5 py-0.5 rounded-sm" style={{ background: '#fdf0eb', color: '#9b4a2a' }}>Pending approval</span>
+  if (status === 'approved') return <span className="font-jost text-[13px] px-1.5 py-0.5 rounded-sm" style={{ background: '#eef3ec', color: '#3a5832' }}>Published</span>
+  if (status === 'hidden') return <span className="font-jost text-[13px] px-1.5 py-0.5 rounded-sm" style={{ background: '#f1efe8', color: '#8a7d65' }}>Not published</span>
+  return <span className="font-jost text-[13px] px-1.5 py-0.5 rounded-sm" style={{ background: '#fdf0eb', color: '#9b4a2a' }}>Pending approval</span>
 }
 
 function StarDisplay({ rating }: { rating: number }) {
   return (
-    <span style={{ fontSize: 13, color: '#4a6741', letterSpacing: 1 }}>
+    <span style={{ fontSize: 15, color: '#4a6741', letterSpacing: 1 }}>
       {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
     </span>
   )
@@ -162,7 +162,7 @@ function InlineReviewForm({
   return (
     <div className="mt-3 p-4 border border-sand rounded-sm" style={{ background: 'rgba(238,232,216,0.3)' }}>
       <div className="mb-3">
-        <p className="font-jost mb-1" style={{ fontSize: 11, color: '#8a7d65' }}>Your rating</p>
+        <p className="font-jost mb-1" style={{ fontSize: 13, color: '#8a7d65' }}>Your rating</p>
         <StarInput value={rating} onChange={setRating} />
       </div>
 
@@ -171,10 +171,10 @@ function InlineReviewForm({
         onChange={e => setComment(e.target.value)}
         placeholder="Share your thoughts about this book..."
         rows={3}
-        className="w-full px-3 py-2 border border-sand bg-cream font-jost text-sm text-ink outline-none focus:border-moss resize-none rounded-sm mb-2"
+        className="w-full px-3 py-2 border border-sand bg-cream font-jost text-base sm:text-sm text-ink outline-none focus:border-moss resize-none rounded-sm mb-2"
       />
       {comment.length > 0 && comment.length < 20 && (
-        <p className="font-jost mb-2" style={{ fontSize: 11, color: '#9b4a2a' }}>
+        <p className="font-jost mb-2" style={{ fontSize: 13, color: '#9b4a2a' }}>
           {20 - comment.length} more characters needed
         </p>
       )}
@@ -191,10 +191,10 @@ function InlineReviewForm({
       {photos.length < 3 && (
         <label className="block border-dashed border border-sand p-2 text-center cursor-pointer hover:border-moss transition-colors rounded-sm mb-2">
           <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handlePhotoChange} />
-          <span className="font-jost" style={{ fontSize: 11, color: '#8a7d65' }}>+ Add photos (optional)</span>
+          <span className="font-jost" style={{ fontSize: 13, color: '#8a7d65' }}>+ Add photos (optional)</span>
         </label>
       )}
-      <p className="font-jost mb-3" style={{ fontSize: 11, color: '#8a7d65' }}>
+      <p className="font-jost mb-3" style={{ fontSize: 13, color: '#8a7d65' }}>
         You&apos;ll earn 20 points for your review, +30 more if you include a photo.
       </p>
 
@@ -557,8 +557,8 @@ export default function AccountPage() {
         <div className="flex items-center gap-4 mb-8">
           <InitialsAvatar name={profile?.full_name || firstName} />
           <div>
-            <h1 className="font-cormorant text-[18px] font-normal text-ink">{profile?.full_name || firstName}</h1>
-            <p className="font-jost text-ink-muted" style={{ fontSize: 12 }}>
+            <h1 className="font-cormorant text-[20px] font-normal text-ink">{profile?.full_name || firstName}</h1>
+            <p className="font-jost text-ink-muted" style={{ fontSize: 14 }}>
               Member since {memberYear} &middot; {points} points
             </p>
           </div>
@@ -589,30 +589,30 @@ export default function AccountPage() {
               <div>
                 <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Full Name</label>
                 <input value={profileForm.fullName} onChange={e => setProfileForm({ ...profileForm, fullName: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss" />
+                  className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss" />
               </div>
               <div>
                 <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Email</label>
                 <input value={user.email || ''} disabled
-                  className="w-full px-3 py-2.5 border border-sand bg-parchment/50 font-jost text-sm text-ink-muted outline-none cursor-not-allowed" />
+                  className="w-full px-3 py-2.5 border border-sand bg-parchment/50 font-jost text-base sm:text-sm text-ink-muted outline-none cursor-not-allowed" />
               </div>
               <div>
                 <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Phone</label>
                 <input value={profileForm.phone} onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss" />
+                  className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss" />
               </div>
               <div>
                 <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Country</label>
                 <input value={profileForm.country} onChange={e => setProfileForm({ ...profileForm, country: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss" />
+                  className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss" />
               </div>
               <div>
                 <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">
-                  Date of Birth <span className="normal-case text-ink-muted text-[10px]">(birthday surprises)</span>
+                  Date of Birth <span className="normal-case text-ink-muted text-[12px]">(birthday surprises)</span>
                 </label>
                 <input type="date" value={profileForm.dateOfBirth} onChange={e => setProfileForm({ ...profileForm, dateOfBirth: e.target.value })}
                   max={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss" />
+                  className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss" />
               </div>
             </div>
             <div className="mb-5">
@@ -623,7 +623,7 @@ export default function AccountPage() {
                     value={profileForm.addressLine1}
                     onChange={e => setProfileForm({ ...profileForm, addressLine1: e.target.value })}
                     placeholder="Address line 1 (house no., street)"
-                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss"
+                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss"
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -631,7 +631,7 @@ export default function AccountPage() {
                     value={profileForm.addressLine2}
                     onChange={e => setProfileForm({ ...profileForm, addressLine2: e.target.value })}
                     placeholder="Address line 2 (optional)"
-                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss"
+                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss"
                   />
                 </div>
                 <div>
@@ -639,7 +639,7 @@ export default function AccountPage() {
                     value={profileForm.city}
                     onChange={e => setProfileForm({ ...profileForm, city: e.target.value })}
                     placeholder="District / City"
-                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss"
+                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss"
                   />
                 </div>
                 <div>
@@ -647,7 +647,7 @@ export default function AccountPage() {
                     value={profileForm.province}
                     onChange={e => setProfileForm({ ...profileForm, province: e.target.value })}
                     placeholder="Province"
-                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss"
+                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss"
                   />
                 </div>
                 <div>
@@ -655,11 +655,11 @@ export default function AccountPage() {
                     value={profileForm.postalCode}
                     onChange={e => setProfileForm({ ...profileForm, postalCode: e.target.value })}
                     placeholder="Postal code"
-                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss"
+                    className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-base sm:text-sm text-ink outline-none focus:border-moss"
                   />
                 </div>
               </div>
-              <p className="font-jost text-[11px] text-ink-muted italic mt-2">
+              <p className="font-jost text-[13px] text-ink-muted italic mt-2">
                 Saved here, auto-filled next time you check out.
               </p>
             </div>
@@ -689,7 +689,7 @@ export default function AccountPage() {
                 {activeOrders.map((order, idx) => (
                   <div key={order.id} className={`pb-6 mb-6 ${idx < activeOrders.length - 1 ? 'border-b border-sand' : ''}`}>
                     <div className="flex items-start justify-between mb-3">
-                      <p className="font-jost" style={{ fontSize: 11, color: '#8a7d65' }}>
+                      <p className="font-jost" style={{ fontSize: 13, color: '#8a7d65' }}>
                         {order.order_number} &middot; {new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
                       <div className="flex gap-1.5 flex-wrap justify-end">
@@ -712,7 +712,7 @@ export default function AccountPage() {
                             )}
                             <div className="flex-1 min-w-0">
                               <p className="font-cormorant text-sm font-semibold text-ink leading-tight truncate">{item.title}</p>
-                              <p className="font-jost" style={{ fontSize: 11, color: '#8a7d65' }}>{item.author}</p>
+                              <p className="font-jost" style={{ fontSize: 13, color: '#8a7d65' }}>{item.author}</p>
                             </div>
                             <span className="font-jost text-sm text-bark shrink-0">฿{item.price.toLocaleString()}</span>
                           </Link>
@@ -764,11 +764,11 @@ export default function AccountPage() {
                       <div>
                         {order.tracking_number && (
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-jost" style={{ fontSize: 12, color: '#8a7d65' }}>
+                            <span className="font-jost" style={{ fontSize: 14, color: '#8a7d65' }}>
                               Tracking: <span className="font-mono text-ink">{order.tracking_number}</span>
                             </span>
                             <button onClick={() => handleCopyTracking(order.tracking_number!)} className="text-ink-muted hover:text-moss transition-colors" title="Copy">
-                              {copied === order.tracking_number ? <span style={{ fontSize: 11, color: '#4a6741' }}>✓</span> : <span style={{ fontSize: 13 }}>⎘</span>}
+                              {copied === order.tracking_number ? <span style={{ fontSize: 13, color: '#4a6741' }}>✓</span> : <span style={{ fontSize: 15 }}>⎘</span>}
                             </button>
                             <Link
                               href={`/track?order=${encodeURIComponent(order.order_number)}`}
@@ -833,7 +833,7 @@ export default function AccountPage() {
                 {deliveredOrders.map((order, idx) => (
                   <div key={order.id} className={`pb-6 mb-6 ${idx < deliveredOrders.length - 1 ? 'border-b border-sand' : ''}`}>
                     <div className="flex items-start justify-between mb-3">
-                      <p className="font-jost" style={{ fontSize: 11, color: '#8a7d65' }}>
+                      <p className="font-jost" style={{ fontSize: 13, color: '#8a7d65' }}>
                         {order.order_number} &middot; {new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
                       <StatusBadge status="delivered" />
@@ -853,7 +853,7 @@ export default function AccountPage() {
                             )}
                             <div className="flex-1 min-w-0">
                               <p className="font-cormorant text-sm font-semibold text-ink leading-tight truncate">{item.title}</p>
-                              <p className="font-jost" style={{ fontSize: 11, color: '#8a7d65' }}>{item.author}</p>
+                              <p className="font-jost" style={{ fontSize: 13, color: '#8a7d65' }}>{item.author}</p>
                             </div>
                             <span className="font-jost text-sm text-bark shrink-0">฿{item.price.toLocaleString()}</span>
                           </Link>
@@ -868,7 +868,7 @@ export default function AccountPage() {
                     {/* Reviews section */}
                     {order.items && order.items.length > 0 && (
                       <div className="mt-4 pt-4 border-t border-sand">
-                        <p className="font-jost uppercase tracking-widest mb-3" style={{ fontSize: 10, color: '#8a7d65' }}>Your Reviews</p>
+                        <p className="font-jost uppercase tracking-widest mb-3" style={{ fontSize: 12, color: '#8a7d65' }}>Your Reviews</p>
                         <div className="space-y-3">
                           {order.items.map(item => {
                             const review = userReviews.get(item.title)
@@ -954,7 +954,7 @@ export default function AccountPage() {
                             </div>
                           )}
                           {isSold && (
-                            <div className="absolute top-2 left-2 bg-rose text-white text-[10px] px-1.5 py-0.5 font-jost">Sold</div>
+                            <div className="absolute top-2 left-2 bg-rose text-white text-[12px] px-1.5 py-0.5 font-jost">Sold</div>
                           )}
                         </div>
                         <div className="p-3">
@@ -966,14 +966,14 @@ export default function AccountPage() {
                         {!isSold && book ? (
                           <button
                             onClick={() => addItem({ id: book.id + '-' + (book.condition || 'Like New'), bookId: book.id, title: book.title, author: book.author, price: book.price, image_url: book.image_url, category: book.category, condition: book.condition, quantity: 1 })}
-                            className="w-full py-1.5 bg-moss text-cream font-jost text-[11px] tracking-wide rounded-sm hover:opacity-90"
+                            className="w-full py-1.5 bg-moss text-cream font-jost text-[13px] tracking-wide rounded-sm hover:opacity-90"
                           >
                             Add to Cart
                           </button>
                         ) : (
                           <button
                             onClick={() => book && handleJoinWaitlist(book.id, book.title)}
-                            className="w-full py-1.5 border border-moss text-moss font-jost text-[11px] tracking-wide rounded-sm hover:bg-moss hover:text-cream transition-colors"
+                            className="w-full py-1.5 border border-moss text-moss font-jost text-[13px] tracking-wide rounded-sm hover:bg-moss hover:text-cream transition-colors"
                           >
                             Join Waitlist
                           </button>
@@ -1020,29 +1020,29 @@ export default function AccountPage() {
                 {/* Active subscription */}
                 <div className="flex items-center gap-2 mb-5">
                   <h2 className="font-cormorant text-xl font-normal text-ink">The Flower Letter</h2>
-                  <span className="font-jost text-[10px] px-2 py-0.5 rounded-sm" style={{ background: '#eef3ec', color: '#3a5832' }}>Active</span>
+                  <span className="font-jost text-[12px] px-2 py-0.5 rounded-sm" style={{ background: '#eef3ec', color: '#3a5832' }}>Active</span>
                 </div>
 
                 <div className="p-5 border border-sand bg-parchment mb-5">
                   <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                     <div>
-                      <p className="font-jost text-ink-muted mb-0.5" style={{ fontSize: 11 }}>Plan</p>
+                      <p className="font-jost text-ink-muted mb-0.5" style={{ fontSize: 13 }}>Plan</p>
                       <p className="font-cormorant text-base font-semibold text-ink">
                         {subscription.plan === 'monthly' ? 'Monthly' : subscription.plan === '6months' ? '6 Months' : '1 Year'}
                       </p>
                     </div>
                     <div>
-                      <p className="font-jost text-ink-muted mb-0.5" style={{ fontSize: 11 }}>Type</p>
+                      <p className="font-jost text-ink-muted mb-0.5" style={{ fontSize: 13 }}>Type</p>
                       <p className="font-cormorant text-base font-semibold text-ink capitalize">{subscription.subscriber_type}</p>
                     </div>
                     <div>
-                      <p className="font-jost text-ink-muted mb-0.5" style={{ fontSize: 11 }}>Amount Paid</p>
+                      <p className="font-jost text-ink-muted mb-0.5" style={{ fontSize: 13 }}>Amount Paid</p>
                       <p className="font-cormorant text-base font-semibold text-ink">
                         {subscription.currency === 'THB' ? '฿' : '$'}{Number(subscription.amount_paid).toLocaleString()}
                       </p>
                     </div>
                     <div>
-                      <p className="font-jost text-ink-muted mb-0.5" style={{ fontSize: 11 }}>Renews / Expires</p>
+                      <p className="font-jost text-ink-muted mb-0.5" style={{ fontSize: 13 }}>Renews / Expires</p>
                       <p className="font-cormorant text-base font-semibold text-ink">
                         {new Date(subscription.expires_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
@@ -1074,7 +1074,7 @@ export default function AccountPage() {
                   <p className="font-jost text-xs text-ink-muted uppercase tracking-widest mb-3">Your Benefits</p>
                   {['5% discount on orders over ฿1,000 — applied automatically', 'Birthday 10% gift code sent at the start of your birthday month', 'Monthly lottery entry — one member wins a curated gift'].map(b => (
                     <div key={b} className="flex items-start gap-2">
-                      <span className="text-moss" style={{ fontSize: 10, marginTop: 3 }}>●</span>
+                      <span className="text-moss" style={{ fontSize: 12, marginTop: 3 }}>●</span>
                       <p className="font-jost text-xs text-bark">{b}</p>
                     </div>
                   ))}
@@ -1087,7 +1087,7 @@ export default function AccountPage() {
                   <button
                     onClick={() => setCancelModal(true)}
                     className="font-jost text-ink-muted hover:text-rose transition-colors"
-                    style={{ fontSize: 11, textDecoration: 'underline', textUnderlineOffset: 3 }}
+                    style={{ fontSize: 13, textDecoration: 'underline', textUnderlineOffset: 3 }}
                   >
                     Cancel Subscription
                   </button>
@@ -1102,8 +1102,8 @@ export default function AccountPage() {
           <div>
             <div className="text-center mb-8">
               <div className="font-cormorant text-[52px] font-normal text-ink leading-none">{points}</div>
-              <div className="font-jost text-bark mt-1" style={{ fontSize: 12 }}>points balance</div>
-              <div className="font-jost text-ink-muted mt-1" style={{ fontSize: 11 }}>100 points = ฿50 discount</div>
+              <div className="font-jost text-bark mt-1" style={{ fontSize: 14 }}>points balance</div>
+              <div className="font-jost text-ink-muted mt-1" style={{ fontSize: 13 }}>100 points = ฿50 discount</div>
             </div>
 
             {points >= 100 ? (
@@ -1143,7 +1143,7 @@ export default function AccountPage() {
                           ? 'Welcome bonus'
                           : tx.type}
                       </p>
-                      <p className="font-jost text-ink-muted" style={{ fontSize: 10 }}>
+                      <p className="font-jost text-ink-muted" style={{ fontSize: 12 }}>
                         {new Date(tx.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
                     </div>
@@ -1190,10 +1190,10 @@ export default function AccountPage() {
             className="bg-cream border border-sand rounded-sm max-w-[420px] w-full p-8 shadow-lg"
             onClick={e => e.stopPropagation()}
           >
-            <h2 className="font-cormorant text-[22px] font-normal text-ink mb-1">
+            <h2 className="font-cormorant text-[26px] font-normal text-ink mb-1">
               Your books have been delivered!
             </h2>
-            <p className="font-jost mb-4" style={{ fontSize: 11, color: '#8a7d65' }}>— ✦ —</p>
+            <p className="font-jost mb-4" style={{ fontSize: 13, color: '#8a7d65' }}>— ✦ —</p>
             <p className="font-jost text-sm text-bark leading-relaxed mb-4">
               Share your thoughts and earn loyalty points — 20 points per review, 50 points if you include a photo. 100 points = ฿50 discount on your next order.
             </p>
@@ -1201,7 +1201,7 @@ export default function AccountPage() {
             <div className="mb-5 space-y-1">
               {unreviewedBooks.slice(0, 3).map(title => (
                 <p key={title} className="font-jost text-xs text-ink flex items-center gap-1.5">
-                  <span style={{ color: '#4a6741', fontSize: 10 }}>●</span>
+                  <span style={{ color: '#4a6741', fontSize: 12 }}>●</span>
                   {title}
                 </p>
               ))}
@@ -1222,7 +1222,7 @@ export default function AccountPage() {
             <button
               onClick={() => setShowReviewPopup(false)}
               className="w-full text-center font-jost"
-              style={{ fontSize: 12, color: '#8a7d65' }}
+              style={{ fontSize: 14, color: '#8a7d65' }}
             >
               Maybe later
             </button>

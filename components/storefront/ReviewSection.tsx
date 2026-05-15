@@ -196,11 +196,11 @@ export default function ReviewSection({ bookId, bookTitle }: { bookId: string; b
   return (
     <div className="mt-10 border-t border-sand pt-8">
       {/* Section header */}
-      <p className="font-jost uppercase tracking-widest mb-1" style={{ fontSize: 11, color: '#8a7d65' }}>
+      <p className="font-jost uppercase tracking-widest mb-1" style={{ fontSize: 13, color: '#8a7d65' }}>
         Share your experience
       </p>
       <h2 className="font-cormorant text-2xl font-normal text-ink mb-1">Customer Reviews</h2>
-      <p className="font-jost text-ink-muted mb-6" style={{ fontSize: 11 }}>— ✦ —</p>
+      <p className="font-jost text-ink-muted mb-6" style={{ fontSize: 13 }}>— ✦ —</p>
 
       {/* Overall rating block */}
       {reviews.length > 0 && (
@@ -211,15 +211,15 @@ export default function ReviewSection({ bookId, bookTitle }: { bookId: string; b
                 {avgRating.toFixed(1)}
               </div>
               <StarRow rating={Math.round(avgRating)} size={13} />
-              <p className="font-jost mt-1" style={{ fontSize: 11, color: '#8a7d65' }}>
+              <p className="font-jost mt-1" style={{ fontSize: 13, color: '#8a7d65' }}>
                 ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
               </p>
             </div>
             <div className="flex-1">
               {ratingCounts.map(({ star, count }) => (
                 <div key={star} className="flex items-center gap-2 mb-1">
-                  <span className="font-jost w-3 text-right" style={{ fontSize: 11, color: '#8a7d65' }}>{star}</span>
-                  <span style={{ fontSize: 10, color: '#8a7d65' }}>★</span>
+                  <span className="font-jost w-3 text-right" style={{ fontSize: 13, color: '#8a7d65' }}>{star}</span>
+                  <span style={{ fontSize: 12, color: '#8a7d65' }}>★</span>
                   <div className="flex-1 rounded-full overflow-hidden" style={{ height: 5, background: '#d6cdb8' }}>
                     <div
                       className="h-full rounded-full"
@@ -229,7 +229,7 @@ export default function ReviewSection({ bookId, bookTitle }: { bookId: string; b
                       }}
                     />
                   </div>
-                  <span className="font-jost w-3" style={{ fontSize: 11, color: '#8a7d65' }}>{count}</span>
+                  <span className="font-jost w-3" style={{ fontSize: 13, color: '#8a7d65' }}>{count}</span>
                 </div>
               ))}
             </div>
@@ -239,7 +239,7 @@ export default function ReviewSection({ bookId, bookTitle }: { bookId: string; b
 
       {/* Individual reviews */}
       {!loading && reviews.length === 0 && (
-        <p className="font-jost text-center mb-6" style={{ fontSize: 13, color: '#8a7d65' }}>
+        <p className="font-jost text-center mb-6" style={{ fontSize: 15, color: '#8a7d65' }}>
           Be the first to review this book
         </p>
       )}
@@ -249,7 +249,7 @@ export default function ReviewSection({ bookId, bookTitle }: { bookId: string; b
           <div key={review.id} className="bg-cream border border-sand rounded-sm p-4">
             <div className="flex items-center justify-between mb-1">
               <span className="font-jost text-sm font-semibold text-ink">{formatName(review)}</span>
-              <span className="font-jost" style={{ fontSize: 11, color: '#8a7d65' }}>
+              <span className="font-jost" style={{ fontSize: 13, color: '#8a7d65' }}>
                 {new Date(review.created_at).toLocaleDateString('en-GB', {
                   day: 'numeric',
                   month: 'short',
@@ -258,7 +258,7 @@ export default function ReviewSection({ bookId, bookTitle }: { bookId: string; b
               </span>
             </div>
             <StarRow rating={review.rating} size={13} />
-            <p className="font-jost mt-2 leading-relaxed" style={{ fontSize: 13, color: '#6b5e48' }}>
+            <p className="font-jost mt-2 leading-relaxed" style={{ fontSize: 15, color: '#6b5e48' }}>
               {review.comment}
             </p>
             {review.photo_urls && review.photo_urls.length > 0 && (
@@ -281,7 +281,7 @@ export default function ReviewSection({ bookId, bookTitle }: { bookId: string; b
 
       {/* Review form area */}
       {!user && (
-        <p style={{ fontSize: 13, color: '#8a7d65' }} className="font-jost">
+        <p style={{ fontSize: 15, color: '#8a7d65' }} className="font-jost">
           <Link href="/login" className="text-moss underline underline-offset-2">Sign in</Link>{' '}
           to leave a review
         </p>
@@ -291,13 +291,13 @@ export default function ReviewSection({ bookId, bookTitle }: { bookId: string; b
         <div className="p-4 bg-parchment border border-sand rounded-sm">
           <p className="font-jost text-xs font-semibold text-bark mb-2">Your review</p>
           <StarRow rating={myReview.rating} size={14} />
-          <p className="font-jost mt-2 leading-relaxed" style={{ fontSize: 13, color: '#6b5e48' }}>
+          <p className="font-jost mt-2 leading-relaxed" style={{ fontSize: 15, color: '#6b5e48' }}>
             {myReview.comment}
           </p>
           <span
             className="inline-block mt-2 font-jost px-2 py-0.5 rounded-sm"
             style={{
-              fontSize: 11,
+              fontSize: 13,
               background: statusBadge(myReview.status).bg,
               color: statusBadge(myReview.status).color,
             }}
@@ -308,7 +308,7 @@ export default function ReviewSection({ bookId, bookTitle }: { bookId: string; b
       )}
 
       {user && !myReview && !canReview && (
-        <p style={{ fontSize: 13, color: '#8a7d65' }} className="font-jost">
+        <p style={{ fontSize: 15, color: '#8a7d65' }} className="font-jost">
           Purchase this book to leave a review
         </p>
       )}
@@ -339,7 +339,7 @@ export default function ReviewSection({ bookId, bookTitle }: { bookId: string; b
                   className="w-full px-3 py-2.5 border border-sand bg-cream font-jost text-sm text-ink outline-none focus:border-moss resize-y rounded-sm"
                 />
                 {comment.length > 0 && comment.length < 20 && (
-                  <p className="font-jost mt-1" style={{ fontSize: 11, color: '#9b4a2a' }}>
+                  <p className="font-jost mt-1" style={{ fontSize: 13, color: '#9b4a2a' }}>
                     Minimum 20 characters ({20 - comment.length} more needed)
                   </p>
                 )}
@@ -369,12 +369,12 @@ export default function ReviewSection({ bookId, bookTitle }: { bookId: string; b
                       className="hidden"
                       onChange={handlePhotoChange}
                     />
-                    <span className="font-jost" style={{ fontSize: 12, color: '#8a7d65' }}>
+                    <span className="font-jost" style={{ fontSize: 14, color: '#8a7d65' }}>
                       + Add photos (up to 3) · optional
                     </span>
                   </label>
                 )}
-                <p className="font-jost mt-2" style={{ fontSize: 11, color: '#8a7d65' }}>
+                <p className="font-jost mt-2" style={{ fontSize: 13, color: '#8a7d65' }}>
                   Reviews are checked before publishing. You&apos;ll earn 20 points for your review, +30 more if you include a photo.
                 </p>
               </div>

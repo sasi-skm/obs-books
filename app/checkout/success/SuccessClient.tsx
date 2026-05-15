@@ -128,7 +128,7 @@ export default function SuccessClient({ payload }: { payload: SuccessPayload }) 
               {copied ? '✓' : '📋'}
             </button>
           </div>
-          <p className="text-[11px] text-ink-muted italic mt-1.5">
+          <p className="text-[13px] text-ink-muted italic mt-1.5">
             {t('orderRefHint')}
           </p>
         </div>

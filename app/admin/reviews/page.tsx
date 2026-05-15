@@ -29,7 +29,7 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className="font-jost px-2 py-0.5 rounded-sm capitalize"
-      style={{ fontSize: 11, background: s.bg, color: s.color }}
+      style={{ fontSize: 13, background: s.bg, color: s.color }}
     >
       {status}
     </span>
@@ -38,7 +38,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function StarRow({ rating }: { rating: number }) {
   return (
-    <span className="font-jost" style={{ fontSize: 13, color: '#4a6741', letterSpacing: 1 }}>
+    <span className="font-jost" style={{ fontSize: 15, color: '#4a6741', letterSpacing: 1 }}>
       {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
     </span>
   )
@@ -119,7 +119,7 @@ export default function AdminReviewsPage() {
         >
           Pending{pendingCount > 0 && (
             <span
-              className="ml-1.5 font-jost px-1.5 py-0.5 rounded-sm text-[10px]"
+              className="ml-1.5 font-jost px-1.5 py-0.5 rounded-sm text-[12px]"
               style={{ background: '#fdf0eb', color: '#9b4a2a' }}
             >
               {pendingCount}

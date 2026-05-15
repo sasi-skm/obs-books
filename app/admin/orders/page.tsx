@@ -327,7 +327,7 @@ export default function AdminOrdersPage() {
                 {/* Book list */}
                 {order.items && order.items.length > 0 && (
                   <div className="mb-3 pt-2 border-t border-line">
-                    <p className="text-[10px] uppercase tracking-wide text-ink-muted mb-1.5">Order items</p>
+                    <p className="text-[12px] uppercase tracking-wide text-ink-muted mb-1.5">Order items</p>
                     <div className="space-y-1.5">
                       {order.items.map((item: { id: string; image_url?: string; title: string; author: string; price: number; condition?: string; quantity?: number }) => (
                         <div key={item.id} className="flex items-center gap-2">
@@ -340,7 +340,7 @@ export default function AdminOrdersPage() {
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="font-heading text-xs font-medium text-ink truncate">{item.title}</p>
-                            <p className="text-[10px] text-ink-muted">
+                            <p className="text-[12px] text-ink-muted">
                               {item.author}
                               {item.condition && <span className="ml-1 text-sage font-medium">· {item.condition}</span>}
                               {item.quantity && item.quantity > 1 && <span className="ml-1 text-bark">× {item.quantity}</span>}
@@ -485,12 +485,12 @@ export default function AdminOrdersPage() {
                       <div className="text-xs text-ink-muted">{order.customer_phone}</div>
                       {order.customer_email && <div className="text-xs text-ink-muted">{order.customer_email}</div>}
                       {order.shipping_address && (
-                        <div className="text-[10px] text-ink-muted mt-0.5 max-w-[200px] leading-relaxed">📍 {order.shipping_address}</div>
+                        <div className="text-[12px] text-ink-muted mt-0.5 max-w-[200px] leading-relaxed">📍 {order.shipping_address}</div>
                       )}
                       {order.items && order.items.length > 0 && (
                         <div className="mt-1 space-y-0.5">
                           {order.items.map((item: { id: string; title: string; condition?: string; quantity?: number }) => (
-                            <div key={item.id} className="text-[10px] text-ink-muted truncate max-w-[180px]">
+                            <div key={item.id} className="text-[12px] text-ink-muted truncate max-w-[180px]">
                               · {item.title}
                               {item.condition && <span className="text-sage font-medium ml-1">({item.condition})</span>}
                               {item.quantity && item.quantity > 1 && <span className="text-bark ml-1">×{item.quantity}</span>}
@@ -802,7 +802,7 @@ export default function AdminOrdersPage() {
                   disabled={refundLoading}
                 />
               </div>
-              <p className="text-[11px] text-ink-muted italic mt-1">
+              <p className="text-[13px] text-ink-muted italic mt-1">
                 Leave at full to refund the entire charge.
               </p>
             </div>

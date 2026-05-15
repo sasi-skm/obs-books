@@ -129,7 +129,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <span>{item.icon}</span>
                 {item.label}
                 {item.label === 'Orders' && pendingSlips > 0 && (
-                  <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose text-white">{pendingSlips}</span>
+                  <span className="ml-auto text-[12px] font-bold px-1.5 py-0.5 rounded-full bg-rose text-white">{pendingSlips}</span>
                 )}
               </Link>
             ))}

@@ -335,14 +335,14 @@ export default function NewBookPage() {
                 {slot.preview ? (
                   <>
                     <Image src={slot.preview} alt="" fill className="object-cover" sizes="120px" />
-                    {i === 0 && <span className="absolute top-1 left-1 bg-sage text-white text-[9px] px-1 py-0.5 font-heading">COVER</span>}
+                    {i === 0 && <span className="absolute top-1 left-1 bg-sage text-white text-[11px] px-1 py-0.5 font-heading">COVER</span>}
                     <button type="button" onClick={e => { e.preventDefault(); removeImage(i) }}
                       className="absolute top-1 right-1 bg-rose text-white w-5 h-5 flex items-center justify-center text-xs">x</button>
                   </>
                 ) : (
                   <div className="flex flex-col items-center gap-0.5">
                     <span className="text-ink-muted text-2xl">{dragOverSlot === i ? '📷' : '+'}</span>
-                    {dragOverSlot === i && <span className="text-[9px] text-sage font-heading">Drop here</span>}
+                    {dragOverSlot === i && <span className="text-[11px] text-sage font-heading">Drop here</span>}
                   </div>
                 )}
               </label>
@@ -361,7 +361,7 @@ export default function NewBookPage() {
               ) : (
                 <>
                   <span className="text-2xl mb-1">🎥</span>
-                  <span className="text-[10px] text-ink-muted font-heading">VIDEO</span>
+                  <span className="text-[12px] text-ink-muted font-heading">VIDEO</span>
                 </>
               )}
             </label>

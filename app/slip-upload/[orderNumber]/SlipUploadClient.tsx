@@ -159,7 +159,7 @@ export default function SlipUploadClient({ orderNumber }: { orderNumber: string 
             {order.created_at && order.payment_status === 'pending' && (
               <div className="mb-4">
                 <PaymentCountdown createdAt={order.created_at} />
-                <p className="text-[11px] text-ink-muted italic mt-2 leading-snug text-center">
+                <p className="text-[13px] text-ink-muted italic mt-2 leading-snug text-center">
                   {t('pay24hBody')}
                 </p>
               </div>
@@ -203,7 +203,7 @@ export default function SlipUploadClient({ orderNumber }: { orderNumber: string 
               {uploading ? 'Uploading...' : 'Submit Slip'}
             </button>
 
-            <p className="text-[11px] text-ink-muted italic text-center mt-4">
+            <p className="text-[13px] text-ink-muted italic text-center mt-4">
               Having trouble? DM us on Instagram @obs_books with your order number.
             </p>
           </div>

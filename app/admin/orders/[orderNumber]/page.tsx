@@ -400,10 +400,10 @@ export default function AdminOrderDetailPage() {
                 )}
                 <div className="flex flex-wrap gap-2 mt-1">
                   {item.condition && (
-                    <span className="text-[11px] px-1.5 py-0.5 bg-sage/10 text-sage">{item.condition}</span>
+                    <span className="text-[13px] px-1.5 py-0.5 bg-sage/10 text-sage">{item.condition}</span>
                   )}
                   {item.quantity && item.quantity > 1 && (
-                    <span className="text-[11px] px-1.5 py-0.5 bg-bark/10 text-bark">×{item.quantity}</span>
+                    <span className="text-[13px] px-1.5 py-0.5 bg-bark/10 text-bark">×{item.quantity}</span>
                   )}
                 </div>
               </div>
@@ -418,12 +418,12 @@ export default function AdminOrderDetailPage() {
           <span className="text-bark">{formatOrderTotal(order)}</span>
         </div>
         {isStripe && order.currency === 'USD' && (
-          <p className="text-[11px] text-ink-muted italic mt-1">
+          <p className="text-[13px] text-ink-muted italic mt-1">
             Items shown in shop currency (THB). Total in USD as charged via Stripe (incl. DHL international shipping).
           </p>
         )}
         {isStripe && order.currency === 'THB' && (
-          <p className="text-[11px] text-ink-muted italic mt-1">
+          <p className="text-[13px] text-ink-muted italic mt-1">
             Charged via Stripe in THB. Free domestic shipping.
           </p>
         )}
@@ -599,7 +599,7 @@ export default function AdminOrderDetailPage() {
                   disabled={refundLoading}
                 />
               </div>
-              <p className="text-[11px] text-ink-muted italic mt-1">Leave at full to refund the entire charge.</p>
+              <p className="text-[13px] text-ink-muted italic mt-1">Leave at full to refund the entire charge.</p>
             </div>
 
             <div className="mb-4">
