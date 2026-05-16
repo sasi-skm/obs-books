@@ -117,7 +117,7 @@ export default function AdminOrdersPage() {
   })
 
   const handleConfirmPayment = async (orderId: string) => {
-    await adminFetch(`/api/orders/${orderId}`, {
+    await fetch(`/api/orders/${orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'confirm_payment' }),
@@ -127,7 +127,7 @@ export default function AdminOrdersPage() {
 
   const handleConfirmShip = async () => {
     if (!shippingForm || !shippingForm.tracking.trim()) return
-    await adminFetch(`/api/orders/${shippingForm.orderId}`, {
+    await fetch(`/api/orders/${shippingForm.orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -240,7 +240,7 @@ export default function AdminOrdersPage() {
         reason: cancelReasons[item.id] || CANCEL_REASONS[0],
       }))
 
-      const res = await adminFetch(`/api/orders/${cancelModal.id}`, {
+      const res = await fetch(`/api/orders/${cancelModal.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

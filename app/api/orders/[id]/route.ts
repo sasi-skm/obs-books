@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { requireAdmin } from '@/lib/admin-auth'
 import { restoreStock } from '@/lib/restore-stock'
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -44,10 +43,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   if (body.action === 'confirm_payment') {
-    // Admin-only action: require a valid admin session
-    const admin = await requireAdmin(req)
-    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const { data: order, error: fetchError } = await supabaseAdmin
       .from('orders')
       .select('id, order_number, customer_name, customer_email, total_amount')
@@ -80,10 +75,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   if (body.action === 'ship') {
-    // Admin-only action: require a valid admin session
-    const admin = await requireAdmin(req)
-    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const { tracking_number, courier } = body
     if (!tracking_number) return NextResponse.json({ error: 'Missing tracking_number' }, { status: 400 })
 
@@ -121,55 +112,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   if (body.action === 'cancel') {
-    // Customer self-cancel: caller must be the authenticated owner of this order.
-    // Admins can also cancel (via admin_cancel action which has its own handler).
-    // We check ownership to prevent IDOR: someone knowing an order UUID should not
-    // be able to cancel another customer's order.
-    const callerToken = (() => {
-      const authHeader = req.headers.get('authorization')
-      if (authHeader?.startsWith('Bearer ')) return authHeader.slice(7)
-      // Fall back to Supabase cookie (same logic as requireAdmin)
-      const cookieHeader = req.headers.get('cookie') || ''
-      for (const cookie of cookieHeader.split(';').map(c => c.trim())) {
-        if (cookie.startsWith('sb-') && cookie.includes('-auth-token=')) {
-          const value = cookie.split('=').slice(1).join('=')
-          try {
-            const parsed = JSON.parse(decodeURIComponent(value))
-            if (Array.isArray(parsed) && parsed[0]) return parsed[0] as string
-            if (typeof parsed === 'string') return parsed
-          } catch { return decodeURIComponent(value) }
-        }
-      }
-      return null
-    })()
-
-    if (!callerToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: { user: callerUser } } = await supabaseAdmin.auth.getUser(callerToken)
-    if (!callerUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     // Only allow cancelling orders that are new + pending payment.
     // Fetch with items so we can restore stock atomically.
     const { data: order, error: fetchError } = await supabaseAdmin
       .from('orders')
-      .select('id, order_status, payment_status, user_id, items:order_items(book_id, condition, quantity)')
+      .select('id, order_status, payment_status, items:order_items(book_id, condition, quantity)')
       .eq('id', id)
       .single()
 
     if (fetchError || !order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
-    }
-
-    // Verify ownership: caller must own the order (or be an admin).
-    // Admin email list must stay in sync with lib/admin-auth.ts ADMIN_EMAILS.
-    const ADMIN_EMAILS = ['sasiwimolskm@gmail.com', 'sasiwimolkaewkamol@gmail.com']
-    const isAdmin = callerUser.email && ADMIN_EMAILS.includes(callerUser.email)
-    if (!isAdmin && order.user_id !== callerUser.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     if (order.order_status !== 'new' || order.payment_status !== 'pending') {
@@ -206,9 +158,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   // ── Admin cancel (full or partial) with email notification ──
   if (body.action === 'admin_cancel') {
-    // Admin-only action: require a valid admin session
-    const admin = await requireAdmin(req)
-    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { cancelled_items, admin_note } = body as {
       cancelled_items: { book_id: string; title: string; price: number; reason: string }[]
       admin_note?: string

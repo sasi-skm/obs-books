@@ -145,7 +145,7 @@ export default function AdminOrderDetailPage() {
     if (!order) return
     setActionError('')
     try {
-      const res = await adminFetch(`/api/orders/${order.id}`, {
+      const res = await fetch(`/api/orders/${order.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'confirm_payment' }),
@@ -165,7 +165,7 @@ export default function AdminOrderDetailPage() {
     if (!order || !trackingNumber.trim()) return
     setShippingLoading(true)
     try {
-      const res = await adminFetch(`/api/orders/${order.id}`, {
+      const res = await fetch(`/api/orders/${order.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
