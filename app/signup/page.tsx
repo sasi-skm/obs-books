@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import DateOfBirthPicker from '@/components/DateOfBirthPicker'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -81,12 +82,9 @@ export default function SignupPage() {
             <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">
               Date of Birth <span className="normal-case text-ink-muted">(for birthday surprises)</span>
             </label>
-            <input
-              type="date"
+            <DateOfBirthPicker
               value={form.dateOfBirth}
-              onChange={e => setForm({ ...form, dateOfBirth: e.target.value })}
-              max={new Date().toISOString().split('T')[0]}
-              className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss transition-colors"
+              onChange={v => setForm({ ...form, dateOfBirth: v })}
             />
           </div>
           <div className="mb-4">

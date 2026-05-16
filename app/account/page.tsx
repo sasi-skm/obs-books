@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { useAuth } from '@/lib/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { useCart } from '@/components/cart/CartContext'
+import DateOfBirthPicker from '@/components/DateOfBirthPicker'
 import { Book, Order } from '@/types'
 // static QR image used instead of generated promptpay QR
 
@@ -579,9 +580,10 @@ export default function AccountPage() {
                 <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">
                   Date of Birth <span className="normal-case text-ink-muted text-[10px]">(birthday surprises)</span>
                 </label>
-                <input type="date" value={profileForm.dateOfBirth} onChange={e => setProfileForm({ ...profileForm, dateOfBirth: e.target.value })}
-                  max={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss" />
+                <DateOfBirthPicker
+                  value={profileForm.dateOfBirth}
+                  onChange={v => setProfileForm({ ...profileForm, dateOfBirth: v })}
+                />
               </div>
             </div>
             <div className="mb-5">
