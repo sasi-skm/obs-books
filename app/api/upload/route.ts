@@ -76,7 +76,74 @@ export async function POST(req: NextRequest) {
       const fileName = `${orderId || Date.now()}-${Date.now()}.${ext}`
 
       const arrayBuffer = await file.arrayBuffer()
-      const buffer = Buffer.from(arrayBuffer)
+      const inputBuffer = Buffer.from(arrayBuffer)
+
+      // ---------------------------------------------------------------
+      // book-images: auto-orient + resize to webp (display + thumb)
+      // payment-slips: original buffer, original contentType, unchanged
+      // ---------------------------------------------------------------
+      if (bucket === 'book-images') {
+        const base = `${orderId || Date.now()}-${Date.now()}`
+        let displayBuffer: Buffer
+        let thumbBuffer: Buffer
+        let processedOk = false
+
+        try {
+          const sharp = (await import('sharp')).default
+          const pipeline = sharp(inputBuffer).rotate() // auto-orient from EXIF (critical for iPhone/HEIC)
+          displayBuffer = await pipeline.clone()
+            .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
+            .webp({ quality: 80 })
+            .toBuffer()
+          thumbBuffer = await pipeline.clone()
+            .resize({ width: 400, height: 400, fit: 'inside', withoutEnlargement: true })
+            .webp({ quality: 72 })
+            .toBuffer()
+          processedOk = true
+        } catch (sharpErr) {
+          console.error('sharp processing failed, falling back to original upload:', sharpErr)
+        }
+
+        if (processedOk!) {
+          // Upload display image
+          const displayName = `${base}.webp`
+          const { error: displayUploadError } = await supabaseAdmin.storage
+            .from(bucket)
+            .upload(displayName, displayBuffer!, { contentType: 'image/webp', upsert: true })
+          if (displayUploadError) throw displayUploadError
+
+          // Upload thumbnail
+          const thumbName = `${base}-thumb.webp`
+          const { error: thumbUploadError } = await supabaseAdmin.storage
+            .from(bucket)
+            .upload(thumbName, thumbBuffer!, { contentType: 'image/webp', upsert: true })
+          if (thumbUploadError) throw thumbUploadError
+
+          const { data: { publicUrl } } = supabaseAdmin.storage
+            .from(bucket)
+            .getPublicUrl(displayName)
+
+          return NextResponse.json({ url: publicUrl })
+        }
+
+        // Graceful fallback: sharp failed - upload original so owner never sees an error
+        const { error: fallbackUploadError } = await supabaseAdmin.storage
+          .from(bucket)
+          .upload(fileName, inputBuffer, { contentType: file.type, upsert: true })
+        if (fallbackUploadError) throw fallbackUploadError
+
+        const { data: { publicUrl } } = supabaseAdmin.storage
+          .from(bucket)
+          .getPublicUrl(fileName)
+
+        return NextResponse.json({ url: publicUrl })
+      }
+
+      // ---------------------------------------------------------------
+      // payment-slips (and any future whitelisted bucket): original path
+      // pixel-faithful - no sharp processing
+      // ---------------------------------------------------------------
+      const buffer = inputBuffer
 
       const { error: uploadError } = await supabaseAdmin.storage
         .from(bucket)

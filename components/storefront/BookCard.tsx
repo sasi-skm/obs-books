@@ -6,6 +6,7 @@ import { Book } from '@/types'
 import { useCart } from '../cart/CartContext'
 import { useLang } from '../layout/LanguageContext'
 import WishlistHeart from './WishlistHeart'
+import { thumbSrc } from '@/lib/image'
 
 export default function BookCard({
   book,
@@ -76,12 +77,20 @@ export default function BookCard({
       <Link href={'/book/' + book.id} className="block">
         <div className="aspect-square overflow-hidden relative">
           <Image
-            src={coverImage}
+            src={thumbSrc(coverImage)}
             alt={book.title}
             fill
             className="object-cover transition-transform duration-400 group-hover:scale-[1.04]"
             sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw"
             priority={priority}
+            onError={e => {
+              const img = e.target as HTMLImageElement
+              if (img.src !== coverImage) {
+                img.src = coverImage
+              } else {
+                img.src = FALLBACK_COVER
+              }
+            }}
           />
           {isSold && (
             <div className="absolute top-2.5 right-2.5 bg-rose text-white text-xs px-2 py-0.5 font-heading">
