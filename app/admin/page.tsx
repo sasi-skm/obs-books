@@ -47,17 +47,28 @@ export default function AdminDashboard() {
             .lte('copies', 1),
           supabase
             .from('orders')
-            .select('total_amount')
-            .eq('payment_status', 'confirmed'),
+            .select('total_amount, payment_method')
+            .eq('payment_status', 'confirmed')
+            // Refunded/cancelled orders are not realized revenue - exclude them.
+            .not('order_status', 'in', '(refunded,cancelled)'),
         ])
 
-        const revenueRows = (revenueRes.data || []) as { total_amount: number }[]
+        const revenueRows = (revenueRes.data || []) as { total_amount: number; payment_method: string | null }[]
 
         setStats({
           newOrders: newOrdersRes.count ?? 0,
           awaitingShipment: awaitingShipmentRes.count ?? 0,
           lowStock: lowStockRes.count ?? 0,
-          totalRevenue: revenueRows.reduce((s, o) => s + (o.total_amount || 0), 0),
+          // Stripe stores total_amount in the smallest unit (satang); divide
+          // by 100 to baht. Non-Stripe (PromptPay/bank) is already in baht.
+          totalRevenue: revenueRows.reduce(
+            (s, o) =>
+              s +
+              (o.payment_method === 'stripe'
+                ? Math.round((o.total_amount || 0) / 100)
+                : o.total_amount || 0),
+            0,
+          ),
         })
       } catch (err) {
         console.error('[admin/page] loadStats failed:', err)

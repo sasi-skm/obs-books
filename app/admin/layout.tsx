@@ -13,7 +13,6 @@ const NAV_ITEMS = [
   { label: 'Reviews', href: '/admin/reviews', icon: '⭐' },
   { label: 'Customers', href: '/admin/customers', icon: '👤' },
   { label: 'Vouchers', href: '/admin/vouchers', icon: '🏷️' },
-  { label: 'Subscriptions', href: '/admin/subscriptions', icon: '🌸' },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

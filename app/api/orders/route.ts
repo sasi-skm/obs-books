@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
+  const rl = await rateLimit(req, { id: 'orders-create', limit: 8, windowMs: 60000 })
+  if (!rl.ok) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+
   try {
     const body = await req.json()
     const { customer_name, customer_phone, customer_email, shipping_address, payment_method, note, items, total_amount, slip_url, destination_country, currency, user_id, redeem_points, voucher_id, voucher_email, subscriber_discount_applied, subscriber_discount_amount } = body

@@ -3,7 +3,7 @@
 ## What This Project Is
 E-commerce website for **OBS Books** - a used bookstore in Bangkok selling vintage illustrated books about flowers, nature, cookbooks, and fairy tales. Owned by Sasi.
 
-- **Live site**: https://obs-books.vercel.app
+- **Live site**: https://www.obsbooks.com
 - **Admin panel**: /admin (login with Supabase credentials)
 - **Tech**: Next.js 14 + TypeScript + Tailwind CSS + Supabase + Vercel
 
@@ -19,7 +19,7 @@ Open http://localhost:3000
 
 ## How to Deploy to Vercel
 ```bash
-npx vercel --yes --prod --scope julians-projects-0e1b3890
+npx vercel --yes --prod --scope <VERCEL_SCOPE - see Vercel account>
 ```
 
 ---
@@ -27,19 +27,19 @@ npx vercel --yes --prod --scope julians-projects-0e1b3890
 ## Credentials & Services
 
 ### Supabase (Database + Storage)
-- Project URL: https://xquzachvmptvrmovvlgc.supabase.co
+- Project URL: `<SUPABASE_URL - see Vercel env / .env.local>`
 - Keys are in `.env.local` (never commit this file)
 - Tables: `books`, `orders`, `order_items`
 - Storage buckets: `book-images` (public), `payment-slips` (private)
-- Admin login email: sasiwimolskm@gmail.com (password set in Supabase Auth)
+- Admin login email: `<ADMIN_EMAIL - see Supabase Auth>` (password set in Supabase Auth)
 
 ### Tawk.to (Live Chat)
-- Property ID: `69cccad97a1fd31c39851dcb`
+- Property ID: `<TAWKTO_PROPERTY_ID - see components/layout/TawktoChat.tsx>`
 - Configured in `components/layout/TawktoChat.tsx`
 - Manage chats at https://tawk.to
 
 ### PromptPay
-- Phone number: 0837845392 (Sasi's number linked to PromptPay)
+- Phone number: `<PROMPTPAY_NUMBER - Sasi's number, see secure notes>`
 
 ---
 

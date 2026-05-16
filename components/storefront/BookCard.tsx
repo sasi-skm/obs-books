@@ -2,41 +2,24 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
 import { Book } from '@/types'
 import { useCart } from '../cart/CartContext'
 import { useLang } from '../layout/LanguageContext'
 import WishlistHeart from './WishlistHeart'
-import { supabase } from '@/lib/supabase'
 
-// Module-level cache so each title is only fetched once per session
-const ratingCache = new Map<string, { avg: number; count: number } | null>()
-
-async function fetchRating(bookTitle: string): Promise<{ avg: number; count: number } | null> {
-  if (ratingCache.has(bookTitle)) return ratingCache.get(bookTitle) || null
-  try {
-    const { data } = await supabase
-      .from('reviews')
-      .select('rating')
-      .eq('book_title', bookTitle)
-      .eq('status', 'approved')
-    const result =
-      data && data.length > 0
-        ? { avg: data.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / data.length, count: data.length }
-        : null
-    ratingCache.set(bookTitle, result)
-    return result
-  } catch {
-    return null
-  }
-}
-
-export default function BookCard({ book, priority = false }: { book: Book; priority?: boolean }) {
-  const [rating, setRating] = useState<{ avg: number; count: number } | null>(null)
-
-  useEffect(() => {
-    fetchRating(book.title).then(setRating)
-  }, [book.title])
+export default function BookCard({
+  book,
+  priority = false,
+  ratingData = null,
+}: {
+  book: Book
+  priority?: boolean
+  /** Pre-fetched rating for this book, supplied by the parent grid.
+   *  Defaults to null (no rating shown) so the card is safe when used
+   *  without the prop. */
+  ratingData?: { avg: number; count: number } | null
+}) {
+  const rating = ratingData
   const { addItem, removeItem, items } = useCart()
   const { t } = useLang()
 

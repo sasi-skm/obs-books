@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { rateLimit } from '@/lib/rate-limit'
 
 async function getAuthUser(req: NextRequest) {
   try {
@@ -45,6 +46,9 @@ const ALLOWED_BUCKETS = ['payment-slips', 'book-images'] as const
 type AllowedBucket = typeof ALLOWED_BUCKETS[number]
 
 export async function POST(req: NextRequest) {
+  const rl = await rateLimit(req, { id: 'upload', limit: 10, windowMs: 60000 })
+  if (!rl.ok) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
