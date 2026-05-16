@@ -520,9 +520,13 @@ export default function AccountPage() {
   const handleCancelOrder = async (orderId: string) => {
     setCancellingOrder(orderId)
     try {
+      // Attach the session token so the API can verify ownership.
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
       await fetch(`/api/orders/${orderId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ action: 'cancel' }),
       })
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, order_status: 'cancelled' } : o))

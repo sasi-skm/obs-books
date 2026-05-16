@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     siteName: 'OBS Books',
     images: [
       {
-        url: '/images/obs-display.png',
+        url: '/images/obs-display.jpg',
         width: 1200,
         height: 630,
         alt: 'OBS Books - Vintage illustrated books collection',
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'OBS Books - The Book Itself Is a Treasure',
     description: 'Curated vintage & used illustrated books - especially flowers & nature.',
-    images: ['/images/obs-display.png'],
+    images: ['/images/obs-display.jpg'],
   },
   robots: {
     index: true,

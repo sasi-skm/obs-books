@@ -46,7 +46,7 @@ export default function SubscribePage() {
           <span className="h-px w-16 bg-sand block" />
         </div>
 
-        <p className="font-crimson text-lg text-bark leading-relaxed mb-10">
+        <p className="font-cormorant text-lg text-bark leading-relaxed mb-10">
           A monthly botanical letter for book lovers.
           <br />
           Launching soon - stay tuned.
@@ -55,7 +55,7 @@ export default function SubscribePage() {
         {status === 'done' ? (
           <div className="bg-parchment border border-sand px-6 py-5">
             <p className="font-cormorant italic text-xl text-moss mb-1">You are on the list.</p>
-            <p className="font-crimson text-bark text-sm">
+            <p className="font-cormorant text-bark text-sm">
               We will let you know as soon as The Flower Letter launches.
             </p>
           </div>
@@ -70,10 +70,10 @@ export default function SubscribePage() {
               onChange={e => setEmail(e.target.value)}
               placeholder="your@email.com"
               required
-              className="w-full px-4 py-3 bg-white border border-sand font-crimson text-ink placeholder:text-ink-muted focus:outline-none focus:border-moss transition-colors"
+              className="w-full px-4 py-3 bg-white border border-sand font-cormorant text-ink placeholder:text-ink-muted focus:outline-none focus:border-moss transition-colors"
             />
             {status === 'error' && (
-              <p className="font-crimson text-sm text-rose">{errorMsg}</p>
+              <p className="font-cormorant text-sm text-rose">{errorMsg}</p>
             )}
             <button
               type="submit"

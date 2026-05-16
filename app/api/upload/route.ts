@@ -41,6 +41,9 @@ async function getAuthUser(req: NextRequest) {
   }
 }
 
+const ALLOWED_BUCKETS = ['payment-slips', 'book-images'] as const
+type AllowedBucket = typeof ALLOWED_BUCKETS[number]
+
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -49,7 +52,13 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData()
     const file = formData.get('file') as File
     const orderId = formData.get('order_id') as string
-    const bucket = formData.get('bucket') as string || 'payment-slips'
+    const rawBucket = formData.get('bucket') as string || 'payment-slips'
+
+    // Strict whitelist: reject any bucket not explicitly allowed.
+    if (!(ALLOWED_BUCKETS as readonly string[]).includes(rawBucket)) {
+      return NextResponse.json({ error: 'Invalid bucket' }, { status: 400 })
+    }
+    const bucket: AllowedBucket = rawBucket as AllowedBucket
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })

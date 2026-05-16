@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { adminFetch } from '@/lib/admin-fetch'
 import { SUBSCRIPTION_BENEFITS } from '@/lib/subscription-pricing'
 
 type AdminTab = 'subscribers' | 'letters' | 'payments'
@@ -210,7 +211,7 @@ export default function AdminSubscriptionsPage() {
       let sent = 0
       for (const sub of intlActiveSubs) {
         try {
-          const res = await fetch('/api/subscriptions/send-letter', {
+          const res = await adminFetch('/api/subscriptions/send-letter', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

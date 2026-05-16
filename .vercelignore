@@ -1,0 +1,9 @@
+# Deploy-bundle exclusions (does NOT delete local files; only trims the Vercel deployment)
+
+# ~162 MB of unreferenced legacy photos. Verified zero code/runtime references
+# (book galleries are served from the Supabase `book-images` bucket, not this folder).
+public/images/gallery/
+
+# Superseded by the optimized obs-display.jpg (all references migrated). Kept on
+# disk as a source backup, but excluded from the production bundle.
+public/images/obs-display.png
