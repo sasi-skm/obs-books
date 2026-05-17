@@ -137,14 +137,19 @@ export default function BookCard({
           >
             {book.condition}
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-heading text-lg font-semibold text-bark whitespace-nowrap">
+          {/* Stacked footer: price on its own line, then a
+              full-width CTA. Robust at every card width / base
+              font-size — the button can never clip or wrap
+              awkwardly (the prior side-by-side row overflowed
+              narrow mobile cards when the price had a 'from' prefix). */}
+          <div className="mt-3 flex flex-col gap-2">
+            <span className="font-heading text-lg font-semibold text-bark">
               {priceLabel}
             </span>
             {!isSold && (
               <button
                 onClick={handleCartClick}
-                className={'shrink-0 whitespace-nowrap text-xs px-3 py-1.5 border transition-all font-jost tracking-wide rounded-sm ' +
+                className={'w-full whitespace-nowrap text-sm px-3 py-2 border transition-all font-jost tracking-wide rounded-sm ' +
                   (inCart
                     ? 'border-rose text-rose hover:bg-rose hover:text-white'
                     : 'bg-moss text-cream hover:opacity-90')}

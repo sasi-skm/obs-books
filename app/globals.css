@@ -23,7 +23,9 @@
 body {
   color: var(--bark);
   background: var(--cream);
-  font-size: 14px;
+  /* Was 14px — too small on desktop at 100% zoom; 16px is the web
+     standard and reads as properly sized / professional. */
+  font-size: 16px;
   line-height: 1.6;
 }
 
