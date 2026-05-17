@@ -150,7 +150,7 @@ export default function BookCard({
             {!isSold && (
               <button
                 onClick={handleCartClick}
-                className={'w-full whitespace-nowrap text-sm px-3 py-2 border transition-all font-jost tracking-wide rounded-sm ' +
+                className={'w-full text-center whitespace-nowrap text-sm px-3 py-2 border transition-all font-jost tracking-wide rounded-sm ' +
                   (inCart
                     ? 'border-rose text-rose hover:bg-rose hover:text-white'
                     : 'bg-moss text-cream hover:opacity-90')}
