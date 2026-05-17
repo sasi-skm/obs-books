@@ -489,26 +489,26 @@ export default function CheckoutPage() {
               <div className="p-4 border border-line bg-offwhite">
                 <h3 className="font-heading text-sm mb-2">KBank / กสิกรไทย</h3>
                 <div className="text-sm space-y-1.5">
-                  <div className="flex justify-between">
-                    <span className="text-ink-muted">{t('bankAccount')}:</span>
-                    <span className="font-medium font-mono">021-3-24417-5</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-ink-muted shrink-0">{t('bankAccount')}:</span>
+                    <span className="font-medium font-mono whitespace-nowrap">021-3-24417-5</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-ink-muted">{t('bankHolder')}:</span>
-                    <span className="font-medium">ศศิวิมล แก้วกมล</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-ink-muted shrink-0">{t('bankHolder')}:</span>
+                    <span className="font-medium text-right min-w-0 break-words">ศศิวิมล แก้วกมล</span>
                   </div>
                 </div>
               </div>
               <div className="p-4 border border-line bg-offwhite">
                 <h3 className="font-heading text-sm mb-2">Krungsri / กรุงศรี</h3>
                 <div className="text-sm space-y-1.5">
-                  <div className="flex justify-between">
-                    <span className="text-ink-muted">{t('bankAccount')}:</span>
-                    <span className="font-medium font-mono">719-1-26847-2</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-ink-muted shrink-0">{t('bankAccount')}:</span>
+                    <span className="font-medium font-mono whitespace-nowrap">719-1-26847-2</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-ink-muted">{t('bankHolder')}:</span>
-                    <span className="font-medium">ศศิวิมล แก้วกมล (Sasiwimol Kaewkamol)</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-ink-muted shrink-0">{t('bankHolder')}:</span>
+                    <span className="font-medium text-right min-w-0 break-words">ศศิวิมล แก้วกมล (Sasiwimol Kaewkamol)</span>
                   </div>
                 </div>
               </div>
@@ -956,13 +956,13 @@ export default function CheckoutPage() {
                     {t('bankTitle')} - KBank / กสิกรไทย
                   </h3>
                   <div className="text-sm space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-ink-muted">{t('bankAccount')}:</span>
-                      <span className="font-medium font-mono">021-3-24417-5</span>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-ink-muted shrink-0">{t('bankAccount')}:</span>
+                      <span className="font-medium font-mono whitespace-nowrap">021-3-24417-5</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-ink-muted">{t('bankHolder')}:</span>
-                      <span className="font-medium">ศศิวิมล แก้วกมล</span>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-ink-muted shrink-0">{t('bankHolder')}:</span>
+                      <span className="font-medium text-right min-w-0 break-words">ศศิวิมล แก้วกมล</span>
                     </div>
                   </div>
                 </div>
@@ -973,13 +973,13 @@ export default function CheckoutPage() {
                     {t('bankTitle')} - Krungsri / กรุงศรี
                   </h3>
                   <div className="text-sm space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-ink-muted">{t('bankAccount')}:</span>
-                      <span className="font-medium font-mono">719-1-26847-2</span>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-ink-muted shrink-0">{t('bankAccount')}:</span>
+                      <span className="font-medium font-mono whitespace-nowrap">719-1-26847-2</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-ink-muted">{t('bankHolder')}:</span>
-                      <span className="font-medium">ศศิวิมล แก้วกมล (Sasiwimol Kaewkamol)</span>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-ink-muted shrink-0">{t('bankHolder')}:</span>
+                      <span className="font-medium text-right min-w-0 break-words">ศศิวิมล แก้วกมล (Sasiwimol Kaewkamol)</span>
                     </div>
                   </div>
                 </div>
