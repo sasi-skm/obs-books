@@ -748,7 +748,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* City / Province / Postal code */}
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div>
                 <label className="block font-heading text-sm mb-1">City *</label>
                 <input

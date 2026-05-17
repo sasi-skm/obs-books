@@ -96,9 +96,9 @@ export default function CartDrawer() {
                     {item.condition && (
                       <div className="text-[0.65rem] text-sage tracking-wider uppercase">{item.condition}</div>
                     )}
-                    <div className="flex items-center justify-between mt-1.5">
+                    <div className="flex items-center justify-between gap-2 mt-1.5">
                       {/* Quantity controls */}
-                      <div className="flex items-center border border-sand rounded">
+                      <div className="flex items-center border border-sand rounded shrink-0">
                         <button
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           className="w-7 h-7 flex items-center justify-center text-bark hover:text-moss transition-colors text-sm"
@@ -114,7 +114,7 @@ export default function CartDrawer() {
                           +
                         </button>
                       </div>
-                      <div className="font-heading text-sm font-semibold text-bark">
+                      <div className="font-heading text-sm font-semibold text-bark shrink-0 whitespace-nowrap">
                         ฿{(item.price * item.quantity).toLocaleString()}
                       </div>
                     </div>

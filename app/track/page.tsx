@@ -381,9 +381,9 @@ function TrackPageInner() {
               <div className="border-t border-line pt-4">
                 <p className="font-heading text-sm mb-2">{lang === 'th' ? 'รายการสินค้า' : 'Items'}</p>
                 {order.items.map(item => (
-                  <div key={item.id} className="flex justify-between text-sm text-ink-light mb-1">
-                    <span>{item.title}</span>
-                    <span>฿{item.price.toLocaleString()}</span>
+                  <div key={item.id} className="flex justify-between gap-2 text-sm text-ink-light mb-1">
+                    <span className="truncate">{item.title}</span>
+                    <span className="shrink-0 whitespace-nowrap">฿{item.price.toLocaleString()}</span>
                   </div>
                 ))}
                 <div className="flex justify-between font-heading text-base font-semibold pt-2 mt-2 border-t border-line">

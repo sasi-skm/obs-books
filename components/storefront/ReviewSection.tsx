@@ -247,9 +247,9 @@ export default function ReviewSection({ bookId, bookTitle }: { bookId: string; b
       <div className="space-y-4 mb-8">
         {reviews.map(review => (
           <div key={review.id} className="bg-cream border border-sand rounded-sm p-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="font-jost text-sm font-semibold text-ink">{formatName(review)}</span>
-              <span className="font-jost" style={{ fontSize: 11, color: '#8a7d65' }}>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="font-jost text-sm font-semibold text-ink truncate">{formatName(review)}</span>
+              <span className="font-jost shrink-0 whitespace-nowrap" style={{ fontSize: 11, color: '#8a7d65' }}>
                 {new Date(review.created_at).toLocaleDateString('en-GB', {
                   day: 'numeric',
                   month: 'short',
