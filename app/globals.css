@@ -27,6 +27,18 @@ body {
      standard and reads as properly sized / professional. */
   font-size: 16px;
   line-height: 1.6;
+  /* Stop Android Chrome / Samsung Internet from auto-inflating text
+     ("font boosting"). Without this, those browsers enlarge body text
+     beyond the designed sizes and burst fixed-size containers, causing
+     horizontal overflow on Samsung/Android only (iOS Safari never
+     boosts, which is why iPhone looked fine). */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Belt-and-suspenders: never allow a stray wide child to create a
+     horizontal scroll on phones. The storefront nav is fixed (not
+     sticky), so clipping the x-axis here has no layout side effects. */
+  overflow-x: hidden;
 }
 
 h1, h2, h3 {
@@ -58,8 +70,14 @@ h3 { font-size: 20px; }
 .divider-cream::after { background: var(--cream); }
 .divider-white::after { background: var(--white); }
 
-/* Smooth scroll */
-html { scroll-behavior: smooth; }
+/* Smooth scroll + disable Android/Samsung text auto-inflation at the
+   root too (Samsung Internet keys off <html> in some versions). */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 
 /* Animations */
 @keyframes fadeUp {
