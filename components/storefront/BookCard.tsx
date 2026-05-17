@@ -137,14 +137,14 @@ export default function BookCard({
           >
             {book.condition}
           </div>
-          <div className="flex items-center justify-between">
-            <span className="font-heading text-lg font-semibold text-bark">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-heading text-lg font-semibold text-bark whitespace-nowrap">
               {priceLabel}
             </span>
             {!isSold && (
               <button
                 onClick={handleCartClick}
-                className={'text-xs px-3 py-1.5 border transition-all font-jost tracking-wide rounded-sm ' +
+                className={'shrink-0 whitespace-nowrap text-xs px-3 py-1.5 border transition-all font-jost tracking-wide rounded-sm ' +
                   (inCart
                     ? 'border-rose text-rose hover:bg-rose hover:text-white'
                     : 'bg-moss text-cream hover:opacity-90')}
