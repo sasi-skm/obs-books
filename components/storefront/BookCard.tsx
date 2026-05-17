@@ -73,8 +73,8 @@ export default function BookCard({
   }
 
   return (
-    <div className="bg-cream border border-sand rounded-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-hover hover:border-moss group">
-      <Link href={'/book/' + book.id} className="block">
+    <div className="bg-cream border border-sand rounded-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-hover hover:border-moss group h-full flex flex-col">
+      <Link href={'/book/' + book.id} className="flex flex-1 flex-col">
         <div className="aspect-square overflow-hidden relative">
           <Image
             src={thumbSrc(coverImage)}
@@ -107,7 +107,7 @@ export default function BookCard({
             </div>
           )}
         </div>
-        <div className="p-4">
+        <div className="p-4 flex flex-1 flex-col">
           <h3 className="font-heading text-[0.95rem] font-semibold leading-tight mb-0.5 line-clamp-2 text-ink">
             {book.title}
           </h3>
@@ -137,12 +137,13 @@ export default function BookCard({
           >
             {book.condition}
           </div>
-          {/* Stacked footer: price on its own line, then a
-              full-width CTA. Robust at every card width / base
-              font-size — the button can never clip or wrap
-              awkwardly (the prior side-by-side row overflowed
-              narrow mobile cards when the price had a 'from' prefix). */}
-          <div className="mt-3 flex flex-col gap-2">
+          {/* Stacked footer pinned to the card bottom (mt-auto).
+              Price on its own line, then a full-width CTA. The
+              card is a full-height flex column, so every footer in
+              a grid row aligns on the same baseline regardless of
+              title length / 'from' price / condition — no clip or
+              wrap at any width or base font-size. */}
+          <div className="mt-auto pt-3 flex flex-col gap-2">
             <span className="font-heading text-lg font-semibold text-bark">
               {priceLabel}
             </span>
