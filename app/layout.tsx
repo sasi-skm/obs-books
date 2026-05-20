@@ -8,6 +8,7 @@ import Nav from '@/components/layout/Nav'
 import Footer from '@/components/layout/Footer'
 import CartDrawer from '@/components/cart/CartDrawer'
 import TawktoChat from '@/components/layout/TawktoChat'
+import UtilityStrip from '@/components/layout/UtilityStrip'
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -75,6 +76,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${cormorant.variable} ${jost.variable} ${notoThai.variable}`}>
       <body className="font-body antialiased bg-cream text-ink">
+        <UtilityStrip />
         <LanguageProvider>
           <AuthProvider>
             <CartProvider>
