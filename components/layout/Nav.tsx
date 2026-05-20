@@ -8,15 +8,6 @@ import { useCart } from '../cart/CartContext'
 import { useAuth } from '@/lib/AuthContext'
 import { supabase } from '@/lib/supabase'
 
-const NAV_ITEMS = [
-  { key: 'nFeatured', href: '/#featured' },
-  { key: 'nCategories', href: '/#categories' },
-  { key: 'navShop', href: '/shop' },
-  { key: 'nShipping', href: '/shipping' },
-  { key: 'navAbout', href: '/#about' },
-  { key: 'navContact', href: '/#contact' },
-  { key: 'nFlowerLetter', href: '/subscribe' },
-]
 
 export default function Nav() {
   const pathname = usePathname()
