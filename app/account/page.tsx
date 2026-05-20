@@ -7,15 +7,15 @@ import Image from 'next/image'
 import { useAuth } from '@/lib/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { useCart } from '@/components/cart/CartContext'
+import DateOfBirthPicker from '@/components/DateOfBirthPicker'
 import { Book, Order } from '@/types'
 // static QR image used instead of generated promptpay QR
 
-type Tab = 'profile' | 'orders' | 'history' | 'wishlist' | 'subscription' | 'points'
+type Tab = 'profile' | 'orders' | 'history' | 'wishlist' | 'points'
 
 interface WishlistEntry { id: string; book_id: string; book_title: string; added_at: string }
 interface PointsTx { id: string; points: number; type: string; created_at: string; reference_id?: string; book_title?: string }
 interface ReviewData { id: string; book_title: string; rating: number; status: 'pending' | 'approved' | 'hidden' }
-interface Subscription { id: string; plan: string; subscriber_type: string; status: string; expires_at: string; started_at: string; amount_paid: number; currency: string }
 
 // ── Small helpers ─────────────────────────────────────────────────────────────
 
@@ -255,12 +255,6 @@ export default function AccountPage() {
   const [wishlistBooks, setWishlistBooks] = useState<Record<string, Book>>({})
   const [wishlistLoading, setWishlistLoading] = useState(false)
 
-  // Subscription
-  const [subscription, setSubscription] = useState<Subscription | null>(null)
-  const [subLoading, setSubLoading] = useState(false)
-  const [cancelModal, setCancelModal] = useState(false)
-  const [cancelling, setCancelling] = useState(false)
-
   // Points
   const [pointsTxs, setPointsTxs] = useState<PointsTx[]>([])
   const [pointsLoading, setPointsLoading] = useState(false)
@@ -402,29 +396,11 @@ export default function AccountPage() {
     setPointsLoading(false)
   }, [user])
 
-  const fetchSubscription = useCallback(async () => {
-    if (!user) return
-    setSubLoading(true)
-    try {
-      const { data } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .in('status', ['active', 'expired'])
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-      if (data) setSubscription(data as Subscription)
-    } catch {}
-    setSubLoading(false)
-  }, [user])
-
   useEffect(() => {
     if (tab === 'orders' || tab === 'history') fetchOrders()
     if (tab === 'wishlist') fetchWishlist()
-    if (tab === 'subscription') fetchSubscription()
     if (tab === 'points') fetchPoints()
-  }, [tab, fetchOrders, fetchWishlist, fetchSubscription, fetchPoints])
+  }, [tab, fetchOrders, fetchWishlist, fetchPoints])
 
   const handleSaveProfile = async () => {
     if (!user) return
@@ -520,9 +496,13 @@ export default function AccountPage() {
   const handleCancelOrder = async (orderId: string) => {
     setCancellingOrder(orderId)
     try {
+      // Attach the session token so the API can verify ownership.
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`
       await fetch(`/api/orders/${orderId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ action: 'cancel' }),
       })
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, order_status: 'cancelled' } : o))
@@ -531,21 +511,11 @@ export default function AccountPage() {
     setCancelConfirmId(null)
   }
 
-  const handleCancelSubscription = async () => {
-    if (!subscription) return
-    setCancelling(true)
-    await supabase.from('subscriptions').update({ status: 'cancelled' }).eq('id', subscription.id)
-    setSubscription({ ...subscription, status: 'cancelled' })
-    setCancelModal(false)
-    setCancelling(false)
-  }
-
   const tabs: { key: Tab; label: string }[] = [
     { key: 'profile', label: 'Profile' },
     { key: 'orders', label: 'Orders' },
     { key: 'history', label: 'Purchase History' },
     { key: 'wishlist', label: 'Wishlist' },
-    { key: 'subscription', label: 'Subscription' },
     { key: 'points', label: 'Points' },
   ]
 
@@ -610,9 +580,10 @@ export default function AccountPage() {
                 <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">
                   Date of Birth <span className="normal-case text-ink-muted text-[10px]">(birthday surprises)</span>
                 </label>
-                <input type="date" value={profileForm.dateOfBirth} onChange={e => setProfileForm({ ...profileForm, dateOfBirth: e.target.value })}
-                  max={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2.5 border border-sand bg-parchment font-jost text-sm text-ink outline-none focus:border-moss" />
+                <DateOfBirthPicker
+                  value={profileForm.dateOfBirth}
+                  onChange={v => setProfileForm({ ...profileForm, dateOfBirth: v })}
+                />
               </div>
             </div>
             <div className="mb-5">
@@ -987,116 +958,6 @@ export default function AccountPage() {
           </div>
         )}
 
-        {/* ── Subscription Tab ─────────────────────────────────────────────── */}
-        {tab === 'subscription' && (
-          <div>
-            {subLoading ? (
-              <p className="font-jost text-sm text-ink-muted italic">Loading...</p>
-            ) : !subscription || subscription.status === 'cancelled' ? (
-              <div className="text-center py-10">
-                <p className="text-3xl mb-4">🌸</p>
-                <h2 className="font-cormorant text-2xl font-normal text-ink mb-2">Join The Flower Letter</h2>
-                <p className="font-jost text-sm text-bark leading-relaxed mb-6 max-w-xs mx-auto">
-                  Subscribe to receive a monthly botanical letter and exclusive member benefits.
-                </p>
-                <Link href="/subscribe" className="inline-block px-8 py-3 bg-moss text-cream font-jost text-xs tracking-wide hover:opacity-90">
-                  Subscribe Now
-                </Link>
-              </div>
-            ) : subscription.status === 'expired' ? (
-              <div className="text-center py-10">
-                <p className="text-3xl mb-4">🌿</p>
-                <h2 className="font-cormorant text-2xl font-normal text-ink mb-2">Your Subscription Has Ended</h2>
-                <div className="inline-block mb-4">
-                  <span className="font-jost text-xs px-2 py-0.5 rounded-sm" style={{ background: '#f1efe8', color: '#8a7d65' }}>Expired</span>
-                </div>
-                <p className="font-jost text-sm text-bark mb-6">Thank you for being part of our botanical community. Come back anytime.</p>
-                <Link href="/subscribe" className="inline-block px-8 py-3 bg-moss text-cream font-jost text-xs tracking-wide hover:opacity-90">
-                  Resubscribe
-                </Link>
-              </div>
-            ) : (
-              <div>
-                {/* Active subscription */}
-                <div className="flex items-center gap-2 mb-5">
-                  <h2 className="font-cormorant text-xl font-normal text-ink">The Flower Letter</h2>
-                  <span className="font-jost text-[10px] px-2 py-0.5 rounded-sm" style={{ background: '#eef3ec', color: '#3a5832' }}>Active</span>
-                </div>
-
-                <div className="p-5 border border-sand bg-parchment mb-5">
-                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                    <div>
-                      <p className="font-jost text-ink-muted mb-0.5" style={{ fontSize: 11 }}>Plan</p>
-                      <p className="font-cormorant text-base font-semibold text-ink">
-                        {subscription.plan === 'monthly' ? 'Monthly' : subscription.plan === '6months' ? '6 Months' : '1 Year'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-jost text-ink-muted mb-0.5" style={{ fontSize: 11 }}>Type</p>
-                      <p className="font-cormorant text-base font-semibold text-ink capitalize">{subscription.subscriber_type}</p>
-                    </div>
-                    <div>
-                      <p className="font-jost text-ink-muted mb-0.5" style={{ fontSize: 11 }}>Amount Paid</p>
-                      <p className="font-cormorant text-base font-semibold text-ink">
-                        {subscription.currency === 'THB' ? '฿' : '$'}{Number(subscription.amount_paid).toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-jost text-ink-muted mb-0.5" style={{ fontSize: 11 }}>Renews / Expires</p>
-                      <p className="font-cormorant text-base font-semibold text-ink">
-                        {new Date(subscription.expires_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Days remaining bar */}
-                  {(() => {
-                    const total = new Date(subscription.expires_at).getTime() - new Date(subscription.started_at).getTime()
-                    const elapsed = Date.now() - new Date(subscription.started_at).getTime()
-                    const pct = Math.max(0, Math.min(100, 100 - (elapsed / total) * 100))
-                    const daysLeft = Math.max(0, Math.ceil((new Date(subscription.expires_at).getTime() - Date.now()) / 86400000))
-                    return (
-                      <div className="mb-4">
-                        <div className="flex justify-between mb-1">
-                          <span className="font-jost text-xs text-ink-muted">Time remaining</span>
-                          <span className="font-jost text-xs text-moss">{daysLeft} days</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-sand rounded-full overflow-hidden">
-                          <div className="h-full rounded-full bg-moss transition-all" style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    )
-                  })()}
-                </div>
-
-                {/* Benefits reminder */}
-                <div className="mb-6 space-y-2">
-                  <p className="font-jost text-xs text-ink-muted uppercase tracking-widest mb-3">Your Benefits</p>
-                  {['5% discount on orders over ฿1,000 — applied automatically', 'Birthday 10% gift code sent at the start of your birthday month', 'Monthly lottery entry — one member wins a curated gift'].map(b => (
-                    <div key={b} className="flex items-start gap-2">
-                      <span className="text-moss" style={{ fontSize: 10, marginTop: 3 }}>●</span>
-                      <p className="font-jost text-xs text-bark">{b}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <Link href="/subscribe" className="px-5 py-2 border border-moss text-moss font-jost text-xs tracking-wide hover:bg-moss hover:text-cream transition-colors">
-                    Renew Early
-                  </Link>
-                  <button
-                    onClick={() => setCancelModal(true)}
-                    className="font-jost text-ink-muted hover:text-rose transition-colors"
-                    style={{ fontSize: 11, textDecoration: 'underline', textUnderlineOffset: 3 }}
-                  >
-                    Cancel Subscription
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* ── Points Tab ───────────────────────────────────────────────────── */}
         {tab === 'points' && (
           <div>
@@ -1157,27 +1018,6 @@ export default function AccountPage() {
           </div>
         )}
       </div>
-
-      {/* ── Cancel Subscription Modal ────────────────────────────────────── */}
-      {cancelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(44,36,22,0.4)' }} onClick={() => setCancelModal(false)}>
-          <div className="bg-cream border border-sand rounded-sm max-w-[380px] w-full p-8 shadow-lg" onClick={e => e.stopPropagation()}>
-            <h2 className="font-cormorant text-xl font-normal text-ink mb-2">Cancel Subscription?</h2>
-            <p className="font-jost text-sm text-bark leading-relaxed mb-6">
-              You will keep your benefits until your subscription expires. You can always resubscribe later.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={handleCancelSubscription} disabled={cancelling}
-                className="flex-1 py-2.5 bg-rose text-white font-jost text-xs tracking-wide hover:opacity-90 disabled:opacity-50">
-                {cancelling ? 'Cancelling...' : 'Yes, Cancel'}
-              </button>
-              <button onClick={() => setCancelModal(false)} className="flex-1 py-2.5 border border-sand text-bark font-jost text-xs hover:border-moss hover:text-moss transition-colors">
-                Keep Subscription
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Review Popup ─────────────────────────────────────────────────── */}
       {showReviewPopup && (

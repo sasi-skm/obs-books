@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Book } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { adminFetch } from '@/lib/admin-fetch'
+import { thumbSrc } from '@/lib/image'
 
 export default function AdminBooksPage() {
   const [books, setBooks] = useState<Book[]>([])
@@ -20,7 +21,7 @@ export default function AdminBooksPage() {
     try {
       const { data } = await supabase
         .from('books')
-        .select('*')
+        .select('id, title, author, price, status, copies, image_url, category, created_at')
         .or('product_type.eq.book,product_type.is.null')
         .order('created_at', { ascending: false })
       if (data) {
@@ -98,7 +99,14 @@ export default function AdminBooksPage() {
             {filtered.map(book => (
               <div key={book.id} className="bg-offwhite border border-line p-3 flex gap-3 items-center">
                 <div className="w-12 h-12 relative flex-shrink-0">
-                  <Image src={book.image_url} alt="" fill className="object-cover" sizes="48px" />
+                  <Image
+                    src={thumbSrc(book.image_url)}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="48px"
+                    onError={e => { (e.target as HTMLImageElement).src = book.image_url }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-heading font-medium text-sm truncate">{book.title}</p>
@@ -145,7 +153,14 @@ export default function AdminBooksPage() {
                   <tr key={book.id} className="border-b border-line hover:bg-parchment/50">
                     <td className="p-3">
                       <div className="w-10 h-10 relative">
-                        <Image src={book.image_url} alt="" fill className="object-cover" sizes="40px" />
+                        <Image
+                          src={thumbSrc(book.image_url)}
+                          alt=""
+                          fill
+                          className="object-cover"
+                          sizes="40px"
+                          onError={e => { (e.target as HTMLImageElement).src = book.image_url }}
+                        />
                       </div>
                     </td>
                     <td className="p-3 font-heading font-medium max-w-[200px] truncate">{book.title}</td>

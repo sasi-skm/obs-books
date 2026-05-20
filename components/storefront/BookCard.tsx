@@ -2,41 +2,25 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
 import { Book } from '@/types'
 import { useCart } from '../cart/CartContext'
 import { useLang } from '../layout/LanguageContext'
 import WishlistHeart from './WishlistHeart'
-import { supabase } from '@/lib/supabase'
+import { thumbSrc } from '@/lib/image'
 
-// Module-level cache so each title is only fetched once per session
-const ratingCache = new Map<string, { avg: number; count: number } | null>()
-
-async function fetchRating(bookTitle: string): Promise<{ avg: number; count: number } | null> {
-  if (ratingCache.has(bookTitle)) return ratingCache.get(bookTitle) || null
-  try {
-    const { data } = await supabase
-      .from('reviews')
-      .select('rating')
-      .eq('book_title', bookTitle)
-      .eq('status', 'approved')
-    const result =
-      data && data.length > 0
-        ? { avg: data.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / data.length, count: data.length }
-        : null
-    ratingCache.set(bookTitle, result)
-    return result
-  } catch {
-    return null
-  }
-}
-
-export default function BookCard({ book, priority = false }: { book: Book; priority?: boolean }) {
-  const [rating, setRating] = useState<{ avg: number; count: number } | null>(null)
-
-  useEffect(() => {
-    fetchRating(book.title).then(setRating)
-  }, [book.title])
+export default function BookCard({
+  book,
+  priority = false,
+  ratingData = null,
+}: {
+  book: Book
+  priority?: boolean
+  /** Pre-fetched rating for this book, supplied by the parent grid.
+   *  Defaults to null (no rating shown) so the card is safe when used
+   *  without the prop. */
+  ratingData?: { avg: number; count: number } | null
+}) {
+  const rating = ratingData
   const { addItem, removeItem, items } = useCart()
   const { t } = useLang()
 
@@ -89,16 +73,24 @@ export default function BookCard({ book, priority = false }: { book: Book; prior
   }
 
   return (
-    <div className="bg-cream border border-sand rounded-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-hover hover:border-moss group">
-      <Link href={'/book/' + book.id} className="block">
+    <div className="bg-cream border border-sand rounded-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-hover hover:border-moss group h-full flex flex-col">
+      <Link href={'/book/' + book.id} className="flex flex-1 flex-col">
         <div className="aspect-square overflow-hidden relative">
           <Image
-            src={coverImage}
+            src={thumbSrc(coverImage)}
             alt={book.title}
             fill
             className="object-cover transition-transform duration-400 group-hover:scale-[1.04]"
             sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 25vw"
             priority={priority}
+            onError={e => {
+              const img = e.target as HTMLImageElement
+              if (img.src !== coverImage) {
+                img.src = coverImage
+              } else {
+                img.src = FALLBACK_COVER
+              }
+            }}
           />
           {isSold && (
             <div className="absolute top-2.5 right-2.5 bg-rose text-white text-xs px-2 py-0.5 font-heading">
@@ -115,7 +107,7 @@ export default function BookCard({ book, priority = false }: { book: Book; prior
             </div>
           )}
         </div>
-        <div className="p-4">
+        <div className="p-4 flex flex-1 flex-col">
           <h3 className="font-heading text-[0.95rem] font-semibold leading-tight mb-0.5 line-clamp-2 text-ink">
             {book.title}
           </h3>
@@ -145,14 +137,20 @@ export default function BookCard({ book, priority = false }: { book: Book; prior
           >
             {book.condition}
           </div>
-          <div className="flex items-center justify-between">
+          {/* Stacked footer pinned to the card bottom (mt-auto).
+              Price on its own line, then a full-width CTA. The
+              card is a full-height flex column, so every footer in
+              a grid row aligns on the same baseline regardless of
+              title length / 'from' price / condition — no clip or
+              wrap at any width or base font-size. */}
+          <div className="mt-auto pt-3 flex flex-col gap-2">
             <span className="font-heading text-lg font-semibold text-bark">
               {priceLabel}
             </span>
             {!isSold && (
               <button
                 onClick={handleCartClick}
-                className={'text-xs px-3 py-1.5 border transition-all font-jost tracking-wide rounded-sm ' +
+                className={'flex w-full items-center justify-center whitespace-nowrap text-sm px-3 py-2 border transition-all font-jost rounded-sm ' +
                   (inCart
                     ? 'border-rose text-rose hover:bg-rose hover:text-white'
                     : 'bg-moss text-cream hover:opacity-90')}

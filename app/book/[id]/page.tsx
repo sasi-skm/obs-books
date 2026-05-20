@@ -23,13 +23,13 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       title: `${book.title} - by ${book.author} | OBS Books`,
       description,
       url: `https://www.obsbooks.com/book/${params.id}`,
-      images: book.image_url ? [{ url: book.image_url, alt: book.title }] : [{ url: '/images/obs-display.png' }],
+      images: book.image_url ? [{ url: book.image_url, alt: book.title }] : [{ url: '/images/obs-display.jpg' }],
     },
     twitter: {
       card: 'summary_large_image',
       title: `${book.title} | OBS Books`,
       description,
-      images: book.image_url ? [book.image_url] : ['/images/obs-display.png'],
+      images: book.image_url ? [book.image_url] : ['/images/obs-display.jpg'],
     },
   }
 }

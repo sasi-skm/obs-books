@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { rateLimit } from '@/lib/rate-limit'
 
 /**
  * Public payment-slip upload endpoint.
@@ -25,6 +26,9 @@ const MAX_BYTES = 5 * 1024 * 1024 // 5 MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
 
 export async function POST(req: NextRequest) {
+  const rl = await rateLimit(req, { id: 'slip-upload', limit: 10, windowMs: 60000 })
+  if (!rl.ok) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File | null

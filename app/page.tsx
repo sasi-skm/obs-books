@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     title: 'OBS Books - Vintage Illustrated Books | Bangkok',
     description: 'Curated vintage & used illustrated books - flowers, nature, cookbooks & more. Ships worldwide from Bangkok.',
     url: 'https://www.obsbooks.com',
-    images: [{ url: '/images/obs-display.png', width: 1200, height: 630, alt: 'OBS Books collection' }],
+    images: [{ url: '/images/obs-display.jpg', width: 1200, height: 630, alt: 'OBS Books collection' }],
   },
 }
 
@@ -35,8 +35,8 @@ export default async function HomePage() {
       name: 'OBS Books',
       description: 'Curated vintage and used illustrated books - especially flowers, nature, cookbooks, and fairy tales.',
       url: 'https://www.obsbooks.com',
-      logo: 'https://www.obsbooks.com/images/obs-logo.png',
-      image: 'https://www.obsbooks.com/images/obs-display.png',
+      logo: 'https://www.obsbooks.com/images/logo-new.jpg',
+      image: 'https://www.obsbooks.com/images/obs-display.jpg',
       address: {
         '@type': 'PostalAddress',
         addressLocality: 'Bangkok',

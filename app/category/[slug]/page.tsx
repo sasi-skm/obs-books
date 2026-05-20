@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       title: `${category.en} Books | OBS Books`,
       description: `Vintage illustrated ${category.en.toLowerCase()} books from OBS Books, Bangkok.`,
       url: `https://www.obsbooks.com/category/${params.slug}`,
-      images: [{ url: '/images/obs-display.png', alt: `${category.en} books at OBS Books` }],
+      images: [{ url: '/images/obs-display.jpg', alt: `${category.en} books at OBS Books` }],
     },
   }
 }

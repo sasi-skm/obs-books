@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { useLang } from '../layout/LanguageContext'
 
 const ABOUT_IMAGES = [
-  '/images/obs-display.png',
+  '/images/obs-display.jpg',
   '/images/warm-display.jpeg',
   '/images/wildflower-guide.jpeg',
   '/images/shop-display.jpeg',

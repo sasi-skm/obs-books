@@ -21,8 +21,7 @@ import { NextRequest, NextResponse } from 'next/server'
  * Idempotent: re-running the cron on already-cancelled orders is a no-op
  * because the WHERE clause filters them out.
  *
- * Auth: same Bearer $CRON_SECRET pattern as /api/cron/birthday-check and
- * /api/cron/renewal-reminders.
+ * Auth: Bearer $CRON_SECRET (Vercel Cron sends this header).
  */
 
 export const runtime = 'nodejs'

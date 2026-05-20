@@ -53,9 +53,6 @@ export default function CheckoutPage() {
   const [voucherError, setVoucherError] = useState('')
   const [applyingVoucher, setApplyingVoucher] = useState(false)
 
-  // Subscriber discount
-  const [hasActiveSub, setHasActiveSub] = useState(false)
-
   const [step, setStep] = useState<Step>('details')
   const [form, setForm] = useState({
     firstName: '', lastName: '',
@@ -96,37 +93,17 @@ export default function CheckoutPage() {
   const isInternational = form.country !== 'TH'
   const totalWeightGrams = items.reduce((sum, i) => sum + (i.weight_grams || DEFAULT_BOOK_WEIGHT) * (i.quantity || 1), 0)
   const shippingUsd = isInternational ? getShippingRate(form.country, totalWeightGrams) : null
-  const SUBSCRIBER_DISCOUNT_MIN = 1000
-  const subscriberDiscountAmount = hasActiveSub && total >= SUBSCRIBER_DISCOUNT_MIN
-    ? Math.floor(total * 0.05)
-    : 0
   const voucherDiscount = voucherApplied?.discount_amount ?? 0
-  // Use whichever is higher — subscriber or voucher, never both
-  const bestDiscount = Math.max(voucherDiscount, subscriberDiscountAmount)
-  const usingSubscriberDiscount = subscriberDiscountAmount > 0 && subscriberDiscountAmount >= voucherDiscount
+  const bestDiscount = voucherDiscount
   const effectiveTotal = Math.max(0, total - pointsDiscount - bestDiscount)
   const booksTotalUsd = isInternational ? thbToUsd(effectiveTotal) : null
   const grandTotalUsd = (booksTotalUsd !== null && shippingUsd !== null) ? booksTotalUsd + shippingUsd : null
   // TH customers who pick Card go through Stripe, but discounts (voucher,
-  // points, subscriber) currently don't apply to Stripe orders. When
-  // they're on the payment step with Card selected, show full prices in
-  // the summary so the displayed total matches what Stripe will charge.
+  // points) currently don't apply to Stripe orders. When they're on the
+  // payment step with Card selected, show full prices in the summary so
+  // the displayed total matches what Stripe will charge.
   const showDiscountsInSummary = !(step === 'payment' && payMethod === 'stripe' && !isInternational)
-  const hasActiveDiscount = voucherApplied !== null || pointsRedeemed || usingSubscriberDiscount
-
-  // Check active subscription
-  useEffect(() => {
-    if (!user) return
-    import('@/lib/supabase').then(({ supabase }) => {
-      supabase.from('subscriptions')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .gt('expires_at', new Date().toISOString())
-        .limit(1)
-        .then(({ data }) => { if (data && data.length > 0) setHasActiveSub(true) })
-    })
-  }, [user])
+  const hasActiveDiscount = voucherApplied !== null || pointsRedeemed
 
   // Auto-fill from whatever source we have. Priority:
   //   1. What the user has already typed in this session (never overwrite)
@@ -323,10 +300,8 @@ export default function CheckoutPage() {
             quantity: i.quantity || 1,
           })),
           total_amount: effectiveTotal,
-          voucher_id: (voucherApplied && !usingSubscriberDiscount) ? voucherApplied.voucher_id : null,
-          voucher_email: (voucherApplied && !usingSubscriberDiscount) ? (form.email || user?.email || '') : null,
-          subscriber_discount_applied: usingSubscriberDiscount,
-          subscriber_discount_amount: usingSubscriberDiscount ? subscriberDiscountAmount : 0,
+          voucher_id: voucherApplied ? voucherApplied.voucher_id : null,
+          voucher_email: voucherApplied ? (form.email || user?.email || '') : null,
         }),
       })
       const data = await res.json()
@@ -514,26 +489,26 @@ export default function CheckoutPage() {
               <div className="p-4 border border-line bg-offwhite">
                 <h3 className="font-heading text-sm mb-2">KBank / กสิกรไทย</h3>
                 <div className="text-sm space-y-1.5">
-                  <div className="flex justify-between">
-                    <span className="text-ink-muted">{t('bankAccount')}:</span>
-                    <span className="font-medium font-mono">021-3-24417-5</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-ink-muted shrink-0">{t('bankAccount')}:</span>
+                    <span className="font-medium font-mono whitespace-nowrap">021-3-24417-5</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-ink-muted">{t('bankHolder')}:</span>
-                    <span className="font-medium">ศศิวิมล แก้วกมล</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-ink-muted shrink-0">{t('bankHolder')}:</span>
+                    <span className="font-medium text-right min-w-0 break-words">ศศิวิมล แก้วกมล</span>
                   </div>
                 </div>
               </div>
               <div className="p-4 border border-line bg-offwhite">
                 <h3 className="font-heading text-sm mb-2">Krungsri / กรุงศรี</h3>
                 <div className="text-sm space-y-1.5">
-                  <div className="flex justify-between">
-                    <span className="text-ink-muted">{t('bankAccount')}:</span>
-                    <span className="font-medium font-mono">719-1-26847-2</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-ink-muted shrink-0">{t('bankAccount')}:</span>
+                    <span className="font-medium font-mono whitespace-nowrap">719-1-26847-2</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-ink-muted">{t('bankHolder')}:</span>
-                    <span className="font-medium">ศศิวิมล แก้วกมล (Sasiwimol Kaewkamol)</span>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-ink-muted shrink-0">{t('bankHolder')}:</span>
+                    <span className="font-medium text-right min-w-0 break-words">ศศิวิมล แก้วกมล (Sasiwimol Kaewkamol)</span>
                   </div>
                 </div>
               </div>
@@ -626,13 +601,7 @@ export default function CheckoutPage() {
               <span className="flex-shrink-0">-฿50</span>
             </div>
           )}
-          {usingSubscriberDiscount && showDiscountsInSummary && (
-            <div className="flex justify-between text-sm mb-1 pt-1 border-t border-line/50 mt-1" style={{ color: '#3a5832' }}>
-              <span>✦ Subscriber discount (5% off)</span>
-              <span className="flex-shrink-0">-฿{subscriberDiscountAmount.toLocaleString()}</span>
-            </div>
-          )}
-          {voucherApplied && !usingSubscriberDiscount && showDiscountsInSummary && (
+          {voucherApplied && showDiscountsInSummary && (
             <div className="flex justify-between text-sm mb-1 pt-1 border-t border-line/50 mt-1" style={{ color: '#3a5832' }}>
               <span>Voucher ({voucherApplied.discount_percent}% off)</span>
               <span className="flex-shrink-0">-฿{voucherApplied.discount_amount.toLocaleString()}</span>
@@ -779,7 +748,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* City / Province / Postal code */}
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div>
                 <label className="block font-heading text-sm mb-1">City *</label>
                 <input
@@ -952,10 +921,10 @@ export default function CheckoutPage() {
                   </button>
                 ))}
               </div>
-              {/* Discounts (voucher / points / subscriber) currently only
-                  apply to PromptPay + Bank Transfer. Surface this when a
-                  discount is active so TH customers don't pick Card and
-                  silently lose their discount. */}
+              {/* Discounts (voucher / points) currently only apply to
+                  PromptPay + Bank Transfer. Surface this when a discount
+                  is active so TH customers don't pick Card and silently
+                  lose their discount. */}
               {hasActiveDiscount && (
                 <p className="text-xs text-bark/70 italic mt-2">
                   {t('cardNoDiscountNote')}
@@ -987,13 +956,13 @@ export default function CheckoutPage() {
                     {t('bankTitle')} - KBank / กสิกรไทย
                   </h3>
                   <div className="text-sm space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-ink-muted">{t('bankAccount')}:</span>
-                      <span className="font-medium font-mono">021-3-24417-5</span>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-ink-muted shrink-0">{t('bankAccount')}:</span>
+                      <span className="font-medium font-mono whitespace-nowrap">021-3-24417-5</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-ink-muted">{t('bankHolder')}:</span>
-                      <span className="font-medium">ศศิวิมล แก้วกมล</span>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-ink-muted shrink-0">{t('bankHolder')}:</span>
+                      <span className="font-medium text-right min-w-0 break-words">ศศิวิมล แก้วกมล</span>
                     </div>
                   </div>
                 </div>
@@ -1004,13 +973,13 @@ export default function CheckoutPage() {
                     {t('bankTitle')} - Krungsri / กรุงศรี
                   </h3>
                   <div className="text-sm space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-ink-muted">{t('bankAccount')}:</span>
-                      <span className="font-medium font-mono">719-1-26847-2</span>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-ink-muted shrink-0">{t('bankAccount')}:</span>
+                      <span className="font-medium font-mono whitespace-nowrap">719-1-26847-2</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-ink-muted">{t('bankHolder')}:</span>
-                      <span className="font-medium">ศศิวิมล แก้วกมล (Sasiwimol Kaewkamol)</span>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-ink-muted shrink-0">{t('bankHolder')}:</span>
+                      <span className="font-medium text-right min-w-0 break-words">ศศิวิมล แก้วกมล (Sasiwimol Kaewkamol)</span>
                     </div>
                   </div>
                 </div>

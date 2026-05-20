@@ -675,7 +675,7 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
             {relatedBooks.length > 0 && (
               <div>
                 <p className="font-heading text-xs tracking-widest uppercase text-ink-muted mb-4">You Might Also Like</p>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {relatedBooks.map(rb => (
                     <Link key={rb.id} href={`/book/${rb.id}`} className="group">
                       <div className="relative overflow-hidden border border-sand mb-1.5" style={{ aspectRatio: isTextile ? '4/5' : '2/3' }}>
@@ -684,11 +684,11 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
                           alt={rb.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          sizes="120px"
+                          sizes="(max-width: 640px) 50vw, 120px"
                         />
                       </div>
                       <p className="font-heading text-[11px] text-ink leading-tight truncate">{rb.title}</p>
-                      <p className="font-jost text-[10px] text-bark">฿{rb.price.toLocaleString()}</p>
+                      <p className="font-jost text-[10px] text-bark whitespace-nowrap">฿{rb.price.toLocaleString()}</p>
                     </Link>
                   ))}
                 </div>

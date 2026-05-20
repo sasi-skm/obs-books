@@ -1,48 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { restoreStock } from '@/lib/restore-stock'
+import { requireAdmin } from '@/lib/admin-auth'
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params
   const body = await req.json()
 
+  // upload_slip is intentionally removed from this handler.
+  // All slip uploads must go through /api/upload-slip which has its own
+  // proper ownership/validation logic. No callers in the codebase use
+  // this PATCH action -- the account page and email link both call
+  // /api/upload-slip directly.
   if (body.action === 'upload_slip') {
-    const { slip_url } = body
-    if (!slip_url) return NextResponse.json({ error: 'Missing slip_url' }, { status: 400 })
-
-    const { data: order, error: fetchError } = await supabaseAdmin
-      .from('orders')
-      .select('id, order_number, customer_name, customer_phone, total_amount, payment_status')
-      .eq('id', id)
-      .single()
-
-    if (fetchError || !order) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
-    }
-
-    const { error } = await supabaseAdmin
-      .from('orders')
-      .update({ slip_url, payment_status: 'uploaded' })
-      .eq('id', id)
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-    // Notify admin by email
-    try {
-      const { sendAdminSlipUploadedEmail } = await import('@/lib/email')
-      await sendAdminSlipUploadedEmail({
-        orderNumber: order.order_number,
-        customerName: order.customer_name,
-        customerPhone: order.customer_phone,
-        totalAmount: order.total_amount,
-        slipUrl: slip_url,
-      })
-    } catch {}
-
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ error: 'Use /api/upload-slip instead' }, { status: 410 })
   }
 
   if (body.action === 'confirm_payment') {
+    const admin = await requireAdmin(req)
+    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const { data: order, error: fetchError } = await supabaseAdmin
       .from('orders')
       .select('id, order_number, customer_name, customer_email, total_amount')
@@ -75,6 +52,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   if (body.action === 'ship') {
+    const admin = await requireAdmin(req)
+    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const { tracking_number, courier } = body
     if (!tracking_number) return NextResponse.json({ error: 'Missing tracking_number' }, { status: 400 })
 
@@ -112,16 +92,48 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   if (body.action === 'cancel') {
-    // Only allow cancelling orders that are new + pending payment.
-    // Fetch with items so we can restore stock atomically.
+    // Customer self-cancel: verify the requester owns this order.
+    // We accept either a logged-in Supabase session (Bearer token) whose
+    // uid matches orders.user_id, OR whose email matches orders.customer_email.
+    // Both signals are set at checkout time and are non-enumerable (UUIDs /
+    // private email addresses). Admin users also pass this check naturally
+    // since requireAdmin extracts the same token -- but we avoid admin-only
+    // to preserve the customer self-cancel UX.
+    let cancellerUid: string | null = null
+    let cancellerEmail: string | null = null
+    try {
+      let token: string | null = null
+      const authHeader = req.headers.get('authorization')
+      if (authHeader?.startsWith('Bearer ')) token = authHeader.slice(7)
+      if (token) {
+        const { data: { user } } = await supabaseAdmin.auth.getUser(token)
+        if (user) {
+          cancellerUid = user.id
+          cancellerEmail = user.email ?? null
+        }
+      }
+    } catch { /* unauthenticated callers fall through to ownership check below */ }
+
+    // Fetch the order including owner fields so we can verify ownership.
     const { data: order, error: fetchError } = await supabaseAdmin
       .from('orders')
-      .select('id, order_status, payment_status, items:order_items(book_id, condition, quantity)')
+      .select('id, order_status, payment_status, user_id, customer_email, items:order_items(book_id, condition, quantity)')
       .eq('id', id)
       .single()
 
     if (fetchError || !order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
+    // Ownership check: requester must match user_id or customer_email.
+    // Unauthenticated requests (no token) are rejected -- they cannot
+    // prove ownership without one of these signals.
+    const ownsOrder =
+      (cancellerUid && order.user_id && cancellerUid === order.user_id) ||
+      (cancellerEmail && order.customer_email && cancellerEmail === order.customer_email)
+
+    if (!ownsOrder) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     if (order.order_status !== 'new' || order.payment_status !== 'pending') {
@@ -158,6 +170,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   // ── Admin cancel (full or partial) with email notification ──
   if (body.action === 'admin_cancel') {
+    const admin = await requireAdmin(req)
+    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const { cancelled_items, admin_note } = body as {
       cancelled_items: { book_id: string; title: string; price: number; reason: string }[]
       admin_note?: string

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     title: 'Shop Vintage Illustrated Books | OBS Books Bangkok',
     description: 'Curated collection of vintage illustrated books - flowers, nature, cookbooks, fairy tales & more.',
     url: 'https://www.obsbooks.com/shop',
-    images: [{ url: '/images/obs-display.png', alt: 'OBS Books collection' }],
+    images: [{ url: '/images/obs-display.jpg', alt: 'OBS Books collection' }],
   },
 }
 

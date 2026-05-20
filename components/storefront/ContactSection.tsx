@@ -88,7 +88,7 @@ export default function ContactSection() {
         >
           <div className="flex justify-center mb-2"><EmailIcon /></div>
           <h3 className="font-heading text-base font-medium mb-0.5 text-ink">{t('emailSupport')}</h3>
-          <p className="font-jost text-xs text-ink-muted">obsbooksstore@gmail.com</p>
+          <p className="font-jost text-xs text-ink-muted break-all">obsbooksstore@gmail.com</p>
           <p className="font-jost text-[10px] text-moss mt-1">{t('emailSupportSub')}</p>
         </a>
       </div>
