@@ -283,6 +283,24 @@ export const TX: Record<string, Record<Lang, string>> = {
   followUs: { en: 'Follow Us', th: 'ติดตามเรา' },
   emailSupport: { en: 'Email Us', th: 'อีเมลหาเรา' },
   emailSupportSub: { en: 'Customer support', th: 'สอบถามและติดต่อ' },
+
+  // Footer (Phase 5c redesign)
+  footerBlurb: {
+    en: 'A small bookshop in Bangkok. Curated since 2023 by one obsessed reader. Imported, second-hand, sometimes the only copy in Thailand.',
+    th: 'ร้านหนังสือเล็ก ๆ ในกรุงเทพฯ คัดสรรโดยนักอ่านคนหนึ่งตั้งแต่ปี 2023 หนังสือนำเข้า หนังสือมือสอง บางเล่มมีเพียงเล่มเดียวในประเทศไทย',
+  },
+  footerShop: { en: 'Shop', th: 'เลือกซื้อ' },
+  footerTheShop: { en: 'The Shop', th: 'เกี่ยวกับร้าน' },
+  footerFamily: { en: 'Family', th: 'ในเครือ' },
+  footerAbout: { en: 'About', th: 'เกี่ยวกับเรา' },
+  footerShipping: { en: 'Shipping', th: 'การจัดส่ง' },
+  footerTrackOrder: { en: 'Track Order', th: 'ติดตามคำสั่งซื้อ' },
+  footerContact: { en: 'Contact', th: 'ติดต่อ' },
+  footerFlowerLetter: { en: 'The Flower Letter', th: 'The Flower Letter' },
+  footerInstagram: { en: 'Instagram @obs_books', th: 'Instagram @obs_books' },
+  footerTiktok: { en: 'TikTok @obs_books', th: 'TikTok @obs_books' },
+  footerFacebook: { en: 'Facebook', th: 'Facebook' },
+  footerOrigin: { en: 'Posted from Bangkok · Worldwide', th: 'ส่งจากกรุงเทพฯ · จัดส่งทั่วโลก' },
 }
 
 export function t(key: string, lang: Lang): string {
