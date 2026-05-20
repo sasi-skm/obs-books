@@ -51,7 +51,7 @@ export default function Nav() {
 
   return (
     <>
-      <nav className="fixed top-0 w-full z-50 bg-cream/95 backdrop-blur-md border-b border-sand">
+      <nav className="fixed top-[38px] w-full z-50 bg-cream/95 backdrop-blur-md border-b border-sand">
         <div className="max-w-[1200px] mx-auto px-6 py-2.5 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="font-jost text-sm font-medium tracking-widest text-ink hover:text-moss transition-colors">

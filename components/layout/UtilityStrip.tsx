@@ -2,8 +2,11 @@ export default function UtilityStrip() {
   return (
     <div
       style={{
-        position: 'relative',
-        zIndex: 10,
+        position: 'fixed',
+        zIndex: 60,
+        top: 0,
+        left: 0,
+        right: 0,
         background: 'var(--cream)',
         color: 'var(--fg-muted)',
         borderBottom: '1px solid var(--border-soft)',
