@@ -301,6 +301,14 @@ export const TX: Record<string, Record<Lang, string>> = {
   footerTiktok: { en: 'TikTok @obs_books', th: 'TikTok @obs_books' },
   footerFacebook: { en: 'Facebook', th: 'Facebook' },
   footerOrigin: { en: 'Posted from Bangkok · Worldwide', th: 'ส่งจากกรุงเทพฯ · จัดส่งทั่วโลก' },
+
+  // Flower Letter sister section (Phase 5i)
+  flSectionEyebrow: { en: 'A sister project', th: 'โครงการในเครือ' },
+  flSectionBody: {
+    en: "A monthly envelope from this same shop. Inside: a letter, a postcard, a bookmark, a sticker set, a small painted print, a collectible stamp, a Bloom Note from The Garden of Good Omens, and a real page from a flower book. Eight small pieces, the slowest mail you'll get all month.",
+    th: 'ซองจดหมายรายเดือนจากร้านเดียวกัน ภายในประกอบด้วยจดหมายหนึ่งหน้า โปสการ์ดดอกไม้ ที่คั่นหนังสือ ชุดสติกเกอร์ ภาพพิมพ์ใบเล็ก แสตมป์สะสม การ์ด Bloom Note จาก The Garden of Good Omens และหน้าจากหนังสือดอกไม้ของจริง แปดชิ้นเล็ก ๆ จดหมายที่ช้าที่สุดที่คุณจะได้รับในเดือนนี้',
+  },
+  flSectionCta: { en: 'Visit The Flower Letter', th: 'เยี่ยมชม The Flower Letter' },
 }
 
 export function t(key: string, lang: Lang): string {

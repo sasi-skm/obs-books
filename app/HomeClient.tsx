@@ -6,6 +6,7 @@ import FeaturedSection from '@/components/storefront/FeaturedSection'
 import CategoryCard from '@/components/storefront/CategoryCard'
 import AboutSection from '@/components/storefront/AboutSection'
 import ContactSection from '@/components/storefront/ContactSection'
+import FlowerLetterSection from '@/components/storefront/FlowerLetterSection'
 import { useLang } from '@/components/layout/LanguageContext'
 
 interface Props {
@@ -40,6 +41,8 @@ export default function HomeClient({ featuredBooks, categoryCounts }: Props) {
           ))}
         </div>
       </section>
+
+      <FlowerLetterSection />
 
       <AboutSection />
       <ContactSection />
