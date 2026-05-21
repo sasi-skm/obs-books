@@ -309,6 +309,18 @@ export const TX: Record<string, Record<Lang, string>> = {
     th: 'ซองจดหมายรายเดือนจากร้านเดียวกัน ภายในประกอบด้วยจดหมายหนึ่งหน้า โปสการ์ดดอกไม้ ที่คั่นหนังสือ ชุดสติกเกอร์ ภาพพิมพ์ใบเล็ก แสตมป์สะสม การ์ด Bloom Note จาก The Garden of Good Omens และหน้าจากหนังสือดอกไม้ของจริง แปดชิ้นเล็ก ๆ จดหมายที่ช้าที่สุดที่คุณจะได้รับในเดือนนี้',
   },
   flSectionCta: { en: 'Visit The Flower Letter', th: 'เยี่ยมชม The Flower Letter' },
+
+  // Hero (Phase 5e full-bleed redesign)
+  heroEyebrow: { en: 'A small bookshop in Bangkok', th: 'ร้านหนังสือเล็ก ๆ ในกรุงเทพฯ' },
+  heroHeadlineLead: { en: 'The books we could not find', th: 'หนังสือที่เราตามหา' },
+  heroHeadlineAccent: { en: 'anywhere else.', th: 'จากที่อื่นไม่เจอ' },
+  heroLead: {
+    en: 'Field guides, botanical plates, fairy tales, sketchbooks, cookbooks. Imported, second-hand, sometimes the only copy in Thailand — slowly curated by one obsessed reader.',
+    th: 'คู่มือพรรณไม้ ภาพพิมพ์พฤกษศาสตร์ เทพนิยาย สมุดสเก็ตช์ และตำราอาหาร นำเข้าและมือสอง บางเล่มมีเพียงเล่มเดียวในประเทศไทย คัดสรรอย่างช้า ๆ โดยนักอ่านผู้หลงใหลในหนังสือ',
+  },
+  heroBrowseBtn: { en: 'Browse the shelves', th: 'เลือกชมหนังสือ' },
+  heroStoryBtn: { en: 'Our story', th: 'เรื่องราวของเรา' },
+  heroStrip: { en: 'Curated in Bangkok since 2023', th: 'คัดสรรในกรุงเทพฯ ตั้งแต่ปี 2023' },
 }
 
 export function t(key: string, lang: Lang): string {
