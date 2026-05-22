@@ -40,11 +40,11 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
   const visible = categoryCounts.filter(cat => cat.id !== 'embroidery-fabric');
 
   return (
-    <section id="categories" className="bg-cream py-16 px-8 lg:px-12">
+    <section id="categories" className="bg-cream py-12 px-8 lg:px-12">
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
         {/* Section header */}
-        <div style={{ textAlign: 'center', marginBottom: '44px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '36px' }}>
           <div style={{
             fontFamily: 'var(--font-body)',
             fontSize: '10.5px',
@@ -96,7 +96,7 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
               >
                 <div
                   style={{
-                    padding: '20px 20px',
+                    padding: '12px 16px',
                     border: '1px solid rgba(44,36,24,0.12)',
                     borderRadius: '2px',
                     background: 'var(--cream)',
@@ -121,7 +121,7 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
                     fontStyle: 'italic',
                     fontSize: '13px',
                     color: 'rgba(44,36,24,0.32)',
-                    marginBottom: '8px',
+                    marginBottom: '4px',
                   }}>
                     {ROMAN[index]}.
                   </div>
@@ -133,7 +133,7 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
                     fontSize: 'clamp(15px, 1.5vw, 19px)',
                     lineHeight: 1.25,
                     color: 'var(--brown-dark)',
-                    marginBottom: '6px',
+                    marginBottom: '3px',
                   }}>
                     {name}
                   </div>
@@ -143,9 +143,9 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
                     <div style={{
                       fontFamily: 'var(--font-body)',
                       fontSize: '12px',
-                      lineHeight: 1.6,
+                      lineHeight: 1.45,
                       color: 'rgba(44,36,24,0.52)',
-                      marginBottom: '10px',
+                      marginBottom: '5px',
                     }}>
                       {descText}
                     </div>
