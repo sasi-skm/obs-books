@@ -56,6 +56,9 @@ export const TX: Record<string, Record<Lang, string>> = {
   shopSub: { en: 'All books are used, in good to very good condition. Shipped every Monday.', th: 'หนังสือมือสองทุกเล่ม สภาพดีถึงดีมาก จัดส่งทุกวันจันทร์' },
 
   // About
+  editorNoteEyebrow:     { en: 'A short note from the counter', th: 'บันทึกสั้นๆ จากหน้าร้าน' },
+  editorNoteQuote:       { en: 'Both my degrees were in plant science, but nothing in my studies looked like the illustrations in that first book. I have been collecting them ever since.', th: 'ปริญญาทั้งสองของฉันอยู่ในสาขาพืชศาสตร์ แต่ไม่มีอะไรในการเรียนที่มีภาพประกอบสวยงามเหมือนหนังสือเล่มแรกนั้น ฉันจึงเริ่มสะสมมาตั้งแต่นั้น' },
+  editorNoteAttribution: { en: 'Sasi · Founder, OBS Books', th: 'ศศิ · ผู้ก่อตั้ง OBS Books' },
   aboutTitle: { en: 'Our Story', th: 'เรื่องราวของเรา' },
   aboutP1: { en: 'OBS Books was born in 2023 from a simple obsession: the breathtaking beauty of vintage illustrated books about flowers, nature, and the natural world.', th: 'OBS Books เกิดขึ้นในปี 2023 จากความหลงใหลในความงามของหนังสือภาพประกอบวินเทจเกี่ยวกับดอกไม้และธรรมชาติ' },
   aboutP2: { en: 'We curate used English-language books - from Victorian botanical guides to whimsical illustrated cookbooks and fairy tale collections.', th: 'เราคัดสรรหนังสือมือสองภาษาอังกฤษ - ตั้งแต่คู่มือพฤกษศาสตร์ไปจนถึงตำราอาหารและนิทานแฟนตาซี' },

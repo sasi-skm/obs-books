@@ -4,7 +4,7 @@ import { Book, Category } from '@/types'
 import HeroSection from '@/components/storefront/HeroSection'
 import FeaturedSection from '@/components/storefront/FeaturedSection'
 import CategorySection from '@/components/storefront/CategorySection'
-import AboutSection from '@/components/storefront/AboutSection'
+import EditorNoteSection from '@/components/storefront/EditorNoteSection'
 import ContactSection from '@/components/storefront/ContactSection'
 import FlowerLetterSection from '@/components/storefront/FlowerLetterSection'
 import { useLang } from '@/components/layout/LanguageContext'
@@ -39,7 +39,7 @@ export default function HomeClient({ featuredBooks, categoryCounts }: Props) {
 
       <FlowerLetterSection />
 
-      <AboutSection />
+      <EditorNoteSection />
       <ContactSection />
     </>
   )
