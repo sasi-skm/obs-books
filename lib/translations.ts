@@ -39,6 +39,11 @@ export const TX: Record<string, Record<Lang, string>> = {
   // Featured
   featTitle: { en: 'Featured Books', th: 'หนังสือแนะนำ' },
   featSub: { en: 'Hand-selected treasures from our collection', th: 'คัดสรรอย่างดีจากคอลเลคชันของเรา' },
+  featEyebrow:        { en: 'On the table this week',                                                                   th: 'หนังสือบนโต๊ะสัปดาห์นี้' },
+  featHeadlineMain:   { en: 'What is open in the shop,',                                                                th: 'หนังสือที่เปิดอยู่ในร้าน' },
+  featHeadlineAccent: { en: 'right now.',                                                                               th: 'ตอนนี้' },
+  featBody:           { en: 'A small selection of what we are currently reading at the counter. Most are imported — when a copy sells, the next one takes a week or two to arrive.', th: 'คัดสรรจากหนังสือที่เราอ่านอยู่หน้าร้านตอนนี้ ส่วนใหญ่เป็นหนังสือนำเข้า — เมื่อขายได้จะใช้เวลาหนึ่งถึงสองสัปดาห์กว่าจะมีเล่มใหม่มา' },
+  featAttribution:    { en: 'Sasi, behind the counter',                                                                 th: 'ศศิ ผู้อยู่หลังเคาน์เตอร์' },
 
   // Categories
   catTitle: { en: 'Browse by Category', th: 'เลือกซื้อตามหมวดหมู่' },
