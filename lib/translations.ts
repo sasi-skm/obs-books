@@ -312,7 +312,8 @@ export const TX: Record<string, Record<Lang, string>> = {
 
   // Hero (Phase 5e full-bleed redesign)
   heroEyebrow: { en: 'A small bookshop in Bangkok', th: 'ร้านหนังสือเล็ก ๆ ในกรุงเทพฯ' },
-  heroHeadlineLead: { en: 'The books we could not find', th: 'หนังสือที่เราตามหา' },
+  heroHeadlineL1: { en: 'The books we', th: 'หนังสือที่หา' },
+  heroHeadlineL2: { en: 'could not find', th: 'จากที่ไหน' },
   heroHeadlineAccent: { en: 'anywhere else.', th: 'จากที่อื่นไม่เจอ' },
   heroLead: {
     en: 'Field guides, botanical plates, fairy tales, sketchbooks, cookbooks. Imported, second-hand, sometimes the only copy in Thailand — slowly curated by one obsessed reader.',

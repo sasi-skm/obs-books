@@ -24,7 +24,11 @@ export default function HeroSection() {
         fill
         priority
         sizes="100vw"
-        style={{ objectFit: 'cover', objectPosition: 'center' }}
+        style={{
+          objectFit: 'cover',
+          objectPosition: 'center',
+          filter: 'saturate(0.85) brightness(0.97)',
+        }}
       />
 
       {/* Dark scrim for text readability */}
@@ -33,11 +37,11 @@ export default function HeroSection() {
           position: 'absolute',
           inset: 0,
           background:
-            'linear-gradient(to bottom, rgba(44,36,24,0.5) 0%, rgba(44,36,24,0.4) 45%, rgba(44,36,24,0.62) 100%)',
+            'linear-gradient(to bottom, rgba(38,30,20,0.7) 0%, rgba(38,30,20,0.62) 50%, rgba(38,30,20,0.74) 100%)',
         }}
       />
 
-      {/* Main content — centered in available space */}
+      {/* Main content */}
       <div
         style={{
           position: 'relative',
@@ -49,14 +53,14 @@ export default function HeroSection() {
           padding: '120px 24px 24px',
         }}
       >
-        <div style={{ maxWidth: '760px', textAlign: 'center', color: 'var(--cream)' }}>
+        <div style={{ maxWidth: '780px', textAlign: 'center', color: 'var(--cream)' }}>
           <div
             style={{
               fontFamily: 'var(--font-body)',
               fontSize: '11px',
               letterSpacing: '0.24em',
               textTransform: 'uppercase',
-              color: 'rgba(245,240,230,0.78)',
+              color: 'rgba(245,240,230,0.8)',
               marginBottom: '26px',
             }}
           >
@@ -66,16 +70,21 @@ export default function HeroSection() {
           <h1
             style={{
               fontFamily: 'var(--font-display)',
+              fontStyle: 'italic',
               fontWeight: 500,
-              fontSize: 'clamp(38px, 6.6vw, 76px)',
-              lineHeight: 1.08,
-              letterSpacing: '-0.015em',
+              fontSize: 'clamp(38px, 6.6vw, 78px)',
+              lineHeight: 1.1,
+              letterSpacing: '-0.005em',
               margin: '0 0 26px 0',
               color: 'var(--cream)',
             }}
           >
-            {t('heroHeadlineLead')}{' '}
-            <em style={{ fontStyle: 'italic', color: '#aac291' }}>
+            <span className="hero-headline-line">{t('heroHeadlineL1')}{' '}</span>
+            <span className="hero-headline-line">{t('heroHeadlineL2')}{' '}</span>
+            <em
+              className="hero-headline-line"
+              style={{ fontStyle: 'italic', color: '#aac291', whiteSpace: 'nowrap' }}
+            >
               {t('heroHeadlineAccent')}
             </em>
           </h1>
@@ -86,7 +95,7 @@ export default function HeroSection() {
               fontStyle: 'italic',
               fontSize: 'clamp(15px, 1.7vw, 19px)',
               lineHeight: 1.6,
-              color: 'rgba(245,240,230,0.9)',
+              color: 'rgba(245,240,230,0.92)',
               maxWidth: '560px',
               margin: '0 auto 38px',
             }}
