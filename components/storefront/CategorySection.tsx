@@ -40,11 +40,11 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
   const visible = categoryCounts.filter(cat => cat.id !== 'embroidery-fabric');
 
   return (
-    <section id="categories" className="bg-cream py-20 px-8 lg:px-12">
+    <section id="categories" className="bg-cream py-16 px-8 lg:px-12">
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
         {/* Section header */}
-        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '44px' }}>
           <div style={{
             fontFamily: 'var(--font-body)',
             fontSize: '10.5px',
@@ -82,7 +82,7 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
         </div>
 
         {/* Category tiles — 2 col mobile, 3 col desktop */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           {visible.map((cat, index) => {
             const name = lang === 'th' ? cat.th : cat.en;
             const desc = TILE_DESCS[cat.id];
@@ -96,7 +96,7 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
               >
                 <div
                   style={{
-                    padding: '28px 24px',
+                    padding: '20px 20px',
                     border: '1px solid rgba(44,36,24,0.12)',
                     borderRadius: '2px',
                     background: 'var(--cream)',
@@ -121,7 +121,7 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
                     fontStyle: 'italic',
                     fontSize: '13px',
                     color: 'rgba(44,36,24,0.32)',
-                    marginBottom: '12px',
+                    marginBottom: '8px',
                   }}>
                     {ROMAN[index]}.
                   </div>
@@ -133,7 +133,7 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
                     fontSize: 'clamp(15px, 1.5vw, 19px)',
                     lineHeight: 1.25,
                     color: 'var(--brown-dark)',
-                    marginBottom: '10px',
+                    marginBottom: '6px',
                   }}>
                     {name}
                   </div>
@@ -145,7 +145,7 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
                       fontSize: '12px',
                       lineHeight: 1.6,
                       color: 'rgba(44,36,24,0.52)',
-                      marginBottom: '18px',
+                      marginBottom: '10px',
                     }}>
                       {descText}
                     </div>
