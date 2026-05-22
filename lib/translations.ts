@@ -47,6 +47,9 @@ export const TX: Record<string, Record<Lang, string>> = {
 
   // Categories
   catTitle: { en: 'Browse by Category', th: 'เลือกซื้อตามหมวดหมู่' },
+  shelvesEyebrow:  { en: 'Browse by shelf', th: 'เลือกดูตามหมวดหมู่' },
+  shelvesHeading:  { en: 'The shelves.', th: 'ชั้นหนังสือ' },
+  shelvesSubtitle: { en: 'We do not stock everything. We stock the kinds of books that started this shop — the ones with careful illustrations, slow reading, and pages worth re-reading.', th: 'เราไม่ได้สต็อกทุกอย่าง แต่สต็อกหนังสือที่เป็นจุดเริ่มต้นของร้าน — หนังสือที่มีภาพประกอบอย่างพิถีพิถัน อ่านช้าๆ และมีหน้าที่คู่ควรแก่การอ่านซ้ำ' },
 
   // Shop
   shopTitle: { en: 'Shop Our Collection', th: 'เลือกซื้อหนังสือ' },
