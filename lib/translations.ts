@@ -322,6 +322,11 @@ export const TX: Record<string, Record<Lang, string>> = {
   heroBrowseBtn: { en: 'Browse the shelves', th: 'เลือกชมหนังสือ' },
   heroStoryBtn: { en: 'Our story', th: 'เรื่องราวของเรา' },
   heroStrip: { en: 'Curated in Bangkok since 2023', th: 'คัดสรรในกรุงเทพฯ ตั้งแต่ปี 2023' },
+
+  // Info strip (Phase 5d)
+  stripShippingTH:   { en: 'Ships 2–3 days · Thailand',           th: 'จัดส่งภายใน 2–3 วัน · ไทย' },
+  stripShippingFree: { en: 'Free shipping on all Thailand orders', th: 'ส่งฟรีทุกออเดอร์ในไทย' },
+  stripShippingIntl: { en: 'Worldwide delivery in 5–10 days',     th: 'จัดส่งทั่วโลกภายใน 5–10 วัน' },
 }
 
 export function t(key: string, lang: Lang): string {
