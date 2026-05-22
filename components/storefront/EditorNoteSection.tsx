@@ -32,7 +32,6 @@ export default function EditorNoteSection() {
           lineHeight: 1.65,
           color: 'var(--brown-dark)',
           margin: '0 0 32px 0',
-          textAlign: 'left',
         }}>
           &#8220;{t('editorNoteQuote')}&#8221;
         </blockquote>
