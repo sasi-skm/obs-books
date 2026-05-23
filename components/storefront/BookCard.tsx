@@ -75,7 +75,7 @@ export default function BookCard({
   return (
     <div className="bg-cream border border-sand rounded-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-hover hover:border-moss group h-full flex flex-col">
       <Link href={'/book/' + book.id} className="flex flex-1 flex-col">
-        <div className="aspect-square overflow-hidden relative">
+        <div className="aspect-[3/4] overflow-hidden relative">
           <Image
             src={thumbSrc(coverImage)}
             alt={book.title}
