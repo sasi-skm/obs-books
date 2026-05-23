@@ -54,7 +54,7 @@ export default function ShopClient({
   }
 
   return (
-    <div className="pt-20 pb-16 px-6">
+    <div className="pt-28 pb-16 px-6">
       <div className="text-center mb-10">
         {authorFilter ? (
           <>
