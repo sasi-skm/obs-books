@@ -318,7 +318,7 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
   }
 
   return (
-    <div className="pt-20 pb-16 px-6 min-h-screen bg-cream">
+    <div className="pt-28 pb-16 px-6 min-h-screen bg-cream">
       <div className="max-w-[1100px] mx-auto">
         <Link href="/shop" className="text-[11px] tracking-widest uppercase text-ink-muted hover:text-moss mb-6 inline-block transition-colors">
           {t('backHome')}
@@ -451,7 +451,7 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
             {description && (
               <div className="border-t border-sand pt-5">
                 <p className="font-heading text-xs tracking-widest uppercase text-ink-muted mb-3">
-                  {isTextile ? t('aboutThisPiece') : 'About this book'}
+                  {isTextile ? t('aboutThisPiece') : t('aboutThisBook')}
                 </p>
                 <p className="font-cormorant text-base text-ink leading-relaxed whitespace-pre-line" style={{ fontSize: '1.05rem' }}>
                   {description}
@@ -483,6 +483,23 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
 
           {/* RIGHT: Details + Specs + Related */}
           <div>
+            {book.featured && (
+              <span style={{
+                display: 'inline-block',
+                fontFamily: 'var(--font-body)',
+                fontSize: '10px',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--moss)',
+                border: '1px solid var(--moss)',
+                borderRadius: '2px',
+                padding: '3px 8px',
+                marginBottom: '8px',
+                marginRight: '6px',
+              }}>
+                Sasi&apos;s Pick
+              </span>
+            )}
             <h1 className="font-heading text-2xl font-semibold mb-1 text-ink">{book.title}</h1>
 
             {!isTextile && book.author && (
@@ -674,7 +691,16 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
             {/* You Might Also Like */}
             {relatedBooks.length > 0 && (
               <div>
-                <p className="font-heading text-xs tracking-widest uppercase text-ink-muted mb-4">You Might Also Like</p>
+                <h3 style={{
+                  fontFamily: 'var(--font-display)',
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  fontSize: '1.3rem',
+                  color: 'var(--brown-dark)',
+                  marginBottom: '16px',
+                }}>
+                  {t('readAlongside')}
+                </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {relatedBooks.map(rb => (
                     <Link key={rb.id} href={`/book/${rb.id}`} className="group">

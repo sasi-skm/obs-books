@@ -67,7 +67,7 @@ export const TX: Record<string, Record<Lang, string>> = {
   // Contact
   contactTitle: { en: 'Get in Touch', th: 'ติดต่อเรา' },
   contactSub: { en: 'DM us to order or ask about any book!', th: 'DM มาสั่งซื้อหรือสอบถามได้เลย!' },
-  shipNote: { en: 'Shipping every Monday - Free shipping on all orders', th: 'จัดส่งทุกวันจันทร์ - ส่งฟรีทุกออเดอร์' },
+  shipNote: { en: 'Ships in 2–3 days · Free shipping on all orders in Thailand', th: 'จัดส่งภายใน 2–3 วัน · ส่งฟรีทุกออเดอร์ในไทย' },
   trackOrder: { en: 'Track Order', th: 'ติดตามพัสดุ' },
 
   // Cart
@@ -234,6 +234,8 @@ export const TX: Record<string, Record<Lang, string>> = {
   // Textile / linen product page
   linenDetails: { en: 'Linen Details', th: 'รายละเอียดผ้า' },
   aboutThisPiece: { en: 'About this piece', th: 'เกี่ยวกับชิ้นนี้' },
+  aboutThisBook: { en: 'About this book', th: 'เกี่ยวกับหนังสือเล่มนี้' },
+  readAlongside: { en: 'Read alongside.', th: 'อ่านควบคู่กัน' },
   conditionDetails: { en: 'Condition Note', th: 'รายละเอียดสภาพ' },
   linenHonest: { en: 'All linens honestly graded and carefully photographed', th: 'ผ้าทุกผืนประเมินสภาพตามจริงและถ่ายภาพอย่างละเอียด' },
   specDimensions: { en: 'Dimensions', th: 'ขนาด' },
