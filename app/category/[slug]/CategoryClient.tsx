@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { Book, Category } from '@/types'
-import { getCategoryName, CATEGORIES } from '@/lib/translations'
+import { getCategoryName } from '@/lib/translations'
 import { useLang } from '@/components/layout/LanguageContext'
 import BookGrid from '@/components/storefront/BookGrid'
 
