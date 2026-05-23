@@ -483,23 +483,6 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
 
           {/* RIGHT: Details + Specs + Related */}
           <div>
-            {book.featured && (
-              <span style={{
-                display: 'inline-block',
-                fontFamily: 'var(--font-body)',
-                fontSize: '10px',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                color: 'var(--moss)',
-                border: '1px solid var(--moss)',
-                borderRadius: '2px',
-                padding: '3px 8px',
-                marginBottom: '8px',
-                marginRight: '6px',
-              }}>
-                Sasi&apos;s Pick
-              </span>
-            )}
             <h1 className="font-heading text-2xl font-semibold mb-1 text-ink">{book.title}</h1>
 
             {!isTextile && book.author && (
