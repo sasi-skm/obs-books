@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { getBooksByCategory } from '@/lib/books-data'
+import { getBooksByCategory, getBooks } from '@/lib/books-data'
 import { CATEGORIES } from '@/lib/translations'
 import CategoryClient from './CategoryClient'
 import { notFound } from 'next/navigation'
@@ -28,8 +28,16 @@ export default async function CategoryPage({ params }: { params: { slug: string 
   const category = CATEGORIES.find(c => c.id === params.slug)
   if (!category) notFound()
 
-  const books = await getBooksByCategory(params.slug)
-  return <CategoryClient category={category} books={books} />
+  // getBooks() is deduplicated — getBooksByCategory already called it, no extra query
+  const [books, allBooks] = await Promise.all([
+    getBooksByCategory(params.slug),
+    getBooks(),
+  ])
+  const categoryCounts = CATEGORIES.map(cat => ({
+    ...cat,
+    count: allBooks.filter(b => b.category === cat.id).length,
+  }))
+  return <CategoryClient category={category} books={books} categoryCounts={categoryCounts} />
 }
 
 export function generateStaticParams() {
