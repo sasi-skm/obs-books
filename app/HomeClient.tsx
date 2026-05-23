@@ -5,6 +5,7 @@ import HeroSection from '@/components/storefront/HeroSection'
 import FeaturedSection from '@/components/storefront/FeaturedSection'
 import CategorySection from '@/components/storefront/CategorySection'
 import EditorNoteSection from '@/components/storefront/EditorNoteSection'
+import NewlyArrivedSection from '@/components/storefront/NewlyArrivedSection'
 import ContactSection from '@/components/storefront/ContactSection'
 import FlowerLetterSection from '@/components/storefront/FlowerLetterSection'
 import { useLang } from '@/components/layout/LanguageContext'
@@ -12,9 +13,10 @@ import { useLang } from '@/components/layout/LanguageContext'
 interface Props {
   featuredBooks: Book[]
   categoryCounts: (Category & { count: number })[]
+  recentBooks: Book[]
 }
 
-export default function HomeClient({ featuredBooks, categoryCounts }: Props) {
+export default function HomeClient({ featuredBooks, categoryCounts, recentBooks }: Props) {
   const { t } = useLang()
 
   return (
@@ -37,9 +39,11 @@ export default function HomeClient({ featuredBooks, categoryCounts }: Props) {
       {/* 5g — Category grid */}
       <CategorySection categoryCounts={categoryCounts} />
 
+      <EditorNoteSection />
+
       <FlowerLetterSection />
 
-      <EditorNoteSection />
+      <NewlyArrivedSection recentBooks={recentBooks} />
       <ContactSection />
     </>
   )

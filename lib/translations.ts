@@ -247,6 +247,10 @@ export const TX: Record<string, Record<Lang, string>> = {
   heroSubtitle: { en: 'A curated collection of rare vintage books on flowers, nature, and the botanical world — each one beautiful enough to display, meaningful enough to keep.', th: 'คัดสรรหนังสือเก่าหายากเกี่ยวกับดอกไม้ ธรรมชาติ และพฤกษศาสตร์ — สวยงามพอที่จะตั้งโชว์ มีคุณค่าพอที่จะเก็บรักษาไว้' },
   welcomeText: { en: 'Welcome to OBS Books — a small, carefully tended bookshop born from a love of beautiful things. We search for illustrated books that carry history in their pages: field guides, botanical prints, nature journals, and garden books that feel like stepping into another world. Every title we offer has been chosen with care, not just for what it says, but for how it makes you feel.', th: 'ยินดีต้อนรับสู่ OBS Books — ร้านหนังสือเล็กๆ ที่ถูกสร้างขึ้นจากความรักในสิ่งสวยงาม เราออกตามหาหนังสือภาพประกอบที่ซ่อนประวัติศาสตร์ไว้ในทุกหน้า ทุกเล่มที่เราเลือกมานั้น มาจากใจ — ไม่เพียงแค่เนื้อหา แต่รวมถึงความรู้สึกที่มันมอบให้' },
   newArrivalsTitle: { en: 'Newly Found', th: 'คัดมาใหม่' },
+  newlyArrivedEyebrow:        { en: 'Newly arrived · this week', th: 'มาใหม่สัปดาห์นี้' },
+  newlyArrivedHeadlineMain:   { en: 'Just', th: 'หนังสือ' },
+  newlyArrivedHeadlineAccent: { en: 'off the shelf.', th: 'มาใหม่' },
+  newlyArrivedBrowseBtn:      { en: 'Browse all →', th: 'ดูทั้งหมด →' },
   shopByCategoryTitle: { en: 'Explore the Collection', th: 'สำรวจคอลเลคชัน' },
   shippingBanner: { en: 'We ship every Monday — Thailand Post, Kerry, Flash Express, and J&T available. Free shipping on all orders.', th: 'จัดส่งทุกวันจันทร์ — ผ่าน ไปรษณีย์ไทย, Kerry, Flash Express และ J&T ส่งฟรีทุกออเดอร์' },
 

@@ -23,6 +23,7 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const books = await getBooks()
   const featuredBooks = books.filter(b => b.featured)
+  const recentBooks = books.slice(0, 5)
   const categoryCounts = CATEGORIES.map(cat => ({
     ...cat,
     count: books.filter(b => b.category === cat.id).length,
@@ -81,7 +82,7 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <HomeClient featuredBooks={featuredBooks} categoryCounts={categoryCounts} />
+      <HomeClient featuredBooks={featuredBooks} categoryCounts={categoryCounts} recentBooks={recentBooks} />
     </>
   )
 }
