@@ -155,21 +155,6 @@ const LINEN_GUIDE_COPY = {
   },
 }
 
-function getNextMonday(): Date {
-  const today = new Date()
-  const day = today.getDay()
-  const daysUntil = (8 - day) % 7 || 7
-  const next = new Date(today)
-  next.setDate(today.getDate() + daysUntil)
-  return next
-}
-
-function getEstimatedDelivery(): string {
-  const shipDate = getNextMonday()
-  const delivery = new Date(shipDate)
-  delivery.setDate(shipDate.getDate() + 3)
-  return delivery.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
-}
 
 export default function BookDetailClient({ book, relatedBooks = [] }: { book: Book; relatedBooks?: Book[] }) {
   const { addItem, removeItem, items } = useCart()
@@ -265,7 +250,11 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
   const inCart = items.some(i => i.id === cartItemId)
   const isLowStock = !isSold && conditionStock > 0 && conditionStock <= 2
 
-  const estimatedDelivery = getEstimatedDelivery()
+  const _deliveryDate = new Date()
+  _deliveryDate.setDate(_deliveryDate.getDate() + 3)
+  const estimatedDelivery = _deliveryDate.toLocaleDateString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long'
+  })
 
   const handleCart = () => {
     if (isSold) return
