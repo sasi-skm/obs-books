@@ -381,7 +381,7 @@ export default function AboutPageClient() {
               fontFamily: 'var(--font-display)', fontSize: '15px',
               lineHeight: 1.72, color: 'rgba(44,36,24,0.7)', marginBottom: '16px',
             }}>
-              I&apos;m the founder, buyer, packer, and occasional painter. Both my degrees are in plant science.
+              I&apos;m the founder, buyer, packer, and occasional painter.
             </p>
             <p style={{
               fontFamily: 'var(--font-display)', fontSize: '15px',
