@@ -35,15 +35,18 @@ export default function AboutPageClient() {
       </div>
 
       {/* ── FULL-WIDTH PHOTO ── */}
-      <div style={{ position: 'relative', height: '440px', overflow: 'hidden', marginBottom: '64px' }}>
-        <Image
-          src="/images/about-our-story.jpg"
-          alt="The Alpine Flowers of Britain and Europe — the book that started OBS Books"
-          fill
-          priority
-          sizes="100vw"
-          style={{ objectFit: 'cover', objectPosition: 'center 40%' }}
-        />
+      <div style={{ textAlign: 'center', padding: '0 32px', marginBottom: '64px' }}>
+        <div style={{ display: 'inline-block', maxWidth: '620px', width: '100%' }}>
+          <Image
+            src="/images/about-our-story.jpg"
+            alt="The Alpine Flowers of Britain and Europe — the book that started OBS Books"
+            width={900}
+            height={1200}
+            priority
+            sizes="(max-width: 640px) 100vw, 620px"
+            style={{ width: '100%', height: 'auto', borderRadius: '2px', display: 'block' }}
+          />
+        </div>
       </div>
 
       {/* ── NARRATIVE ── */}
