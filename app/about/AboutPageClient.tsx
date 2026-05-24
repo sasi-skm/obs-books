@@ -8,7 +8,7 @@ export default function AboutPageClient() {
   const { t } = useLang()
 
   return (
-    <div style={{ background: 'var(--cream)', minHeight: '100vh', paddingTop: '112px' }}>
+    <div style={{ background: 'var(--cream)', minHeight: '100vh', paddingTop: '148px' }}>
 
       {/* ── HEADER ── */}
       <div style={{ maxWidth: '680px', margin: '0 auto', padding: '0 32px 48px', textAlign: 'center' }}>
@@ -246,72 +246,94 @@ export default function AboutPageClient() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6" style={{ textAlign: 'left' }}>
 
-            <div style={{ border: '1px solid rgba(245,240,230,0.15)', borderRadius: '2px', padding: '32px' }}>
-              <div style={{
-                fontFamily: 'var(--font-body)', fontSize: '10px',
-                letterSpacing: '0.2em', textTransform: 'uppercase',
-                color: 'rgba(245,240,230,0.45)', marginBottom: '12px',
-              }}>
-                — The Bookshop —
+            <div style={{ border: '1px solid rgba(245,240,230,0.15)', borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ position: 'relative', height: '200px' }}>
+                <Image
+                  src="/images/obs-display2.jpg"
+                  alt="OBS Books"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 430px"
+                  style={{ objectFit: 'cover', objectPosition: 'center' }}
+                />
               </div>
-              <div style={{
-                fontFamily: 'var(--font-display)', fontStyle: 'italic',
-                fontSize: '22px', color: 'var(--cream)', marginBottom: '14px',
-              }}>
-                OBS Books
-              </div>
-              <p style={{
-                fontFamily: 'var(--font-display)', fontSize: '14px',
-                lineHeight: 1.7, color: 'rgba(245,240,230,0.7)', marginBottom: '20px',
-              }}>
-                The shelves, the books we have been collecting since 2023. Field guides, fairy tales,
-                sketchbooks, plates — the kind of books you sit with.
-              </p>
-              <Link href="/shop" style={{
-                fontFamily: 'var(--font-body)', fontSize: '11px',
-                letterSpacing: '0.1em', textTransform: 'uppercase',
-                color: 'var(--cream)', textDecoration: 'none',
-                borderBottom: '1px solid rgba(245,240,230,0.4)', paddingBottom: '2px',
-              }}>
-                You are here →
-              </Link>
-            </div>
-
-            <div style={{ border: '1px solid rgba(245,240,230,0.15)', borderRadius: '2px', padding: '32px' }}>
-              <div style={{
-                fontFamily: 'var(--font-body)', fontSize: '10px',
-                letterSpacing: '0.2em', textTransform: 'uppercase',
-                color: 'rgba(245,240,230,0.45)', marginBottom: '12px',
-              }}>
-                — The Monthly Letter —
-              </div>
-              <div style={{
-                fontFamily: 'var(--font-display)', fontStyle: 'italic',
-                fontSize: '22px', color: 'var(--cream)', marginBottom: '14px',
-              }}>
-                The Flower Letter
-              </div>
-              <p style={{
-                fontFamily: 'var(--font-display)', fontSize: '14px',
-                lineHeight: 1.7, color: 'rgba(245,240,230,0.7)', marginBottom: '20px',
-              }}>
-                Born out of the shop. A monthly envelope — a painted letter, a real book page, a
-                botanical postcard, a stamp, a bookmark, and a card from The Garden of Good Omens.
-                Six small pieces, by post.
-              </p>
-              <a
-                href="https://obsflowerletter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
+              <div style={{ padding: '28px' }}>
+                <div style={{
+                  fontFamily: 'var(--font-body)', fontSize: '10px',
+                  letterSpacing: '0.2em', textTransform: 'uppercase',
+                  color: 'rgba(245,240,230,0.45)', marginBottom: '12px',
+                }}>
+                  — The Bookshop —
+                </div>
+                <div style={{
+                  fontFamily: 'var(--font-display)', fontStyle: 'italic',
+                  fontSize: '22px', color: 'var(--cream)', marginBottom: '14px',
+                }}>
+                  OBS Books
+                </div>
+                <p style={{
+                  fontFamily: 'var(--font-display)', fontSize: '14px',
+                  lineHeight: 1.7, color: 'rgba(245,240,230,0.7)', marginBottom: '20px',
+                }}>
+                  The shelves, the books we have been collecting since 2023. Field guides, fairy tales,
+                  sketchbooks, plates — the kind of books you sit with.
+                </p>
+                <Link href="/shop" style={{
                   fontFamily: 'var(--font-body)', fontSize: '11px',
                   letterSpacing: '0.1em', textTransform: 'uppercase',
                   color: 'var(--cream)', textDecoration: 'none',
                   borderBottom: '1px solid rgba(245,240,230,0.4)', paddingBottom: '2px',
-                }}
-              >
-                Visit the Letter →
-              </a>
+                }}>
+                  You are here →
+                </Link>
+              </div>
+            </div>
+
+            <div style={{ border: '1px solid rgba(245,240,230,0.15)', borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ position: 'relative', height: '200px' }}>
+                <Image
+                  src="/images/flower-letter-promo.jpg"
+                  alt="The Flower Letter"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 430px"
+                  style={{ objectFit: 'cover', objectPosition: 'center' }}
+                />
+              </div>
+              <div style={{ padding: '28px' }}>
+                <div style={{
+                  fontFamily: 'var(--font-body)', fontSize: '10px',
+                  letterSpacing: '0.2em', textTransform: 'uppercase',
+                  color: 'rgba(245,240,230,0.45)', marginBottom: '12px',
+                }}>
+                  — The Monthly Letter —
+                </div>
+                <div style={{
+                  fontFamily: 'var(--font-display)', fontStyle: 'italic',
+                  fontSize: '22px', color: 'var(--cream)', marginBottom: '14px',
+                }}>
+                  The Flower Letter
+                </div>
+                <p style={{
+                  fontFamily: 'var(--font-display)', fontSize: '14px',
+                  lineHeight: 1.7, color: 'rgba(245,240,230,0.7)', marginBottom: '20px',
+                }}>
+                  Born out of the shop. A monthly envelope — a painted letter, a real book page, a
+                  botanical postcard, a stamp, a bookmark, and a card from The Garden of Good Omens.
+                  Six small pieces, by post.
+                </p>
+                <a
+                  href="https://obsflowerletter.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontFamily: 'var(--font-body)', fontSize: '11px',
+                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                    color: 'var(--cream)', textDecoration: 'none',
+                    borderBottom: '1px solid rgba(245,240,230,0.4)', paddingBottom: '2px',
+                  }}
+                >
+                  Visit the Letter →
+                </a>
+              </div>
             </div>
 
           </div>
