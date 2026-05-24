@@ -247,7 +247,7 @@ export default function AboutPageClient() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6" style={{ textAlign: 'left' }}>
 
             <div style={{ border: '1px solid rgba(245,240,230,0.15)', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ position: 'relative', height: '200px' }}>
+              <div style={{ position: 'relative', aspectRatio: '3/2', width: '100%' }}>
                 <Image
                   src="/images/obs-display2.jpg"
                   alt="OBS Books"
@@ -256,7 +256,7 @@ export default function AboutPageClient() {
                   style={{ objectFit: 'cover', objectPosition: 'center' }}
                 />
               </div>
-              <div style={{ padding: '28px' }}>
+              <div style={{ padding: '18px 20px' }}>
                 <div style={{
                   fontFamily: 'var(--font-body)', fontSize: '10px',
                   letterSpacing: '0.2em', textTransform: 'uppercase',
@@ -289,7 +289,7 @@ export default function AboutPageClient() {
             </div>
 
             <div style={{ border: '1px solid rgba(245,240,230,0.15)', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ position: 'relative', height: '200px' }}>
+              <div style={{ position: 'relative', aspectRatio: '3/2', width: '100%' }}>
                 <Image
                   src="/images/flower-letter-promo.jpg"
                   alt="The Flower Letter"
@@ -298,7 +298,7 @@ export default function AboutPageClient() {
                   style={{ objectFit: 'cover', objectPosition: 'center' }}
                 />
               </div>
-              <div style={{ padding: '28px' }}>
+              <div style={{ padding: '18px 20px' }}>
                 <div style={{
                   fontFamily: 'var(--font-body)', fontSize: '10px',
                   letterSpacing: '0.2em', textTransform: 'uppercase',
