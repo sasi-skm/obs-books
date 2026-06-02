@@ -30,6 +30,16 @@ E-commerce website for OBS Books, a used bookstore in Bangkok selling vintage il
 - All customer-facing text must be bilingual (add to lib/translations.ts)
 - Never use em dashes - use hyphens instead
 
+## How to Set Up on a New Machine
+```bash
+git clone https://github.com/sasi-skm/obs-books.git
+cd obs-books
+vercel login                  # log in with sasiwimolkaewkamol@gmail.com
+vercel env pull .env.local    # pulls all API keys from Vercel - no file transfer needed
+npm install
+npm run dev
+```
+
 ## How to Run Locally
 ```bash
 npm install
