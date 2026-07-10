@@ -75,6 +75,14 @@ export default function CheckoutPage() {
   const [snapshotTotal, setSnapshotTotal] = useState(0)
   const [slipUploadWarning, setSlipUploadWarning] = useState<string>('')
   const [copied, setCopied] = useState(false)
+  // Server-quoted transfer amount for PromptPay / bank transfer. The
+  // customer types this number into their bank app BEFORE the order
+  // exists, so it must come from the server's pricing (voucher validity,
+  // points eligibility, current book prices), never from client math.
+  const [serverQuote, setServerQuote] = useState<{ total: number; voucher_discount: number; points_discount: number } | null>(null)
+  const [quoteLoading, setQuoteLoading] = useState(false)
+  const [quoteError, setQuoteError] = useState(false)
+  const [mismatchNotice, setMismatchNotice] = useState(false)
 
   const handleCopyOrderNumber = async () => {
     if (!orderNumber) return
@@ -139,11 +147,63 @@ export default function CheckoutPage() {
     }))
   }, [profile, user]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (step === 'payment' && payMethod === 'promptpay' && effectiveTotal > 0) {
-      // static QR image used instead of generated QR
+  const fetchQuote = async () => {
+    setQuoteLoading(true)
+    setQuoteError(false)
+    try {
+      const res = await fetch('/api/orders/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map(i => ({
+            book_id: i.bookId || i.id.split('-')[0],
+            condition: i.condition,
+            quantity: i.quantity || 1,
+          })),
+          voucher_id: voucherApplied ? voucherApplied.voucher_id : null,
+          customer_email: form.email || user?.email || '',
+          redeem_points: pointsRedeemed,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || typeof data.total !== 'number') {
+        throw new Error(data.error || 'quote failed')
+      }
+      setServerQuote({
+        total: data.total,
+        voucher_discount: data.voucher_discount ?? 0,
+        points_discount: data.points_discount ?? 0,
+      })
+    } catch (err) {
+      console.error('[checkout] quote failed:', err)
+      setServerQuote(null)
+      setQuoteError(true)
     }
-  }, [step, payMethod, effectiveTotal]) // eslint-disable-line react-hooks/exhaustive-deps
+    setQuoteLoading(false)
+  }
+
+  // Quote the authoritative total the moment the payment step opens
+  // (and re-quote when discounts toggle) so the amount next to the QR
+  // is the amount /api/orders will record.
+  useEffect(() => {
+    if (step !== 'payment' || isInternational) return
+    fetchQuote()
+  }, [step, isInternational, pointsRedeemed, voucherApplied, items]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // What the manual-payment panels display as the amount to transfer.
+  const transferAmountDisplay = () => {
+    if (serverQuote && !quoteLoading) {
+      return <span className="font-bold text-bark">฿{serverQuote.total.toLocaleString()}</span>
+    }
+    if (quoteError) {
+      return (
+        <button type="button" onClick={fetchQuote} className="text-rose underline">
+          {t('quoteRetry')}
+        </button>
+      )
+    }
+    return <span className="italic text-ink-muted">{t('quoteChecking')}</span>
+  }
 
   const handleApplyVoucher = async () => {
     if (!voucherCode.trim()) return
@@ -302,6 +362,10 @@ export default function CheckoutPage() {
             quantity: i.quantity || 1,
           })),
           total_amount: effectiveTotal,
+          // The server-quoted amount the customer was told to transfer.
+          // /api/orders compares its authoritative total against this and
+          // flags a mismatch for both us and Sasi's admin email.
+          expected_total: serverQuote?.total ?? null,
           voucher_id: voucherApplied ? voucherApplied.voucher_id : null,
           voucher_email: voucherApplied ? (form.email || user?.email || '') : null,
         }),
@@ -389,6 +453,12 @@ export default function CheckoutPage() {
       // actually recorded, not what we guessed.
       const confirmedTotal =
         typeof data.total_amount === 'number' ? data.total_amount : effectiveTotal
+
+      // The customer transferred the quoted amount; if the server
+      // recorded something else (a discount died between quote and
+      // order), say so on the confirmation screen instead of leaving
+      // them to find out when Sasi checks the slip.
+      setMismatchNotice(Boolean(data.total_mismatch))
 
       // 4. Remember the order locally so the customer can find it again
       //    via /track even if they didn't give an email.
@@ -493,6 +563,12 @@ export default function CheckoutPage() {
                 <span className="text-bark">฿{snapshotTotal.toLocaleString()}</span>
               </div>
             </div>
+          )}
+
+          {mismatchNotice && (
+            <p className="mb-4 text-xs text-rose text-center border border-rose/40 bg-rose/5 py-2 px-3">
+              ⚠ {t('totalMismatchNotice')}
+            </p>
           )}
 
           {/* Payment instructions */}
@@ -964,7 +1040,7 @@ export default function CheckoutPage() {
                   ศศิวิมล แก้วกมล (Sasiwimol Kaewkamol)
                 </p>
                 <p className="text-sm text-ink-muted mb-4">
-                  {t('promptpayAmount')}: <span className="font-bold text-bark">฿{effectiveTotal.toLocaleString()}</span>
+                  {t('promptpayAmount')}: {transferAmountDisplay()}
                 </p>
                 <Image src="/images/promptpay-qr.jpg" alt="PromptPay QR" width={280} height={280} className="mx-auto mb-3" />
                 <p className="text-xs text-ink-muted">{t('promptpayInstructions')}</p>
@@ -1011,7 +1087,7 @@ export default function CheckoutPage() {
                 {/* Total */}
                 <div className="p-4 bg-sage/5 border border-sage/20 text-center">
                   <span className="text-sm text-ink-light">{t('promptpayAmount')}: </span>
-                  <span className="font-heading text-xl font-bold text-bark">฿{effectiveTotal.toLocaleString()}</span>
+                  <span className="font-heading text-xl">{transferAmountDisplay()}</span>
                 </div>
               </div>
             )}
@@ -1049,9 +1125,17 @@ export default function CheckoutPage() {
                     ⚠ {placeOrderError}
                   </p>
                 )}
+                {quoteError && (
+                  <p className="mb-3 text-xs text-rose text-center border border-rose/40 bg-rose/5 py-2 px-3">
+                    ⚠ {t('quoteError')}
+                  </p>
+                )}
+                {/* No confirmed amount = nothing safe to transfer, so no
+                    order either. Prevents placing an order against an
+                    unverified client-side total. */}
                 <button
                   onClick={handlePlaceOrder}
-                  disabled={submitting}
+                  disabled={submitting || !serverQuote}
                   className="w-full py-3 bg-sage text-offwhite font-heading text-sm hover:bg-sage-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? '...' : t('placeOrder')}

@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
-import { DEFAULT_BOOK_WEIGHT } from '@/lib/shipping'
+import {
+  getAuthedUser,
+  buildServerLines,
+  resolveVoucherDiscount,
+  POINTS_COST,
+  POINTS_DISCOUNT_THB,
+  type IncomingItem,
+} from '@/lib/order-pricing'
 
 /**
  * Money is decided here, not in the browser.
@@ -15,6 +20,10 @@ import { DEFAULT_BOOK_WEIGHT } from '@/lib/shipping'
  * (app/api/checkout/stripe/route.ts) has always worked this way because
  * Stripe charges whatever amount we hand it; this route needs the same
  * boundary because the order row it writes is what Sasi ships against.
+ *
+ * The pricing helpers live in lib/order-pricing.ts, shared with
+ * /api/orders/quote so the amount a PromptPay customer is told to
+ * transfer comes from the same arithmetic that writes the order.
  */
 
 // The customer picks a payment method here; card orders go through the
@@ -22,169 +31,68 @@ import { DEFAULT_BOOK_WEIGHT } from '@/lib/shipping'
 const ALLOWED_PAYMENT_METHODS = new Set(['promptpay', 'transfer'])
 const ALLOWED_CURRENCIES = new Set(['THB', 'USD'])
 
-// Redeeming loyalty points costs 100 points and takes ฿50 off. Mirrors
-// `pointsDiscount` in app/checkout/page.tsx.
-const POINTS_COST = 100
-const POINTS_DISCOUNT_THB = 50
-
-type IncomingItem = {
-  book_id: string
-  condition?: string | null
-  quantity?: number
-}
-
-type ServerLine = {
-  book_id: string
-  title: string
-  author: string
-  image_url: string | null
-  condition: string | null
-  quantity: number
-  price: number
-  weight_grams: number
-}
-
 /**
- * Who is actually making this request? Read the Supabase session from
- * the request cookies rather than believing `user_id` in the body -
- * otherwise anyone can spend anyone else's loyalty points.
- * Returns null for guests, which is a supported checkout path.
+ * Atomically spend POINTS_COST from the user's balance.
+ *
+ * PostgREST cannot express `balance = balance - 100`, and the only
+ * RPCs that exist in production are decrement_book_copies/is_admin
+ * (new SQL cannot ship with this change). So: optimistic
+ * compare-and-swap - read the balance, write balance-100 guarded by
+ * `eq(points_balance, <what we read>)`. If another request spent
+ * points in between, zero rows match and we retry against the fresh
+ * balance. The old read-then-write raced: two concurrent orders could
+ * both read 100, both pass the check, and spend the same points twice.
  */
-async function getAuthedUser(): Promise<{ id: string; email: string | null } | null> {
-  try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll: () => cookieStore.getAll(),
-          // Route handler: we only read the session, never refresh it.
-          setAll: () => {},
-        },
-      },
-    )
-    const { data, error } = await supabase.auth.getUser()
-    if (error || !data.user) return null
-    return { id: data.user.id, email: data.user.email ?? null }
-  } catch {
-    return null
-  }
-}
-
-/**
- * Rebuild the cart from the DB. Client sends only book_id, condition
- * and quantity; price/title/author/image come from the books table.
- * Also enforces availability so a sold-out book can't be ordered (and
- * its stock driven negative) by a hand-crafted request.
- */
-async function buildServerLines(
+async function redeemPointsAtomically(
   supabaseAdmin: SupabaseClient,
-  items: IncomingItem[],
-): Promise<{ lines: ServerLine[] } | { error: string; status: number }> {
-  const bookIds = Array.from(new Set(items.map(i => i.book_id).filter(Boolean)))
-  if (bookIds.length === 0) return { error: 'No valid book ids in cart', status: 400 }
+  userId: string,
+): Promise<boolean> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('points_balance')
+      .eq('id', userId)
+      .single()
+    if (!profile || profile.points_balance < POINTS_COST) return false
 
-  const { data: books, error } = await supabaseAdmin
-    .from('books')
-    .select('id, title, author, price, condition_prices, condition_copies, copies, status, weight_grams, image_url')
-    .in('id', bookIds)
-
-  if (error || !books) {
-    console.error('[api/orders] book fetch failed:', error)
-    return { error: 'Could not load cart books', status: 500 }
-  }
-
-  const booksById = new Map(books.map(b => [b.id, b]))
-  const lines: ServerLine[] = []
-
-  for (const item of items) {
-    const book = booksById.get(item.book_id)
-    if (!book) return { error: `Book not found: ${item.book_id}`, status: 400 }
-    if (book.status !== 'available') {
-      return { error: `"${book.title}" is no longer available`, status: 409 }
-    }
-
-    const qty = Math.max(1, Math.floor(Number(item.quantity) || 1))
-    const condition = item.condition || null
-
-    // Per-condition pricing overrides the base price, same as the
-    // storefront and the Stripe route.
-    let price = Number(book.price) || 0
-    if (condition && book.condition_prices && typeof book.condition_prices === 'object') {
-      const cp = (book.condition_prices as Record<string, number>)[condition]
-      if (typeof cp === 'number' && cp > 0) price = cp
-    }
-    if (price <= 0) return { error: `Invalid price for "${book.title}"`, status: 500 }
-
-    let available = Number(book.copies) || 0
-    if (condition && book.condition_copies && typeof book.condition_copies === 'object') {
-      const cc = (book.condition_copies as Record<string, number>)[condition]
-      if (typeof cc === 'number') available = cc
-    }
-    if (available < qty) {
-      return { error: `Only ${available} copy/copies of "${book.title}" left`, status: 409 }
-    }
-
-    lines.push({
-      book_id: book.id,
-      title: book.title,
-      author: book.author,
-      image_url: book.image_url ?? null,
-      condition,
-      quantity: qty,
-      price,
-      weight_grams: Number(book.weight_grams) || DEFAULT_BOOK_WEIGHT,
-    })
-  }
-
-  return { lines }
-}
-
-/**
- * Re-run the same checks /api/vouchers ran when the customer applied the
- * code. That endpoint is advisory - it tells the browser what discount
- * to *display*. The real decision happens here, against the server's own
- * subtotal, at the moment the order is written.
- */
-async function resolveVoucherDiscount(
-  supabaseAdmin: SupabaseClient,
-  voucherId: string | null,
-  email: string | null,
-  subtotal: number,
-): Promise<{ discount: number; voucherId: string | null }> {
-  if (!voucherId || !email) return { discount: 0, voucherId: null }
-
-  const { data: voucher } = await supabaseAdmin
-    .from('vouchers')
-    .select('id, discount_percent, minimum_order, first_order_only, active')
-    .eq('id', voucherId)
-    .eq('active', true)
-    .single()
-
-  if (!voucher) return { discount: 0, voucherId: null }
-  if (subtotal < Number(voucher.minimum_order || 0)) return { discount: 0, voucherId: null }
-
-  if (voucher.first_order_only) {
-    const { data: prev } = await supabaseAdmin
-      .from('orders')
+    const { data: updated, error } = await supabaseAdmin
+      .from('profiles')
+      .update({ points_balance: profile.points_balance - POINTS_COST })
+      .eq('id', userId)
+      .eq('points_balance', profile.points_balance)
       .select('id')
-      .eq('customer_email', email)
-      .neq('order_status', 'cancelled')
-      .limit(1)
-    if (prev && prev.length > 0) return { discount: 0, voucherId: null }
+    if (!error && updated && updated.length === 1) return true
   }
+  return false
+}
 
-  const { data: used } = await supabaseAdmin
-    .from('voucher_uses')
-    .select('id')
-    .eq('voucher_id', voucher.id)
-    .eq('email', email)
-    .limit(1)
-  if (used && used.length > 0) return { discount: 0, voucherId: null }
-
-  const discount = Math.floor((subtotal * Number(voucher.discount_percent)) / 100)
-  return { discount, voucherId: voucher.id }
+/**
+ * Give the points back after a failed order write. Same CAS loop.
+ * If this fails too (DB down hard), the customer has lost 100 points
+ * with no order - log it loud enough that it can be fixed by hand.
+ */
+async function refundPoints(
+  supabaseAdmin: SupabaseClient,
+  userId: string,
+): Promise<void> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('points_balance')
+      .eq('id', userId)
+      .single()
+    if (!profile) continue
+    const { data: updated, error } = await supabaseAdmin
+      .from('profiles')
+      .update({ points_balance: profile.points_balance + POINTS_COST })
+      .eq('id', userId)
+      .eq('points_balance', profile.points_balance)
+      .select('id')
+    if (!error && updated && updated.length === 1) return
+  }
+  console.error(
+    `[api/orders] CRITICAL: failed to refund ${POINTS_COST} points to user ${userId} after a failed order write. Restore manually.`,
+  )
 }
 
 export async function POST(req: NextRequest) {
@@ -205,6 +113,7 @@ export async function POST(req: NextRequest) {
       currency,
       redeem_points,
       voucher_id,
+      expected_total,
     } = body as {
       customer_name?: string
       customer_phone?: string
@@ -217,6 +126,7 @@ export async function POST(req: NextRequest) {
       currency?: string
       redeem_points?: boolean
       voucher_id?: string | null
+      expected_total?: number | null
     }
 
     if (!customer_name || !customer_phone || !shipping_address || !items?.length) {
@@ -230,182 +140,218 @@ export async function POST(req: NextRequest) {
 
     const orderNumber = 'OBS-' + Date.now().toString(36).toUpperCase()
 
-    // Try Supabase if configured
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY &&
-        process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co') {
-      try {
-        const { supabaseAdmin } = await import('@/lib/supabase-server')
+    const supabaseConfigured =
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.SUPABASE_SERVICE_ROLE_KEY &&
+      process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co'
 
-        const built = await buildServerLines(supabaseAdmin, items)
-        if ('error' in built) {
-          return NextResponse.json({ error: built.error }, { status: built.status })
-        }
-        const { lines } = built
-
-        const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0)
-
-        // The session - not the body - decides whose account this is.
-        const authedUser = await getAuthedUser()
-        const userId = authedUser?.id ?? null
-        const voucherEmail = customer_email || authedUser?.email || null
-
-        const { discount: voucherDiscount, voucherId: validVoucherId } =
-          await resolveVoucherDiscount(supabaseAdmin, voucher_id ?? null, voucherEmail, subtotal)
-
-        // Points are only spendable by the signed-in owner of the balance.
-        let pointsDiscount = 0
-        let pointsToRedeem = false
-        if (redeem_points && userId) {
-          const { data: profile } = await supabaseAdmin
-            .from('profiles')
-            .select('points_balance')
-            .eq('id', userId)
-            .single()
-          if (profile && profile.points_balance >= POINTS_COST) {
-            pointsDiscount = POINTS_DISCOUNT_THB
-            pointsToRedeem = true
-          }
-        }
-
-        const totalAmount = Math.max(0, subtotal - voucherDiscount - pointsDiscount)
-
-        // Create order
-        const { data: order, error: orderError } = await supabaseAdmin
-          .from('orders')
-          .insert({
-            order_number: orderNumber,
-            customer_name,
-            customer_phone,
-            customer_email: customer_email || null,
-            shipping_address,
-            payment_method: paymentMethod,
-            note: note || null,
-            total_amount: totalAmount,
-            // The slip is attached later by /api/upload-slip, which
-            // verifies the order first. A new order is always unpaid.
-            slip_url: null,
-            destination_country: destination_country || 'TH',
-            currency: orderCurrency,
-            payment_status: 'pending',
-            order_status: 'new',
-            user_id: userId,
-            subscriber_discount_applied: false,
-            subscriber_discount_amount: 0,
-          })
-          .select()
-          .single()
-
-        if (orderError) throw orderError
-
-        // Create order items from the server-priced lines
-        const orderItems = lines.map(line => ({
-          order_id: order.id,
-          book_id: line.book_id,
-          title: line.title,
-          author: line.author,
-          price: line.price,
-          image_url: line.image_url,
-          condition: line.condition,
-          quantity: line.quantity,
-        }))
-
-        await supabaseAdmin.from('order_items').insert(orderItems)
-
-        // Decrement book copies (per condition if available, repeat for quantity)
-        for (const line of lines) {
-          for (let q = 0; q < line.quantity; q++) {
-            await supabaseAdmin.rpc('decrement_book_copies', {
-              book_id_param: line.book_id,
-              condition_param: line.condition,
-            })
-          }
-        }
-
-        // Record voucher use - only for a voucher that just passed validation
-        if (validVoucherId && voucherEmail) {
-          try {
-            await supabaseAdmin.from('voucher_uses').insert({
-              voucher_id: validVoucherId,
-              email: voucherEmail,
-              order_id: order.id,
-            })
-          } catch (vErr) {
-            console.error('Voucher recording error:', vErr)
-          }
-        }
-
-        // Handle points redemption
-        if (pointsToRedeem && userId) {
-          try {
-            const { data: profile } = await supabaseAdmin
-              .from('profiles')
-              .select('points_balance')
-              .eq('id', userId)
-              .single()
-
-            if (profile && profile.points_balance >= POINTS_COST) {
-              await supabaseAdmin
-                .from('profiles')
-                .update({ points_balance: profile.points_balance - POINTS_COST })
-                .eq('id', userId)
-
-              await supabaseAdmin.from('points_transactions').insert({
-                user_id: userId,
-                points: -POINTS_COST,
-                type: 'redeemed',
-                reference_id: order.id,
-                book_title: null,
-              })
-            }
-          } catch (pointsErr) {
-            console.error('Points redemption error:', pointsErr)
-          }
-        }
-
-        // Send emails (non-blocking). These quote the server's numbers,
-        // so Sasi's admin email can't be spoofed with a fake total.
-        const emailItems = lines.map(l => ({
-          title: l.title,
-          price: l.price,
-          quantity: l.quantity,
-          condition: l.condition ?? undefined,
-        }))
-        try {
-          const { sendAdminNewOrderEmail, sendOrderConfirmationEmail } = await import('@/lib/email')
-          await Promise.allSettled([
-            sendAdminNewOrderEmail({
-              orderNumber,
-              customerName: customer_name,
-              customerPhone: customer_phone,
-              customerEmail: customer_email,
-              totalAmount,
-              paymentMethod,
-              items: emailItems,
-            }),
-            customer_email
-              ? sendOrderConfirmationEmail({
-                  to: customer_email,
-                  customerName: customer_name,
-                  orderNumber,
-                  items: emailItems,
-                  totalAmount,
-                  paymentMethod,
-                  shippingAddress: shipping_address,
-                })
-              : Promise.resolve(),
-          ])
-        } catch (emailErr) {
-          console.error('Email notification failed:', emailErr)
-        }
-
-        return NextResponse.json({ order_number: orderNumber, id: order.id, total_amount: totalAmount })
-      } catch (err) {
-        console.error('Supabase order error:', err)
-      }
+    if (!supabaseConfigured) {
+      // Local-dev convenience only: no database, nothing persisted.
+      // Production always has Supabase configured and never takes
+      // this path, so a real customer can never receive an order
+      // number that doesn't exist in the database.
+      return NextResponse.json({ order_number: orderNumber })
     }
 
-    // Fallback: return order number without persistence
-    return NextResponse.json({ order_number: orderNumber })
+    const { supabaseAdmin } = await import('@/lib/supabase-server')
+
+    const built = await buildServerLines(supabaseAdmin, items)
+    if ('error' in built) {
+      return NextResponse.json({ error: built.error }, { status: built.status })
+    }
+    const { lines } = built
+
+    const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0)
+
+    // The session - not the body - decides whose account this is.
+    const authedUser = await getAuthedUser()
+    const userId = authedUser?.id ?? null
+    const voucherEmail = customer_email || authedUser?.email || null
+
+    const { discount: voucherDiscount, voucherId: validVoucherId } =
+      await resolveVoucherDiscount(supabaseAdmin, voucher_id ?? null, voucherEmail, subtotal)
+
+    // Points are only spendable by the signed-in owner of the balance,
+    // and the discount is only granted if the deduction actually
+    // landed (atomic CAS). Deducting BEFORE the order is written means
+    // a discounted order can never exist without its points having
+    // been spent; if the order write fails below, the points are
+    // refunded.
+    let pointsDiscount = 0
+    let pointsDeducted = false
+    if (redeem_points && userId) {
+      pointsDeducted = await redeemPointsAtomically(supabaseAdmin, userId)
+      if (pointsDeducted) pointsDiscount = POINTS_DISCOUNT_THB
+    }
+
+    const totalAmount = Math.max(0, subtotal - voucherDiscount - pointsDiscount)
+
+    // The checkout page quotes /api/orders/quote before the customer
+    // transfers. If the authoritative total no longer matches what the
+    // customer was shown (a voucher went stale mid-checkout), the money
+    // they sent is wrong - tell the client AND Sasi instead of leaving
+    // it for her to discover during slip verification.
+    const totalMismatch =
+      typeof expected_total === 'number' && expected_total !== totalAmount
+
+    try {
+      // Create order
+      const { data: order, error: orderError } = await supabaseAdmin
+        .from('orders')
+        .insert({
+          order_number: orderNumber,
+          customer_name,
+          customer_phone,
+          customer_email: customer_email || null,
+          shipping_address,
+          payment_method: paymentMethod,
+          note: note || null,
+          total_amount: totalAmount,
+          // The slip is attached later by /api/upload-slip, which
+          // verifies the order first. A new order is always unpaid.
+          slip_url: null,
+          destination_country: destination_country || 'TH',
+          currency: orderCurrency,
+          payment_status: 'pending',
+          order_status: 'new',
+          user_id: userId,
+          subscriber_discount_applied: false,
+          subscriber_discount_amount: 0,
+        })
+        .select()
+        .single()
+
+      if (orderError || !order) throw orderError ?? new Error('Order insert returned no row')
+
+      // Create order items from the server-priced lines. An order row
+      // without its items is a shipment Sasi can't pack - treat a
+      // failed items write as a failed order.
+      const orderItems = lines.map(line => ({
+        order_id: order.id,
+        book_id: line.book_id,
+        title: line.title,
+        author: line.author,
+        price: line.price,
+        image_url: line.image_url,
+        condition: line.condition,
+        quantity: line.quantity,
+      }))
+
+      const { error: itemsError } = await supabaseAdmin.from('order_items').insert(orderItems)
+      if (itemsError) {
+        // Best-effort: remove the empty order shell so /track and admin
+        // never see a total with no books attached.
+        await supabaseAdmin.from('orders').delete().eq('id', order.id)
+        throw itemsError
+      }
+
+      // Decrement book copies (per condition if available, repeat for quantity)
+      for (const line of lines) {
+        for (let q = 0; q < line.quantity; q++) {
+          await supabaseAdmin.rpc('decrement_book_copies', {
+            book_id_param: line.book_id,
+            condition_param: line.condition,
+          })
+        }
+      }
+
+      // Record voucher use - only for a voucher that just passed validation
+      if (validVoucherId && voucherEmail) {
+        try {
+          await supabaseAdmin.from('voucher_uses').insert({
+            voucher_id: validVoucherId,
+            email: voucherEmail,
+            order_id: order.id,
+          })
+        } catch (vErr) {
+          console.error('Voucher recording error:', vErr)
+        }
+      }
+
+      // The points were already deducted atomically above; this is the
+      // audit record linking the spend to the order.
+      if (pointsDeducted && userId) {
+        try {
+          await supabaseAdmin.from('points_transactions').insert({
+            user_id: userId,
+            points: -POINTS_COST,
+            type: 'redeemed',
+            reference_id: order.id,
+            book_title: null,
+          })
+        } catch (pointsErr) {
+          console.error('Points transaction record error (points already deducted):', pointsErr)
+        }
+      }
+
+      if (totalMismatch) {
+        console.error('[api/orders] total mismatch: customer was shown a different amount', {
+          orderNumber,
+          expected_total,
+          recorded_total: totalAmount,
+        })
+      }
+
+      // Send emails (non-blocking). These quote the server's numbers,
+      // so Sasi's admin email can't be spoofed with a fake total.
+      const emailItems = lines.map(l => ({
+        title: l.title,
+        price: l.price,
+        quantity: l.quantity,
+        condition: l.condition ?? undefined,
+      }))
+      try {
+        const { sendAdminNewOrderEmail, sendOrderConfirmationEmail } = await import('@/lib/email')
+        await Promise.allSettled([
+          sendAdminNewOrderEmail({
+            orderNumber,
+            customerName: customer_name,
+            customerPhone: customer_phone,
+            customerEmail: customer_email,
+            totalAmount,
+            paymentMethod,
+            items: emailItems,
+            reconcileNote: totalMismatch
+              ? `Heads up: the customer was shown ฿${Number(expected_total).toLocaleString()} at checkout but the recorded total is ฿${totalAmount.toLocaleString()} (a discount changed between quote and order). Check the transferred amount against the slip.`
+              : undefined,
+          }),
+          customer_email
+            ? sendOrderConfirmationEmail({
+                to: customer_email,
+                customerName: customer_name,
+                orderNumber,
+                items: emailItems,
+                totalAmount,
+                paymentMethod,
+                shippingAddress: shipping_address,
+              })
+            : Promise.resolve(),
+        ])
+      } catch (emailErr) {
+        console.error('Email notification failed:', emailErr)
+      }
+
+      return NextResponse.json({
+        order_number: orderNumber,
+        id: order.id,
+        total_amount: totalAmount,
+        total_mismatch: totalMismatch,
+      })
+    } catch (err) {
+      // The old code fell through to a fabricated "success" here: a 200
+      // with an order number that exists nowhere, shown to a customer
+      // who had already transferred real money. Fail honestly instead -
+      // the checkout page keeps them on the payment step with their
+      // cart intact so they can retry or contact Sasi.
+      console.error('Supabase order error:', err)
+      if (pointsDeducted && userId) {
+        await refundPoints(supabaseAdmin, userId)
+      }
+      return NextResponse.json(
+        { error: 'We could not save your order. Please try again - your cart is untouched.' },
+        { status: 500 },
+      )
+    }
   } catch {
     return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })
   }

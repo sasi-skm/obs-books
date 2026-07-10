@@ -162,6 +162,19 @@ export const TX: Record<string, Record<Lang, string>> = {
   promptpayTitle: { en: 'Scan to Pay with PromptPay', th: 'สแกนจ่ายด้วยพร้อมเพย์' },
   promptpayAmount: { en: 'Amount', th: 'จำนวนเงิน' },
   promptpayInstructions: { en: 'Open your banking app, scan the QR code, and confirm the transfer.', th: 'เปิดแอพธนาคาร สแกน QR แล้วยืนยันการโอน' },
+  // The transfer amount is confirmed with the server before it is
+  // shown, so what the customer types into their bank app is what the
+  // order will record.
+  quoteChecking: { en: 'Confirming amount...', th: 'กำลังยืนยันจำนวนเงิน...' },
+  quoteError: {
+    en: 'We could not confirm the amount to transfer. Please check your connection and try again.',
+    th: 'ไม่สามารถยืนยันจำนวนเงินที่ต้องโอนได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง',
+  },
+  quoteRetry: { en: 'Try again', th: 'ลองอีกครั้ง' },
+  totalMismatchNotice: {
+    en: 'The recorded total differs from the amount shown earlier (a discount may have expired). If you already transferred a different amount, please message us with your order number - do not transfer again.',
+    th: 'ยอดที่บันทึกไว้ต่างจากยอดที่แสดงก่อนหน้านี้ (ส่วนลดอาจหมดอายุ) หากคุณโอนเงินไปแล้วเป็นยอดอื่น กรุณาทักหาเราพร้อมหมายเลขคำสั่งซื้อ - อย่าโอนซ้ำ',
+  },
 
   // Bank Transfer
   bankTitle: { en: 'Bank Transfer Details', th: 'รายละเอียดการโอนเงิน' },

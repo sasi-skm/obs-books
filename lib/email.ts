@@ -363,6 +363,7 @@ export async function sendStripeOrderConfirmationEmail({
 export async function sendAdminNewOrderEmail({
   orderNumber, customerName, customerPhone, customerEmail, totalAmount, items, paymentMethod,
   currency = 'THB',
+  reconcileNote,
 }: {
   orderNumber: string
   customerName: string
@@ -375,6 +376,10 @@ export async function sendAdminNewOrderEmail({
   // Items always render in ฿ since they're stored that way and Sasi
   // does inventory in THB.
   currency?: 'THB' | 'USD'
+  // Optional warning rendered prominently, e.g. when the recorded
+  // total differs from the amount the customer was shown (and may
+  // have already transferred).
+  reconcileNote?: string
 }) {
   const adminEmail = process.env.ADMIN_EMAIL
   if (!adminEmail) return
@@ -394,6 +399,7 @@ export async function sendAdminNewOrderEmail({
   const content = `
     ${h1(`New Order: ${orderNumber}`)}
     ${divider()}
+    ${reconcileNote ? `<p style="margin:0 0 16px;padding:12px 14px;background:#fdf1f2;border:1px solid #B4636E;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#8a3a44;">⚠ ${reconcileNote}</p>` : ''}
     <table cellpadding="0" cellspacing="0" style="margin-bottom:20px;padding:16px;background:#fdf8f2;border:1px solid #d6cdb8;width:100%;">
       <tr><td style="padding:4px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;"><strong>Customer:</strong> ${customerName}</td></tr>
       ${customerPhone ? `<tr><td style="padding:4px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:13px;color:#4a3f32;"><strong>Phone:</strong> ${customerPhone}</td></tr>` : ''}
