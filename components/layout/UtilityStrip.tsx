@@ -2,7 +2,7 @@ export default function UtilityStrip() {
   const Sep = () => (
     <span
       aria-hidden="true"
-      style={{ color: 'var(--mauve)', margin: '0 1.6em', display: 'inline-block' }}
+      style={{ color: 'var(--mauve)', margin: '0 1.6em', display: 'inline-block', fontSize: '10px' }}
     >
       ✦
     </span>
@@ -38,6 +38,10 @@ export default function UtilityStrip() {
     </div>
   );
 
+  // Field-journal treatment: the strip keeps its slow drift but drops
+  // to half height - italic serif lowercase instead of tracked caps,
+  // so it reads as a margin note, not a banner. Nav.tsx pins itself
+  // directly below at top-[25px]; keep the two in sync.
   return (
     <div
       style={{
@@ -48,13 +52,13 @@ export default function UtilityStrip() {
         zIndex: 60,
         background: 'var(--brown-dark)',
         color: 'var(--cream)',
-        padding: '9px 0',
-        fontSize: '10.5px',
-        lineHeight: 1,
-        letterSpacing: '0.22em',
-        textTransform: 'uppercase',
-        fontFamily: 'var(--font-body)',
-        fontWeight: 500,
+        padding: '5px 0',
+        fontSize: '13px',
+        lineHeight: 1.15,
+        letterSpacing: '0.02em',
+        fontFamily: 'var(--font-display)',
+        fontStyle: 'italic',
+        fontWeight: 400,
         overflow: 'hidden',
         whiteSpace: 'nowrap',
       }}
