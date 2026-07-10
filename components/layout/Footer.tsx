@@ -56,7 +56,7 @@ export default function Footer() {
             marginBottom: '48px',
           }}
         >
-          {/* Column 1 — Brand blurb */}
+          {/* Column 1 - Brand blurb */}
           <div>
             <div
               style={{
@@ -94,7 +94,7 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Column 2 — Shop (real categories) */}
+          {/* Column 2 - Shop (real categories) */}
           <div>
             <h4 style={headingStyle}>{t('footerShop')}</h4>
             <ul style={listStyle}>
@@ -108,7 +108,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Column 3 — The Shop */}
+          {/* Column 3 - The Shop */}
           <div>
             <h4 style={headingStyle}>{t('footerTheShop')}</h4>
             <ul style={listStyle}>
@@ -128,14 +128,14 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/contact" style={linkStyle}>
+                <Link href="/#contact" style={linkStyle}>
                   {t('footerContact')}
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 4 — Family */}
+          {/* Column 4 - Family */}
           <div>
             <h4 style={headingStyle}>{t('footerFamily')}</h4>
             <ul style={listStyle}>

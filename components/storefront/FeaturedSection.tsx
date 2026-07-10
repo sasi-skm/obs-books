@@ -14,7 +14,7 @@ export default function FeaturedSection({ books }: FeaturedSectionProps) {
   const featured = books.slice(0, 3);
 
   return (
-    <section className="bg-cream py-20 px-8 lg:px-12">
+    <section id="featured" className="bg-cream py-20 px-8 lg:px-12">
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <div className="flex flex-col lg:flex-row items-start gap-14 lg:gap-20">
 
@@ -70,14 +70,14 @@ export default function FeaturedSection({ books }: FeaturedSectionProps) {
           {/* Right: book cards */}
           <div className="w-full lg:flex-1 flex gap-5 overflow-x-auto pb-2 lg:grid lg:grid-cols-3 lg:overflow-visible lg:pb-0">
             {featured.map((book) => {
-              // IMAGE — same fallback chain as BookCard.tsx
+              // IMAGE - same fallback chain as BookCard.tsx
               const FALLBACK_COVER = '/images/hero-botanical.jpeg';
               const imageUrl =
                 (book.images && book.images.length > 0 && book.images[0])
                   ? book.images[0]
                   : (book.image_url || FALLBACK_COVER);
 
-              // PRICE — same condition_prices logic as BookCard.tsx
+              // PRICE - same condition_prices logic as BookCard.tsx
               const hasConditionPrices =
                 book.condition_prices && Object.keys(book.condition_prices).length > 0;
               const prices = hasConditionPrices
@@ -89,7 +89,7 @@ export default function FeaturedSection({ books }: FeaturedSectionProps) {
                   ? 'from ฿' + minPrice.toLocaleString()
                   : '฿' + minPrice.toLocaleString();
 
-              // STOCK — same sold/copies logic as BookCard.tsx
+              // STOCK - same sold/copies logic as BookCard.tsx
               const isSold = book.status === 'sold' || book.copies <= 0;
               const stockLabel = isSold
                 ? 'Sold'

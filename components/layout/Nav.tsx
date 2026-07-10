@@ -54,7 +54,7 @@ export default function Nav() {
         {/* ── DESKTOP (lg+) ── */}
         <div className="hidden lg:grid grid-cols-3 items-center max-w-[1200px] mx-auto px-6 py-5">
 
-          {/* Col 1 — Left nav links */}
+          {/* Col 1 - Left nav links */}
           <div className="flex items-center gap-7">
             <Link href="/shop" style={linkStyle} className="hover:text-moss transition-colors">
               {t('navShop')}
@@ -67,7 +67,7 @@ export default function Nav() {
             </Link>
           </div>
 
-          {/* Col 2 — Center wordmark */}
+          {/* Col 2 - Center wordmark */}
           <div className="text-center">
             <Link href="/" style={{ textDecoration: 'none' }}>
               <div style={{
@@ -93,11 +93,11 @@ export default function Nav() {
             </Link>
           </div>
 
-          {/* Col 3 — Right: About, Account, Cart, EN/TH */}
+          {/* Col 3 - Right: About, Account, Cart, EN/TH */}
           <div className="flex items-center justify-end gap-5">
 
             {/* About */}
-            <Link href="/#about" style={linkStyle} className="hover:text-moss transition-colors">
+            <Link href="/about" style={linkStyle} className="hover:text-moss transition-colors">
               {t('navAbout')}
             </Link>
 
@@ -164,7 +164,7 @@ export default function Nav() {
         {/* ── MOBILE (below lg) ── */}
         <div className="flex lg:hidden items-center justify-between max-w-[1200px] mx-auto px-6 py-2.5">
 
-          {/* Wordmark — italic only */}
+          {/* Wordmark - italic only */}
           <Link href="/" style={{ textDecoration: 'none' }}>
             <span style={{
               fontFamily: 'var(--font-display)',
@@ -235,7 +235,7 @@ export default function Nav() {
               {t('nFeatured')}
             </Link>
             <Link
-              href="/#about"
+              href="/about"
               onClick={() => setMobileOpen(false)}
               className="block py-2 font-jost text-xs text-bark hover:text-moss transition-colors"
             >
