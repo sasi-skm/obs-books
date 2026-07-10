@@ -46,12 +46,12 @@ export default function SignupPage() {
           date_of_birth: form.dateOfBirth || null,
         })
 
-      // Link any guest orders with matching email to this new account
+      // Link any guest orders with matching email to this new account.
+      // Done server-side: customers have no direct write access to `orders`
+      // (see supabase/harden-orders-rls.sql), and the route takes the email
+      // from the verified session rather than from us.
       try {
-        await supabase.from('orders')
-          .update({ user_id: data.user.id })
-          .eq('customer_email', form.email)
-          .is('user_id', null)
+        await fetch('/api/link-guest-orders', { method: 'POST' })
       } catch {}
     }
 

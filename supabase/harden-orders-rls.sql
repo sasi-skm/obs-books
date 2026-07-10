@@ -18,17 +18,32 @@
 -- an attacker could also mint orders "owned" by their own address and
 -- then mutate them at will.
 --
--- Customers never need to write to orders. Every legitimate write in
--- the app goes through a server route using the service-role key,
--- which bypasses RLS entirely:
+-- Almost every legitimate write already goes through a server route using the
+-- service-role key, which bypasses RLS entirely:
 --   - app/api/orders/route.ts          (create)
 --   - app/api/checkout/stripe/route.ts (create)
 --   - app/api/upload-slip/route.ts     (attach slip, set payment_status)
 --   - app/api/webhooks/stripe/route.ts (mark paid / expire)
 --   - app/admin/**                     (status, tracking, cancel)
--- So dropping the customer UPDATE policy removes an attack surface
--- without removing any feature. Reads (orders_user_read_own) stay,
--- which is what /account and /track need.
+-- Reads (orders_user_read_own) stay, which is what /account and /track need.
+--
+-- ORDERING REQUIREMENT - read this before running the file
+-- --------------------------------------------------------
+-- An earlier draft of this file claimed customers never write to orders. That
+-- was wrong. app/signup/page.tsx linked a new account to its guest orders from
+-- the browser with the anon key, relying on the very policy dropped below. RLS
+-- would have filtered that UPDATE to zero rows, raised no error, and the empty
+-- catch would have swallowed it: every new account would silently lose its
+-- order history and the loyalty points hanging off it.
+--
+-- That path now lives in app/api/link-guest-orders/route.ts (service-role, with
+-- the email taken from the verified session rather than the request). Therefore:
+--
+--   1. Deploy the code containing app/api/link-guest-orders/route.ts.
+--   2. THEN run this SQL.
+--
+-- Running it against a deployment that still has the old client-side signup
+-- breaks guest-order linking silently.
 -- ============================================================
 
 -- 1. Customers may no longer write to their own order rows.

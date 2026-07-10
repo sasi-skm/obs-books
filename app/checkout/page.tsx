@@ -69,6 +69,7 @@ export default function CheckoutPage() {
   // Stripe redirect state — card-payment path (international or TH-domestic)
   const [stripeLoading, setStripeLoading] = useState(false)
   const [stripeError, setStripeError] = useState('')
+  const [placeOrderError, setPlaceOrderError] = useState('')
   const [snapshotItems, setSnapshotItems] = useState<CartItem[]>([])
   const [snapshotPayMethod, setSnapshotPayMethod] = useState<'promptpay' | 'transfer' | 'stripe'>('promptpay')
   const [snapshotTotal, setSnapshotTotal] = useState(0)
@@ -270,6 +271,7 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     setSubmitting(true)
+    setPlaceOrderError('')
     try {
       // 1. Create the order first. The slip (if any) is uploaded AFTER we
       //    have a confirmed order_id, so an upload failure can't orphan
@@ -305,7 +307,23 @@ export default function CheckoutPage() {
         }),
       })
       const data = await res.json()
-      const createdOrderNumber = data.order_number || 'OBS-' + Date.now().toString(36).toUpperCase()
+
+      // NEVER invent an order number. By the time a PromptPay customer clicks
+      // Place Order they have already transferred real baht from their bank
+      // app. If the server rejected the order (sold out, rate limited, bad
+      // request) and we fabricated a number and cleared the cart, the money
+      // is gone with no order, no slip, and nothing for Sasi to reconcile.
+      // Keep them on the page with the server's own message so they can
+      // retry or contact us. handleStripeCheckout has always done this.
+      if (!res.ok || !data.order_number) {
+        // Server messages here are already human-friendly cart-state errors
+        // ("Only 1 copy left"), same as the Stripe path shows verbatim.
+        setPlaceOrderError(data.error || t('orderFailed'))
+        setSubmitting(false)
+        return
+      }
+
+      const createdOrderNumber = data.order_number as string
       const createdOrderId = data.id as string | undefined
 
       // 2. Upload the slip to the public /api/upload-slip route if the
@@ -388,13 +406,11 @@ export default function CheckoutPage() {
       clearCart()
       setStep('done')
     } catch (err) {
+      // Network/parse failure. Same rule as above: do not show a success
+      // screen for an order that may not exist. Keep the cart so they can
+      // retry without rebuilding it.
       console.error('[checkout] handlePlaceOrder failed:', err)
-      setOrderNumber('OBS-' + Date.now().toString(36).toUpperCase())
-      setSnapshotItems([...items])
-      setSnapshotPayMethod(payMethod)
-      setSnapshotTotal(effectiveTotal)
-      clearCart()
-      setStep('done')
+      setPlaceOrderError(t('orderFailed'))
     }
     setSubmitting(false)
   }
@@ -1028,6 +1044,11 @@ export default function CheckoutPage() {
                 Stripe card below has its own redirect button. */}
             {payMethod !== 'stripe' && (
               <>
+                {placeOrderError && (
+                  <p className="mb-3 text-xs text-rose text-center border border-rose/40 bg-rose/5 py-2 px-3">
+                    ⚠ {placeOrderError}
+                  </p>
+                )}
                 <button
                   onClick={handlePlaceOrder}
                   disabled={submitting}

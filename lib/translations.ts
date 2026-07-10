@@ -187,6 +187,10 @@ export const TX: Record<string, Record<Lang, string>> = {
   payWithCard: { en: 'Pay {amount} with card', th: 'ชำระ {amount} ด้วยบัตร' },
   stripeRedirecting: { en: 'Redirecting to Stripe...', th: 'กำลังนำไปยัง Stripe...' },
   stripeError: { en: 'Could not start payment. Please try again.', th: 'ไม่สามารถเริ่มการชำระเงินได้ กรุณาลองอีกครั้ง' },
+  orderFailed: {
+    en: 'We could not place your order and your cart has been kept. If you already transferred the money, please do not transfer again - message us and we will sort it out.',
+    th: 'ไม่สามารถสั่งซื้อได้ และเราเก็บสินค้าในตะกร้าไว้ให้แล้ว หากคุณโอนเงินแล้ว กรุณาอย่าโอนซ้ำ - ทักหาเราแล้วเราจะจัดการให้',
+  },
   poweredByStripe: { en: 'Powered by Stripe', th: 'ขับเคลื่อนโดย Stripe' },
 
   // Stripe success / cancelled landing pages
