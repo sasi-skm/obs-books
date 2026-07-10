@@ -127,12 +127,24 @@ async function main() {
 
     let newCover = book.image_url
     if (isDataUri(newCover)) {
-      // The cover is normally images[0]. Reuse that upload rather than
-      // storing the same bytes twice.
-      newCover =
-        newGallery[0] && !isDataUri(newGallery[0])
-          ? newGallery[0]
-          : await uploadOne(book.id, 'cover', book.image_url)
+      // "The cover is images[0]" is a convention, not a constraint. Reuse
+      // the gallery[0] upload ONLY when gallery[0] held byte-identical
+      // data to image_url - otherwise reusing it would silently swap the
+      // book's cover to a different photo. When in doubt, upload the
+      // cover's own bytes separately; a duplicate file in storage is
+      // cheap, a wrong cover is not.
+      const coverIsGalleryZero =
+        gallery.length > 0 && gallery[0] === book.image_url
+      if (coverIsGalleryZero && newGallery[0] && !isDataUri(newGallery[0])) {
+        newCover = newGallery[0]
+      } else {
+        if (!coverIsGalleryZero) {
+          console.log(
+            '      note: image_url is not byte-identical to images[0]; uploading the cover separately',
+          )
+        }
+        newCover = await uploadOne(book.id, 'cover', book.image_url)
+      }
     }
 
     if (!APPLY) {
