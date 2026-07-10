@@ -364,11 +364,19 @@ export default function CheckoutPage() {
         }
       }
 
+      // The server recalculates the total from the database and ignores
+      // whatever we sent, so its number is the one on the order Sasi
+      // ships against. They agree in the normal case; they can differ if
+      // a voucher went stale between validation and submit. Show what was
+      // actually recorded, not what we guessed.
+      const confirmedTotal =
+        typeof data.total_amount === 'number' ? data.total_amount : effectiveTotal
+
       // 4. Remember the order locally so the customer can find it again
       //    via /track even if they didn't give an email.
       addRecentOrder({
         orderNumber: createdOrderNumber,
-        totalAmount: effectiveTotal,
+        totalAmount: confirmedTotal,
         currency: isInternational ? 'USD' : 'THB',
         placedAt: Date.now(),
       })
@@ -376,7 +384,7 @@ export default function CheckoutPage() {
       setOrderNumber(createdOrderNumber)
       setSnapshotItems([...items])
       setSnapshotPayMethod(payMethod)
-      setSnapshotTotal(effectiveTotal)
+      setSnapshotTotal(confirmedTotal)
       clearCart()
       setStep('done')
     } catch (err) {
