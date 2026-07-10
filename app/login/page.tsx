@@ -39,9 +39,11 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} className="bg-cream border border-sand p-8">
           <div className="mb-4">
-            <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Email</label>
+            <label htmlFor="li-email" className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Email</label>
             <input
+              id="li-email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
@@ -49,9 +51,11 @@ function LoginForm() {
             />
           </div>
           <div className="mb-5">
-            <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Password</label>
+            <label htmlFor="li-password" className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Password</label>
             <input
+              id="li-password"
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required

@@ -784,8 +784,10 @@ export default function CheckoutPage() {
           <form onSubmit={handleSubmitDetails}>
             {/* Country */}
             <div className="mb-4">
-              <label className="block font-heading text-sm mb-1">{t('destinationCountry')} *</label>
+              <label htmlFor="co-country" className="block font-heading text-sm mb-1">{t('destinationCountry')} *</label>
               <select
+                id="co-country"
+                autoComplete="country"
                 className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                 value={form.country}
                 onChange={e => setForm({ ...form, country: e.target.value, province: '' })}
@@ -807,8 +809,10 @@ export default function CheckoutPage() {
             {/* First + Last name */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
-                <label className="block font-heading text-sm mb-1">First Name *</label>
+                <label htmlFor="co-fname" className="block font-heading text-sm mb-1">First Name *</label>
                 <input
+                  id="co-fname"
+                  autoComplete="given-name"
                   className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                   placeholder="First name"
                   value={form.firstName}
@@ -817,8 +821,10 @@ export default function CheckoutPage() {
                 />
               </div>
               <div>
-                <label className="block font-heading text-sm mb-1">Last Name</label>
+                <label htmlFor="co-lname" className="block font-heading text-sm mb-1">Last Name</label>
                 <input
+                  id="co-lname"
+                  autoComplete="family-name"
                   className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                   placeholder="Last name"
                   value={form.lastName}
@@ -829,8 +835,10 @@ export default function CheckoutPage() {
 
             {/* Address */}
             <div className="mb-4">
-              <label className="block font-heading text-sm mb-1">{t('address')} *</label>
+              <label htmlFor="co-addr1" className="block font-heading text-sm mb-1">{t('address')} *</label>
               <input
+                id="co-addr1"
+                autoComplete="address-line1"
                 className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                 placeholder="House no., street, soi"
                 value={form.addressLine1}
@@ -840,6 +848,9 @@ export default function CheckoutPage() {
             </div>
             <div className="mb-4">
               <input
+                id="co-addr2"
+                autoComplete="address-line2"
+                aria-label="Apartment, suite, building (optional)"
                 className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                 placeholder="Apartment, suite, building (optional)"
                 value={form.addressLine2}
@@ -850,8 +861,10 @@ export default function CheckoutPage() {
             {/* City / Province / Postal code */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div>
-                <label className="block font-heading text-sm mb-1">City *</label>
+                <label htmlFor="co-city" className="block font-heading text-sm mb-1">City *</label>
                 <input
+                  id="co-city"
+                  autoComplete="address-level2"
                   className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                   placeholder="City"
                   value={form.city}
@@ -860,9 +873,11 @@ export default function CheckoutPage() {
                 />
               </div>
               <div>
-                <label className="block font-heading text-sm mb-1">Province</label>
+                <label htmlFor="co-province" className="block font-heading text-sm mb-1">Province</label>
                 {!isInternational ? (
                   <select
+                    id="co-province"
+                    autoComplete="address-level1"
                     className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                     value={form.province}
                     onChange={e => setForm({ ...form, province: e.target.value })}
@@ -874,6 +889,8 @@ export default function CheckoutPage() {
                   </select>
                 ) : (
                   <input
+                    id="co-province"
+                    autoComplete="address-level1"
                     className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                     placeholder="State / Region"
                     value={form.province}
@@ -882,8 +899,11 @@ export default function CheckoutPage() {
                 )}
               </div>
               <div>
-                <label className="block font-heading text-sm mb-1">Postal Code</label>
+                <label htmlFor="co-postal" className="block font-heading text-sm mb-1">Postal Code</label>
                 <input
+                  id="co-postal"
+                  autoComplete="postal-code"
+                  inputMode="numeric"
                   className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                   placeholder="10xxx"
                   value={form.postalCode}
@@ -894,8 +914,11 @@ export default function CheckoutPage() {
 
             {/* Phone */}
             <div className="mb-4">
-              <label className="block font-heading text-sm mb-1">{t('phone')} *</label>
+              <label htmlFor="co-phone" className="block font-heading text-sm mb-1">{t('phone')} *</label>
               <input
+                id="co-phone"
+                type="tel"
+                autoComplete="tel"
                 className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                 placeholder="08x-xxx-xxxx"
                 value={form.phone}
@@ -904,14 +927,16 @@ export default function CheckoutPage() {
               />
             </div>
             <div className="mb-4">
-              <label className="block font-heading text-sm mb-1">
+              <label htmlFor="co-email" className="block font-heading text-sm mb-1">
                 {t('email')}{' '}
                 <span className="text-[11px] text-sage font-normal normal-case">
                   ({lang === 'th' ? 'แนะนำ' : 'recommended'})
                 </span>
               </label>
               <input
+                id="co-email"
                 type="email"
+                autoComplete="email"
                 className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                 placeholder="you@example.com"
                 value={form.email}
@@ -928,8 +953,10 @@ export default function CheckoutPage() {
               </p>
             </div>
             <div className="mb-4">
-              <label className="block font-heading text-sm mb-1">{t('note')}</label>
+              <label htmlFor="co-note" className="block font-heading text-sm mb-1">{t('note')}</label>
               <input
+                id="co-note"
+                autoComplete="off"
                 className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                 value={form.note}
                 onChange={e => setForm({ ...form, note: e.target.value })}
