@@ -324,9 +324,13 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
           {t('backHome')}
         </Link>
 
+        {/* min-w-0 on both columns: grid items default to min-width
+            auto and refuse to shrink below their content, so the zoom
+            library's inline pixel sizing pushed the whole page wider
+            than a phone (horizontal overflow on every book page). */}
         <div className="grid md:grid-cols-[45%_55%] gap-10">
           {/* LEFT: Gallery + Description */}
-          <div>
+          <div className="min-w-0">
             {/* Main image - portrait */}
             <div
               className="relative overflow-hidden border border-sand mb-2"
@@ -354,6 +358,13 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
                   onTransform={(_ref, state) => setIsZoomed(state.scale > 1.05)}
                 >
                   <TransformComponent
+                    // !w-full/!h-full (important) out-rank the pixel
+                    // width/height the zoom library writes INLINE onto
+                    // these nodes after its first measurement - a
+                    // mis-measured mount was baking in a 500px+ width
+                    // that no non-important rule could claw back.
+                    wrapperClass="!w-full !h-full"
+                    contentClass="!w-full !h-full"
                     wrapperStyle={{ position: 'absolute', inset: 0, width: '100%', height: '100%', cursor: isZoomed ? 'grab' : 'pointer' }}
                     contentStyle={{ width: '100%', height: '100%' }}
                   >
@@ -482,7 +493,7 @@ export default function BookDetailClient({ book, relatedBooks = [] }: { book: Bo
           </div>
 
           {/* RIGHT: Details + Specs + Related */}
-          <div>
+          <div className="min-w-0">
             <h1 className="font-heading text-2xl font-semibold mb-1 text-ink">{book.title}</h1>
 
             {!isTextile && book.author && (
