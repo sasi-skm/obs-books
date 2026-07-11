@@ -3,6 +3,7 @@ import type Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { restoreStock } from '@/lib/restore-stock'
+import { rateLimit } from '@/lib/rate-limit'
 import {
   COUNTRY_ZONES,
   SUPPORTED_COUNTRIES,
@@ -30,12 +31,18 @@ type Body = {
 
 // Hold stock for at most 2h on an abandoned Stripe checkout. OBS sells
 // 1-of-1 vintage books, so reserving inventory for the full 24h Stripe
-// allows is too costly — 2h is enough for a customer to genuinely
+// allows is too costly - 2h is enough for a customer to genuinely
 // finish payment, and Stripe will fire `checkout.session.expired`
 // well before our 24h auto-cancel cron sees the order.
 const SESSION_TTL_SECONDS = 2 * 60 * 60
 
 export async function POST(req: NextRequest) {
+  // Creating a session reserves stock for SESSION_TTL_SECONDS. Without a
+  // limit, a script can loop this endpoint and hold every 1-of-1 book in
+  // rolling 2h reservations without ever paying.
+  const rl = await rateLimit(req, { id: 'stripe-checkout', limit: 5, windowMs: 60000 })
+  if (!rl.ok) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+
   try {
     const body = (await req.json()) as Body
     const {
@@ -69,7 +76,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Re-fetch every book from the DB. We do NOT trust client-supplied
-    // prices here — Stripe will charge the customer the amount we hand
+    // prices here - Stripe will charge the customer the amount we hand
     // it, so the price calculation is a security boundary.
     const bookIds = Array.from(new Set(items.map(i => i.book_id).filter(Boolean)))
     if (bookIds.length === 0) {
@@ -106,10 +113,10 @@ export async function POST(req: NextRequest) {
       if (!book) {
         return NextResponse.json({ error: `Book not found: ${item.book_id}` }, { status: 400 })
       }
-      // No "draft / unpublished" flag exists on books — the equivalent
+      // No "draft / unpublished" flag exists on books - the equivalent
       // guard is status='available' (vs 'sold'). Block sold books from
       // getting into Stripe checkout.
-      // No "draft / unpublished" flag exists on books — schema sweep
+      // No "draft / unpublished" flag exists on books - schema sweep
       // confirms the only visibility gate is status='available' (vs
       // 'sold'). See seed.sql + migrations 002–004 for the full books
       // column list. Block sold books from getting into Stripe checkout.
@@ -173,7 +180,7 @@ export async function POST(req: NextRequest) {
     let stripeLineItems: StripeLineItem[]
 
     if (isThbOrder) {
-      // THB satang. Stripe minimum is 1000 satang (฿10) — guarded by the
+      // THB satang. Stripe minimum is 1000 satang (฿10) - guarded by the
       // positivity check below since OBS books are well above that.
       if (subtotalThb <= 0) {
         return NextResponse.json({ error: 'Order total must be positive' }, { status: 400 })
@@ -197,7 +204,7 @@ export async function POST(req: NextRequest) {
         },
         quantity: l.quantity,
       }))
-      // No shipping line for TH — domestic free shipping convention.
+      // No shipping line for TH - domestic free shipping convention.
     } else {
       // USD with DHL international shipping line.
       const shippingUsd = getShippingRate(country, totalGrams)
@@ -327,7 +334,7 @@ export async function POST(req: NextRequest) {
 
     // 5. Create the Stripe session. If this throws we are left with an
     //    orphan order row + decremented stock that no customer will
-    //    ever pay for — roll both back before surfacing the error so
+    //    ever pay for - roll both back before surfacing the error so
     //    the next customer can buy the book.
     let session: Stripe.Checkout.Session
     try {
@@ -354,7 +361,7 @@ export async function POST(req: NextRequest) {
         expires_at: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS,
       })
     } catch (stripeErr) {
-      console.error('[stripe checkout] session create failed — rolling back:', stripeErr)
+      console.error('[stripe checkout] session create failed - rolling back:', stripeErr)
 
       // Restore inventory using the same helper the auto-cancel cron
       // uses, so the unique vintage book becomes purchasable again.

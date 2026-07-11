@@ -46,12 +46,12 @@ export default function SignupPage() {
           date_of_birth: form.dateOfBirth || null,
         })
 
-      // Link any guest orders with matching email to this new account
+      // Link any guest orders with matching email to this new account.
+      // Done server-side: customers have no direct write access to `orders`
+      // (see supabase/harden-orders-rls.sql), and the route takes the email
+      // from the verified session rather than from us.
       try {
-        await supabase.from('orders')
-          .update({ user_id: data.user.id })
-          .eq('customer_email', form.email)
-          .is('user_id', null)
+        await fetch('/api/link-guest-orders', { method: 'POST' })
       } catch {}
     }
 
@@ -69,9 +69,11 @@ export default function SignupPage() {
 
         <form onSubmit={handleSubmit} className="bg-cream border border-sand p-8">
           <div className="mb-4">
-            <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Full Name</label>
+            <label htmlFor="su-name" className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Full Name</label>
             <input
+              id="su-name"
               type="text"
+              autoComplete="name"
               value={form.fullName}
               onChange={e => setForm({ ...form, fullName: e.target.value })}
               required
@@ -88,9 +90,11 @@ export default function SignupPage() {
             />
           </div>
           <div className="mb-4">
-            <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Email</label>
+            <label htmlFor="su-email" className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Email</label>
             <input
+              id="su-email"
               type="email"
+              autoComplete="email"
               value={form.email}
               onChange={e => setForm({ ...form, email: e.target.value })}
               required
@@ -98,9 +102,11 @@ export default function SignupPage() {
             />
           </div>
           <div className="mb-4">
-            <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Password</label>
+            <label htmlFor="su-password" className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Password</label>
             <input
+              id="su-password"
               type="password"
+              autoComplete="new-password"
               value={form.password}
               onChange={e => setForm({ ...form, password: e.target.value })}
               required
@@ -108,9 +114,11 @@ export default function SignupPage() {
             />
           </div>
           <div className="mb-5">
-            <label className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Confirm Password</label>
+            <label htmlFor="su-confirm" className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Confirm Password</label>
             <input
+              id="su-confirm"
               type="password"
+              autoComplete="new-password"
               value={form.confirm}
               onChange={e => setForm({ ...form, confirm: e.target.value })}
               required

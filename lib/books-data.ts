@@ -50,6 +50,39 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   })
 }
 
+// ── Data-URI guard ───────────────────────────────────────────────────────────
+// books.image_url / books.images[] are meant to hold Supabase Storage URLs. A
+// bug in the admin edit form (now fixed) fell back to writing the browser's
+// base64 preview whenever an upload failed, so one row ended up holding ~12 MB
+// of base64. Next.js serialises whatever we return into both the HTML and the
+// RSC payload, which made /shop a 2.9 MB document and that book's product page
+// a 36 MB one.
+//
+// Serving the placeholder is strictly better than pushing megabytes of inline
+// base64 to a phone on Thai mobile data. Rows are repaired properly by
+// scripts/migrate-data-uri-images.mjs; this only stops the bleeding.
+const FALLBACK_COVER = '/images/hero-botanical.jpeg'
+
+function isDataUri(url: unknown): boolean {
+  return typeof url === 'string' && url.startsWith('data:')
+}
+
+function stripDataUriImages<T extends Book | null>(book: T): T {
+  if (!book) return book
+  const hasBadCover = isDataUri(book.image_url)
+  const hasBadGallery = Array.isArray(book.images) && book.images.some(isDataUri)
+  if (!hasBadCover && !hasBadGallery) return book
+
+  console.warn(
+    `[books-data] book ${book.id} ("${book.title}") stores base64 image data; serving placeholder instead. Run scripts/migrate-data-uri-images.mjs to repair it.`,
+  )
+  return {
+    ...book,
+    image_url: hasBadCover ? FALLBACK_COVER : book.image_url,
+    images: Array.isArray(book.images) ? book.images.filter(u => !isDataUri(u)) : book.images,
+  }
+}
+
 // ── Listing fields ───────────────────────────────────────────────────────────
 // Only pull what the listing pages actually need. Excludes `images` (potentially
 // huge array), `description*`, and `video_url` to keep payloads small.
@@ -88,7 +121,7 @@ async function fetchBooksFromSupabase(): Promise<Book[]> {
     throw new Error(`Supabase returned error: ${JSON.stringify(result.error)}`)
   }
   const data = (result.data || []) as Book[]
-  return data
+  return data.map(stripDataUriImages)
 }
 
 async function getBooksResilient(): Promise<Book[]> {
@@ -165,7 +198,7 @@ async function fetchBookByIdFromSupabase(id: string): Promise<Book | null> {
     if (err && err.code === 'PGRST116') return null
     throw new Error(`Supabase returned error: ${JSON.stringify(result.error)}`)
   }
-  return (result.data || null) as Book | null
+  return stripDataUriImages((result.data || null) as Book | null)
 }
 
 async function getBookByIdResilient(id: string): Promise<Book | null> {

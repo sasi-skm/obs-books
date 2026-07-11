@@ -81,8 +81,52 @@ export default function CategorySection({ categoryCounts }: CategorySectionProps
           </p>
         </div>
 
+        {/* Mobile: a contents page. Eleven shelves as one thumb-height
+            row each - scan, tap, done - instead of a wall of tiles. */}
+        <nav className="sm:hidden border-t border-sand">
+          {visible.map((cat, index) => {
+            const name = lang === 'th' ? cat.th : cat.en;
+            return (
+              <Link
+                key={cat.id}
+                href={`/category/${cat.id}`}
+                className="grid grid-cols-[34px_1fr_auto_18px] items-baseline gap-2 px-1 py-[15px] border-b border-sand"
+                style={{ textDecoration: 'none' }}
+              >
+                <span style={{
+                  fontFamily: 'var(--font-display)',
+                  fontStyle: 'italic',
+                  fontSize: '13px',
+                  color: 'rgba(44,36,24,0.35)',
+                }}>
+                  {ROMAN[index]}.
+                </span>
+                <span style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '19px',
+                  fontWeight: 500,
+                  color: 'var(--brown-dark)',
+                  lineHeight: 1.2,
+                }}>
+                  {name}
+                </span>
+                <span style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '10px',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: 'rgba(44,36,24,0.4)',
+                }}>
+                  {cat.count > 0 ? `${cat.count} titles` : ''}
+                </span>
+                <span aria-hidden="true" style={{ color: 'var(--moss)', fontSize: '14px' }}>&rarr;</span>
+              </Link>
+            );
+          })}
+        </nav>
+
         {/* Category tiles — 2 col mobile, 3 col desktop */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="hidden sm:grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           {visible.map((cat, index) => {
             const name = lang === 'th' ? cat.th : cat.en;
             const desc = TILE_DESCS[cat.id];

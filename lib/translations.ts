@@ -162,6 +162,19 @@ export const TX: Record<string, Record<Lang, string>> = {
   promptpayTitle: { en: 'Scan to Pay with PromptPay', th: 'สแกนจ่ายด้วยพร้อมเพย์' },
   promptpayAmount: { en: 'Amount', th: 'จำนวนเงิน' },
   promptpayInstructions: { en: 'Open your banking app, scan the QR code, and confirm the transfer.', th: 'เปิดแอพธนาคาร สแกน QR แล้วยืนยันการโอน' },
+  // The transfer amount is confirmed with the server before it is
+  // shown, so what the customer types into their bank app is what the
+  // order will record.
+  quoteChecking: { en: 'Confirming amount...', th: 'กำลังยืนยันจำนวนเงิน...' },
+  quoteError: {
+    en: 'We could not confirm the amount to transfer. Please check your connection and try again.',
+    th: 'ไม่สามารถยืนยันจำนวนเงินที่ต้องโอนได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง',
+  },
+  quoteRetry: { en: 'Try again', th: 'ลองอีกครั้ง' },
+  totalMismatchNotice: {
+    en: 'The recorded total differs from the amount shown earlier (a discount may have expired). If you already transferred a different amount, please message us with your order number - do not transfer again.',
+    th: 'ยอดที่บันทึกไว้ต่างจากยอดที่แสดงก่อนหน้านี้ (ส่วนลดอาจหมดอายุ) หากคุณโอนเงินไปแล้วเป็นยอดอื่น กรุณาทักหาเราพร้อมหมายเลขคำสั่งซื้อ - อย่าโอนซ้ำ',
+  },
 
   // Bank Transfer
   bankTitle: { en: 'Bank Transfer Details', th: 'รายละเอียดการโอนเงิน' },
@@ -187,6 +200,10 @@ export const TX: Record<string, Record<Lang, string>> = {
   payWithCard: { en: 'Pay {amount} with card', th: 'ชำระ {amount} ด้วยบัตร' },
   stripeRedirecting: { en: 'Redirecting to Stripe...', th: 'กำลังนำไปยัง Stripe...' },
   stripeError: { en: 'Could not start payment. Please try again.', th: 'ไม่สามารถเริ่มการชำระเงินได้ กรุณาลองอีกครั้ง' },
+  orderFailed: {
+    en: 'We could not place your order and your cart has been kept. If you already transferred the money, please do not transfer again - message us and we will sort it out.',
+    th: 'ไม่สามารถสั่งซื้อได้ และเราเก็บสินค้าในตะกร้าไว้ให้แล้ว หากคุณโอนเงินแล้ว กรุณาอย่าโอนซ้ำ - ทักหาเราแล้วเราจะจัดการให้',
+  },
   poweredByStripe: { en: 'Powered by Stripe', th: 'ขับเคลื่อนโดย Stripe' },
 
   // Stripe success / cancelled landing pages

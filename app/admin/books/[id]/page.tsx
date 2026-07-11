@@ -16,6 +16,18 @@ const COVER_TYPES = ['Hardcover', 'Softcover', 'Paperback', 'Spiral-bound', 'Oth
 type ImageSlot = { file: File | null; preview: string; existing: string }
 type VideoSlot = { file: File | null; preview: string; existing: string }
 
+/**
+ * Is this something we are willing to persist in books.image_url / images[]?
+ *
+ * Specifically: NOT a base64 data URI. Those are only ever meant to be
+ * in-browser previews. A book that ended up with nine of them stored ~12 MB
+ * of base64 in one row, and every page that listed the book inlined it into
+ * the HTML - the product page shipped 36 MB.
+ */
+function isStorableUrl(url: string | null | undefined): url is string {
+  return !!url && !url.startsWith('data:')
+}
+
 export default function EditBookPage() {
   const router = useRouter()
   const params = useParams()
@@ -294,33 +306,59 @@ export default function EditBookPage() {
     try {
       const isSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co'
       const finalUrls: string[] = []
+      let failedUploads = 0
       let finalVideoUrl: string | null = videoSlot.existing || null
 
       if (isSupabase) {
         // Upload images ONE AT A TIME to preserve correct order
         const activeSlots = images.filter(s => s.preview)
         for (const slot of activeSlots) {
+          // `preview` is a base64 data URI produced by readFileAsDataUrl for
+          // the in-browser thumbnail. It must NEVER reach the database: one
+          // book saved this way put ~12 MB of base64 in its row, which then
+          // shipped inside the HTML of every page that listed it.
+          //
+          // `existing` is whatever is already stored. We pass it through
+          // untouched even if it IS a legacy data URI, because for those
+          // rows the database holds the only copy of the photo and dropping
+          // it here would destroy it. Cleaning those up is a migration, not
+          // a side effect of opening the edit form.
+          const keptUrl = slot.existing || null
+
           if (!slot.file) {
-            // Keep existing image URL in its correct position
-            const existingUrl = slot.existing || slot.preview
-            if (existingUrl) finalUrls.push(existingUrl)
-          } else {
-            try {
-              const resized = await resizeImage(slot.file, 1600, 0.9)
-              const fd = new FormData()
-              fd.append('file', resized)
-              fd.append('bookId', bookId)
-              const res = await adminFetch('/api/admin/upload-image', { method: 'POST', body: fd })
-              if (res.ok) {
-                const { url } = await res.json()
-                if (url) finalUrls.push(url)
-                else finalUrls.push(slot.existing || slot.preview)
-              } else {
-                finalUrls.push(slot.existing || slot.preview)
-              }
-            } catch {
-              finalUrls.push(slot.existing || slot.preview)
+            if (keptUrl) finalUrls.push(keptUrl)
+            continue
+          }
+
+          const resized = await resizeImage(slot.file, 1600, 0.9)
+          const fd = new FormData()
+          fd.append('file', resized)
+          fd.append('bookId', bookId)
+
+          let uploadedUrl: string | null = null
+          try {
+            const res = await adminFetch('/api/admin/upload-image', { method: 'POST', body: fd })
+            if (res.ok) {
+              const { url } = await res.json()
+              if (isStorableUrl(url)) uploadedUrl = url
             }
+          } catch {
+            uploadedUrl = null
+          }
+
+          if (uploadedUrl) {
+            finalUrls.push(uploadedUrl)
+          } else if (keptUrl) {
+            // Upload failed but the slot already had a real image. Keep it
+            // and tell the owner the new photo did not save.
+            finalUrls.push(keptUrl)
+            failedUploads += 1
+          } else {
+            // Nothing safe to store. Stop rather than silently writing
+            // base64 (or a broken record) into the book.
+            throw new Error(
+              'Photo upload failed. The book was not saved. Check your connection and try again.',
+            )
           }
         }
 
@@ -399,6 +437,16 @@ export default function EditBookPage() {
           categories: [originalCategory, form.category],
         }),
       })
+
+      if (failedUploads > 0) {
+        // The book saved, but a new photo did not upload and we kept the old
+        // one rather than storing base64. Say so instead of pretending.
+        setError(
+          `Book saved, but ${failedUploads} new photo${failedUploads > 1 ? 's' : ''} failed to upload and the previous image was kept. Try uploading again.`,
+        )
+        setSaving(false)
+        return
+      }
 
       router.push('/admin/books')
     } catch (err: unknown) {

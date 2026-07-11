@@ -69,11 +69,20 @@ export default function CheckoutPage() {
   // Stripe redirect state — card-payment path (international or TH-domestic)
   const [stripeLoading, setStripeLoading] = useState(false)
   const [stripeError, setStripeError] = useState('')
+  const [placeOrderError, setPlaceOrderError] = useState('')
   const [snapshotItems, setSnapshotItems] = useState<CartItem[]>([])
   const [snapshotPayMethod, setSnapshotPayMethod] = useState<'promptpay' | 'transfer' | 'stripe'>('promptpay')
   const [snapshotTotal, setSnapshotTotal] = useState(0)
   const [slipUploadWarning, setSlipUploadWarning] = useState<string>('')
   const [copied, setCopied] = useState(false)
+  // Server-quoted transfer amount for PromptPay / bank transfer. The
+  // customer types this number into their bank app BEFORE the order
+  // exists, so it must come from the server's pricing (voucher validity,
+  // points eligibility, current book prices), never from client math.
+  const [serverQuote, setServerQuote] = useState<{ total: number; voucher_discount: number; points_discount: number } | null>(null)
+  const [quoteLoading, setQuoteLoading] = useState(false)
+  const [quoteError, setQuoteError] = useState(false)
+  const [mismatchNotice, setMismatchNotice] = useState(false)
 
   const handleCopyOrderNumber = async () => {
     if (!orderNumber) return
@@ -138,11 +147,63 @@ export default function CheckoutPage() {
     }))
   }, [profile, user]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (step === 'payment' && payMethod === 'promptpay' && effectiveTotal > 0) {
-      // static QR image used instead of generated QR
+  const fetchQuote = async () => {
+    setQuoteLoading(true)
+    setQuoteError(false)
+    try {
+      const res = await fetch('/api/orders/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map(i => ({
+            book_id: i.bookId || i.id.split('-')[0],
+            condition: i.condition,
+            quantity: i.quantity || 1,
+          })),
+          voucher_id: voucherApplied ? voucherApplied.voucher_id : null,
+          customer_email: form.email || user?.email || '',
+          redeem_points: pointsRedeemed,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || typeof data.total !== 'number') {
+        throw new Error(data.error || 'quote failed')
+      }
+      setServerQuote({
+        total: data.total,
+        voucher_discount: data.voucher_discount ?? 0,
+        points_discount: data.points_discount ?? 0,
+      })
+    } catch (err) {
+      console.error('[checkout] quote failed:', err)
+      setServerQuote(null)
+      setQuoteError(true)
     }
-  }, [step, payMethod, effectiveTotal]) // eslint-disable-line react-hooks/exhaustive-deps
+    setQuoteLoading(false)
+  }
+
+  // Quote the authoritative total the moment the payment step opens
+  // (and re-quote when discounts toggle) so the amount next to the QR
+  // is the amount /api/orders will record.
+  useEffect(() => {
+    if (step !== 'payment' || isInternational) return
+    fetchQuote()
+  }, [step, isInternational, pointsRedeemed, voucherApplied, items]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // What the manual-payment panels display as the amount to transfer.
+  const transferAmountDisplay = () => {
+    if (serverQuote && !quoteLoading) {
+      return <span className="font-bold text-bark">฿{serverQuote.total.toLocaleString()}</span>
+    }
+    if (quoteError) {
+      return (
+        <button type="button" onClick={fetchQuote} className="text-rose underline">
+          {t('quoteRetry')}
+        </button>
+      )
+    }
+    return <span className="italic text-ink-muted">{t('quoteChecking')}</span>
+  }
 
   const handleApplyVoucher = async () => {
     if (!voucherCode.trim()) return
@@ -270,6 +331,7 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     setSubmitting(true)
+    setPlaceOrderError('')
     try {
       // 1. Create the order first. The slip (if any) is uploaded AFTER we
       //    have a confirmed order_id, so an upload failure can't orphan
@@ -300,12 +362,32 @@ export default function CheckoutPage() {
             quantity: i.quantity || 1,
           })),
           total_amount: effectiveTotal,
+          // The server-quoted amount the customer was told to transfer.
+          // /api/orders compares its authoritative total against this and
+          // flags a mismatch for both us and Sasi's admin email.
+          expected_total: serverQuote?.total ?? null,
           voucher_id: voucherApplied ? voucherApplied.voucher_id : null,
           voucher_email: voucherApplied ? (form.email || user?.email || '') : null,
         }),
       })
       const data = await res.json()
-      const createdOrderNumber = data.order_number || 'OBS-' + Date.now().toString(36).toUpperCase()
+
+      // NEVER invent an order number. By the time a PromptPay customer clicks
+      // Place Order they have already transferred real baht from their bank
+      // app. If the server rejected the order (sold out, rate limited, bad
+      // request) and we fabricated a number and cleared the cart, the money
+      // is gone with no order, no slip, and nothing for Sasi to reconcile.
+      // Keep them on the page with the server's own message so they can
+      // retry or contact us. handleStripeCheckout has always done this.
+      if (!res.ok || !data.order_number) {
+        // Server messages here are already human-friendly cart-state errors
+        // ("Only 1 copy left"), same as the Stripe path shows verbatim.
+        setPlaceOrderError(data.error || t('orderFailed'))
+        setSubmitting(false)
+        return
+      }
+
+      const createdOrderNumber = data.order_number as string
       const createdOrderId = data.id as string | undefined
 
       // 2. Upload the slip to the public /api/upload-slip route if the
@@ -364,11 +446,25 @@ export default function CheckoutPage() {
         }
       }
 
+      // The server recalculates the total from the database and ignores
+      // whatever we sent, so its number is the one on the order Sasi
+      // ships against. They agree in the normal case; they can differ if
+      // a voucher went stale between validation and submit. Show what was
+      // actually recorded, not what we guessed.
+      const confirmedTotal =
+        typeof data.total_amount === 'number' ? data.total_amount : effectiveTotal
+
+      // The customer transferred the quoted amount; if the server
+      // recorded something else (a discount died between quote and
+      // order), say so on the confirmation screen instead of leaving
+      // them to find out when Sasi checks the slip.
+      setMismatchNotice(Boolean(data.total_mismatch))
+
       // 4. Remember the order locally so the customer can find it again
       //    via /track even if they didn't give an email.
       addRecentOrder({
         orderNumber: createdOrderNumber,
-        totalAmount: effectiveTotal,
+        totalAmount: confirmedTotal,
         currency: isInternational ? 'USD' : 'THB',
         placedAt: Date.now(),
       })
@@ -376,17 +472,15 @@ export default function CheckoutPage() {
       setOrderNumber(createdOrderNumber)
       setSnapshotItems([...items])
       setSnapshotPayMethod(payMethod)
-      setSnapshotTotal(effectiveTotal)
+      setSnapshotTotal(confirmedTotal)
       clearCart()
       setStep('done')
     } catch (err) {
+      // Network/parse failure. Same rule as above: do not show a success
+      // screen for an order that may not exist. Keep the cart so they can
+      // retry without rebuilding it.
       console.error('[checkout] handlePlaceOrder failed:', err)
-      setOrderNumber('OBS-' + Date.now().toString(36).toUpperCase())
-      setSnapshotItems([...items])
-      setSnapshotPayMethod(payMethod)
-      setSnapshotTotal(effectiveTotal)
-      clearCart()
-      setStep('done')
+      setPlaceOrderError(t('orderFailed'))
     }
     setSubmitting(false)
   }
@@ -469,6 +563,12 @@ export default function CheckoutPage() {
                 <span className="text-bark">฿{snapshotTotal.toLocaleString()}</span>
               </div>
             </div>
+          )}
+
+          {mismatchNotice && (
+            <p className="mb-4 text-xs text-rose text-center border border-rose/40 bg-rose/5 py-2 px-3">
+              ⚠ {t('totalMismatchNotice')}
+            </p>
           )}
 
           {/* Payment instructions */}
@@ -684,8 +784,10 @@ export default function CheckoutPage() {
           <form onSubmit={handleSubmitDetails}>
             {/* Country */}
             <div className="mb-4">
-              <label className="block font-heading text-sm mb-1">{t('destinationCountry')} *</label>
+              <label htmlFor="co-country" className="block font-heading text-sm mb-1">{t('destinationCountry')} *</label>
               <select
+                id="co-country"
+                autoComplete="country"
                 className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                 value={form.country}
                 onChange={e => setForm({ ...form, country: e.target.value, province: '' })}
@@ -707,8 +809,10 @@ export default function CheckoutPage() {
             {/* First + Last name */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
-                <label className="block font-heading text-sm mb-1">First Name *</label>
+                <label htmlFor="co-fname" className="block font-heading text-sm mb-1">First Name *</label>
                 <input
+                  id="co-fname"
+                  autoComplete="given-name"
                   className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                   placeholder="First name"
                   value={form.firstName}
@@ -717,8 +821,10 @@ export default function CheckoutPage() {
                 />
               </div>
               <div>
-                <label className="block font-heading text-sm mb-1">Last Name</label>
+                <label htmlFor="co-lname" className="block font-heading text-sm mb-1">Last Name</label>
                 <input
+                  id="co-lname"
+                  autoComplete="family-name"
                   className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                   placeholder="Last name"
                   value={form.lastName}
@@ -729,8 +835,10 @@ export default function CheckoutPage() {
 
             {/* Address */}
             <div className="mb-4">
-              <label className="block font-heading text-sm mb-1">{t('address')} *</label>
+              <label htmlFor="co-addr1" className="block font-heading text-sm mb-1">{t('address')} *</label>
               <input
+                id="co-addr1"
+                autoComplete="address-line1"
                 className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                 placeholder="House no., street, soi"
                 value={form.addressLine1}
@@ -740,6 +848,9 @@ export default function CheckoutPage() {
             </div>
             <div className="mb-4">
               <input
+                id="co-addr2"
+                autoComplete="address-line2"
+                aria-label="Apartment, suite, building (optional)"
                 className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                 placeholder="Apartment, suite, building (optional)"
                 value={form.addressLine2}
@@ -750,8 +861,10 @@ export default function CheckoutPage() {
             {/* City / Province / Postal code */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div>
-                <label className="block font-heading text-sm mb-1">City *</label>
+                <label htmlFor="co-city" className="block font-heading text-sm mb-1">City *</label>
                 <input
+                  id="co-city"
+                  autoComplete="address-level2"
                   className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                   placeholder="City"
                   value={form.city}
@@ -760,9 +873,11 @@ export default function CheckoutPage() {
                 />
               </div>
               <div>
-                <label className="block font-heading text-sm mb-1">Province</label>
+                <label htmlFor="co-province" className="block font-heading text-sm mb-1">Province</label>
                 {!isInternational ? (
                   <select
+                    id="co-province"
+                    autoComplete="address-level1"
                     className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                     value={form.province}
                     onChange={e => setForm({ ...form, province: e.target.value })}
@@ -774,6 +889,8 @@ export default function CheckoutPage() {
                   </select>
                 ) : (
                   <input
+                    id="co-province"
+                    autoComplete="address-level1"
                     className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                     placeholder="State / Region"
                     value={form.province}
@@ -782,8 +899,11 @@ export default function CheckoutPage() {
                 )}
               </div>
               <div>
-                <label className="block font-heading text-sm mb-1">Postal Code</label>
+                <label htmlFor="co-postal" className="block font-heading text-sm mb-1">Postal Code</label>
                 <input
+                  id="co-postal"
+                  autoComplete="postal-code"
+                  inputMode="numeric"
                   className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                   placeholder="10xxx"
                   value={form.postalCode}
@@ -794,8 +914,11 @@ export default function CheckoutPage() {
 
             {/* Phone */}
             <div className="mb-4">
-              <label className="block font-heading text-sm mb-1">{t('phone')} *</label>
+              <label htmlFor="co-phone" className="block font-heading text-sm mb-1">{t('phone')} *</label>
               <input
+                id="co-phone"
+                type="tel"
+                autoComplete="tel"
                 className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                 placeholder="08x-xxx-xxxx"
                 value={form.phone}
@@ -804,14 +927,16 @@ export default function CheckoutPage() {
               />
             </div>
             <div className="mb-4">
-              <label className="block font-heading text-sm mb-1">
+              <label htmlFor="co-email" className="block font-heading text-sm mb-1">
                 {t('email')}{' '}
                 <span className="text-[11px] text-sage font-normal normal-case">
                   ({lang === 'th' ? 'แนะนำ' : 'recommended'})
                 </span>
               </label>
               <input
+                id="co-email"
                 type="email"
+                autoComplete="email"
                 className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                 placeholder="you@example.com"
                 value={form.email}
@@ -828,8 +953,10 @@ export default function CheckoutPage() {
               </p>
             </div>
             <div className="mb-4">
-              <label className="block font-heading text-sm mb-1">{t('note')}</label>
+              <label htmlFor="co-note" className="block font-heading text-sm mb-1">{t('note')}</label>
               <input
+                id="co-note"
+                autoComplete="off"
                 className="w-full px-3 py-2.5 border border-line bg-cream font-body text-sm outline-none focus:border-sage"
                 value={form.note}
                 onChange={e => setForm({ ...form, note: e.target.value })}
@@ -940,7 +1067,7 @@ export default function CheckoutPage() {
                   ศศิวิมล แก้วกมล (Sasiwimol Kaewkamol)
                 </p>
                 <p className="text-sm text-ink-muted mb-4">
-                  {t('promptpayAmount')}: <span className="font-bold text-bark">฿{effectiveTotal.toLocaleString()}</span>
+                  {t('promptpayAmount')}: {transferAmountDisplay()}
                 </p>
                 <Image src="/images/promptpay-qr.jpg" alt="PromptPay QR" width={280} height={280} className="mx-auto mb-3" />
                 <p className="text-xs text-ink-muted">{t('promptpayInstructions')}</p>
@@ -987,7 +1114,7 @@ export default function CheckoutPage() {
                 {/* Total */}
                 <div className="p-4 bg-sage/5 border border-sage/20 text-center">
                   <span className="text-sm text-ink-light">{t('promptpayAmount')}: </span>
-                  <span className="font-heading text-xl font-bold text-bark">฿{effectiveTotal.toLocaleString()}</span>
+                  <span className="font-heading text-xl">{transferAmountDisplay()}</span>
                 </div>
               </div>
             )}
@@ -1020,9 +1147,22 @@ export default function CheckoutPage() {
                 Stripe card below has its own redirect button. */}
             {payMethod !== 'stripe' && (
               <>
+                {placeOrderError && (
+                  <p className="mb-3 text-xs text-rose text-center border border-rose/40 bg-rose/5 py-2 px-3">
+                    ⚠ {placeOrderError}
+                  </p>
+                )}
+                {quoteError && (
+                  <p className="mb-3 text-xs text-rose text-center border border-rose/40 bg-rose/5 py-2 px-3">
+                    ⚠ {t('quoteError')}
+                  </p>
+                )}
+                {/* No confirmed amount = nothing safe to transfer, so no
+                    order either. Prevents placing an order against an
+                    unverified client-side total. */}
                 <button
                   onClick={handlePlaceOrder}
-                  disabled={submitting}
+                  disabled={submitting || !serverQuote}
                   className="w-full py-3 bg-sage text-offwhite font-heading text-sm hover:bg-sage-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? '...' : t('placeOrder')}
