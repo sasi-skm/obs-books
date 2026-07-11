@@ -4,5 +4,8 @@
       "path": "/api/cron/cancel-unpaid-orders",
       "schedule": "17 1 * * *"
     }
+  ],
+  "regions": [
+    "sin1"
   ]
 }
