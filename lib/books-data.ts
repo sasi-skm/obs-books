@@ -179,11 +179,16 @@ async function fetchBookByIdFromSupabase(id: string): Promise<Book | null> {
   const { supabase } = await import('./supabase')
   if (!supabase) return null
 
+  // Sold books keep their page. Every book here is 1-of-1, so filtering
+  // them out meant a customer following an old Instagram or Google link
+  // hit a 404 the moment the book sold. BookDetailClient already renders
+  // a sold state (badge + waitlist), it just never received one.
+  // `draft` stays excluded: those are unfinished listings with no price.
   const query = supabase
     .from('books')
     .select('*')
     .eq('id', id)
-    .eq('status', 'available')
+    .in('status', ['available', 'sold'])
     .single()
 
   const result = await withTimeout(
