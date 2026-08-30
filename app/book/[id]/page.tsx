@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { getBookById, getBooks } from '@/lib/books-data'
 import BookDetailClient from './BookDetailClient'
-import { notFound } from 'next/navigation'
+import NotFound from '@/app/not-found'
 
 // ISR: regenerate every 60 seconds. Cached pages survive temporary Supabase outages.
 export const revalidate = 60
@@ -36,7 +36,13 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
 export default async function BookPage({ params }: { params: { id: string } }) {
   const book = await getBookById(params.id)
-  if (!book) notFound()
+  // Render the 404 body directly rather than calling notFound(). This
+  // segment has a loading.tsx, so the streamed shell is already flushed
+  // by the time notFound() fires and the boundary never swaps in - the
+  // visitor gets the header and footer wrapped around nothing at all.
+  // Measured: /nope-nope renders the branded page, /book/<draft> did not.
+  if (!book) return <NotFound />
+
 
   // getBooks() is deduplicated by React cache() — no extra Supabase call
   const allBooks = await getBooks()

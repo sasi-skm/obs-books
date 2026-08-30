@@ -36,6 +36,23 @@ type Body = {
 // well before our 24h auto-cancel cron sees the order.
 const SESSION_TTL_SECONDS = 2 * 60 * 60
 
+// Stripe rejects a product image that is not a fetchable http(s) URL, and
+// caps each entry at 2048 characters. A book whose image_url holds a base64
+// data URI (the admin form used to fall back to the browser preview when a
+// storage upload failed) therefore kills session creation for the whole
+// cart, and the customer sees "Payment provider unavailable".
+//
+// The picture is decoration on the Stripe page. Never let it block a sale:
+// drop anything Stripe would refuse and send the session without an image.
+const STRIPE_MAX_IMAGE_URL = 2048
+
+function stripeSafeImages(imageUrl?: string | null): string[] | undefined {
+  if (!imageUrl) return undefined
+  if (imageUrl.length > STRIPE_MAX_IMAGE_URL) return undefined
+  if (!/^https?:\/\//i.test(imageUrl)) return undefined
+  return [imageUrl]
+}
+
 export async function POST(req: NextRequest) {
   // Creating a session reserves stock for SESSION_TTL_SECONDS. Without a
   // limit, a script can loop this endpoint and hold every 1-of-1 book in
@@ -195,7 +212,7 @@ export async function POST(req: NextRequest) {
           product_data: {
             name: l.condition ? `${l.title} (${l.condition})` : l.title,
             description: l.author ? `by ${l.author}` : undefined,
-            images: l.image_url ? [l.image_url] : undefined,
+            images: stripeSafeImages(l.image_url),
             metadata: {
               book_id: l.book_id,
               condition: l.condition || '',
@@ -228,7 +245,7 @@ export async function POST(req: NextRequest) {
             product_data: {
               name: l.condition ? `${l.title} (${l.condition})` : l.title,
               description: l.author ? `by ${l.author}` : undefined,
-              images: l.image_url ? [l.image_url] : undefined,
+              images: stripeSafeImages(l.image_url),
               metadata: {
                 book_id: l.book_id,
                 condition: l.condition || '',
