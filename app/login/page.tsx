@@ -2,14 +2,27 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Suspense } from 'react'
+import GoogleAuthButton from '@/components/auth/GoogleAuthButton'
 
-function LoginForm() {
+/**
+ * Where to send the customer after a successful sign in. Checkout links here as
+ * `/login?redirect=checkout`, so the value is a bare path, not a full URL.
+ *
+ * Read from window.location at submit time rather than through useSearchParams.
+ * The hook forces the whole form to render client side behind a Suspense
+ * boundary, which left the prerendered page blank until React hydrated - on a
+ * phone that showed as an empty cream screen, and it hid the Google button from
+ * the static HTML. The destination itself is unchanged.
+ */
+function redirectTarget(): string {
+  if (typeof window === 'undefined') return '/account'
+  return new URLSearchParams(window.location.search).get('redirect') || '/account'
+}
+
+export default function LoginPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/account'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -25,7 +38,7 @@ function LoginForm() {
     if (authError) {
       setError(authError.message)
     } else {
-      router.push(redirect)
+      router.push(redirectTarget())
     }
   }
 
@@ -38,6 +51,8 @@ function LoginForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-cream border border-sand p-8">
+          <GoogleAuthButton />
+
           <div className="mb-4">
             <label htmlFor="li-email" className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Email</label>
             <input
@@ -89,13 +104,5 @@ function LoginForm() {
         </div>
       </div>
     </div>
-  )
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-cream" />}>
-      <LoginForm />
-    </Suspense>
   )
 }
