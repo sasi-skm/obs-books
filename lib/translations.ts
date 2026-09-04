@@ -356,6 +356,8 @@ export const TX: Record<string, Record<Lang, string>> = {
   footerShipping: { en: 'Shipping', th: 'การจัดส่ง' },
   footerTrackOrder: { en: 'Track Order', th: 'ติดตามคำสั่งซื้อ' },
   footerContact: { en: 'Contact', th: 'ติดต่อ' },
+  footerPrivacy: { en: 'Privacy', th: 'ความเป็นส่วนตัว' },
+  footerTerms: { en: 'Terms', th: 'ข้อกำหนด' },
   footerFlowerLetter: { en: 'The Flower Letter', th: 'The Flower Letter' },
   footerInstagram: { en: 'Instagram @obs_books', th: 'Instagram @obs_books' },
   footerTiktok: { en: 'TikTok @obs_books', th: 'TikTok @obs_books' },
@@ -387,6 +389,12 @@ export const TX: Record<string, Record<Lang, string>> = {
   stripShippingTH:   { en: 'Ships 2–3 days · Thailand',           th: 'จัดส่งภายใน 2–3 วัน · ไทย' },
   stripShippingFree: { en: 'Free shipping on all Thailand orders', th: 'ส่งฟรีทุกออเดอร์ในไทย' },
   stripShippingIntl: { en: 'Worldwide delivery in 5–10 days',     th: 'จัดส่งทั่วโลกภายใน 5–10 วัน' },
+
+  // Google sign-in (login + signup)
+  googleAuthCta: { en: 'Continue with Google', th: 'เข้าสู่ระบบด้วย Google' },
+  googleAuthLoading: { en: 'Connecting...', th: 'กำลังเชื่อมต่อ...' },
+  googleAuthError: { en: 'Could not sign in with Google. Please try again.', th: 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ ลองใหม่อีกครั้ง' },
+  authOr: { en: 'or', th: 'หรือ' },
 }
 
 export function t(key: string, lang: Lang): string {

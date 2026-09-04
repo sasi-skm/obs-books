@@ -132,6 +132,16 @@ export default function Footer() {
                   {t('footerContact')}
                 </Link>
               </li>
+              <li>
+                <Link href="/privacy" style={linkStyle}>
+                  {t('footerPrivacy')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" style={linkStyle}>
+                  {t('footerTerms')}
+                </Link>
+              </li>
             </ul>
           </div>
 

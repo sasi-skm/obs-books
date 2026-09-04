@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import DateOfBirthPicker from '@/components/DateOfBirthPicker'
+import GoogleAuthButton from '@/components/auth/GoogleAuthButton'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -68,6 +69,8 @@ export default function SignupPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-cream border border-sand p-8">
+          <GoogleAuthButton />
+
           <div className="mb-4">
             <label htmlFor="su-name" className="block font-jost text-xs uppercase tracking-wide text-bark mb-1.5">Full Name</label>
             <input
