@@ -356,6 +356,8 @@ export const TX: Record<string, Record<Lang, string>> = {
   footerShipping: { en: 'Shipping', th: 'การจัดส่ง' },
   footerTrackOrder: { en: 'Track Order', th: 'ติดตามคำสั่งซื้อ' },
   footerContact: { en: 'Contact', th: 'ติดต่อ' },
+  footerPrivacy: { en: 'Privacy', th: 'ความเป็นส่วนตัว' },
+  footerTerms: { en: 'Terms', th: 'ข้อกำหนด' },
   footerFlowerLetter: { en: 'The Flower Letter', th: 'The Flower Letter' },
   footerInstagram: { en: 'Instagram @obs_books', th: 'Instagram @obs_books' },
   footerTiktok: { en: 'TikTok @obs_books', th: 'TikTok @obs_books' },
